@@ -34,13 +34,14 @@ window.SRK_CONFIG = {
   /* ── 2) 여행 정보 ─────────────────────────────────────────── */
   trip: {
     title:    "슈퍼리치키드 하계 MT",
-    subtitle: "슈리키 하계휴양 🏕️",
+    subtitle: "",
+    carCapacity: 5,
     startDate: "2026-06-27",
     endDate:   "2026-06-28",
     location: "일영랜드",
     address:  "경기 양주시 장흥면 일영로502번길 222-68",
     lodging:  "양주전원주택체험 (별장·침실 3개·★4.74) · 기준 16인 / 참석 17명",
-    note:     "+1명만큼 더 아늑하게 ❤️",
+    note:     "",
     poolFee:  17000,
     airbnbUrl: "https://www.airbnb.co.kr/rooms/13856178"
   },

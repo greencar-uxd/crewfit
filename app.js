@@ -15,7 +15,7 @@
   var me = localStorage.getItem("srk_me") || null;
   var MYTOKEN = localStorage.getItem("srk_token") || ("t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
   localStorage.setItem("srk_token", MYTOKEN);
-  var state = { tab: "home", pollId: null, prep: "vote" };
+  var state = { tab: "home", pollId: null, alert: "notice" };
   var intro = { step: "name", pick: null, car: false };
   var booted = false;
   var photoSel = {};      // 선택된 사진 key 맵
@@ -71,6 +71,31 @@
     return '<span class="av" style="' + st + "font-size:" + Math.round(size * 0.4) + "px;background:" + avColor(id) + '">' + esc(initials(memberName(id))) + "</span>";
   }
   function chip(id) { return '<span class="mchip">' + avatar(id, 22) + "<span>" + esc(memberName(id)) + "</span></span>"; }
+
+  /* 라인 스타일 아이콘 시스템 (이모지 대체) */
+  function icon(name, size) {
+    size = size || 20;
+    var P = {
+      home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+      ballot: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M7.5 12l3 3 6-6.5"/>',
+      wallet: '<path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H17v3"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M16 13.5h2.5"/>',
+      car: '<path d="M5 11l1.4-3.6A2 2 0 0 1 8.3 6h7.4a2 2 0 0 1 1.9 1.4L19 11"/><rect x="4" y="11" width="16" height="5.5" rx="1.2"/><circle cx="7.6" cy="16.5" r="1.4"/><circle cx="16.4" cy="16.5" r="1.4"/>',
+      camera: '<path d="M4 8.5h3l1.4-2h7.2L18 8.5h2A1.5 1.5 0 0 1 21.5 10v8A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18v-8A1.5 1.5 0 0 1 4 8.5z"/><circle cx="12" cy="13.5" r="3.3"/>',
+      bag: '<path d="M6 8h12a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/><path d="M9 12.5h6"/>',
+      calendar: '<rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 10h16"/><path d="M8.5 3.5v4M15.5 3.5v4"/>',
+      megaphone: '<path d="M5 10v4l9 3.5V6.5L5 10z"/><path d="M5 10H4a1.5 1.5 0 0 0 0 3h1"/><path d="M14 9a3.5 3.5 0 0 1 0 6"/>',
+      key: '<circle cx="8" cy="14" r="3.2"/><path d="M10.3 11.7 19 3"/><path d="M16 6l2.2 2.2M14.2 7.8 16 9.6"/>',
+      theme: '<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8a8.2 8.2 0 0 1 0 16.4z" fill="currentColor" stroke="none"/>',
+      pin: '<path d="M12 21s6.5-5.2 6.5-10.5A6.5 6.5 0 0 0 5.5 10.5C5.5 15.8 12 21 12 21z"/><circle cx="12" cy="10.2" r="2.4"/>',
+      user: '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+      shield: '<path d="M12 3l7 2.5v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V5.5L12 3z"/><path d="M9 12l2 2 4-4.5"/>',
+      plus: '<path d="M12 5.5v13M5.5 12h13"/>',
+      logout: '<path d="M14.5 8V6.5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V16"/><path d="M19 12H9.5"/><path d="M16 9l3 3-3 3"/>',
+      bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.8 5.6 1.8 5.6H4.2S6 14.5 6 10z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+      check: '<path d="M5 12.5l4.5 4.5L19 7"/>'
+    };
+    return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
+  }
 
   function todayKST() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
   function parseDate(s) { var p = String(s || "").split("-"); return new Date(+p[0], (+p[1] || 1) - 1, +p[2] || 1); }
@@ -214,6 +239,8 @@
   function isValidDriver(id) { var m = obj(DB.members)[id]; return !!(m && m.claimed && m.hasCar); }
   function drivers() { return claimedMembers().filter(function (id) { return DB.members[id].hasCar; }); }
   function passengersOf(d) { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && m.rideWith === d; }); }
+  function carCap() { return (CFG.trip || {}).carCapacity || 5; }       // 운전자 포함 총 정원
+  function carFull(d) { return passengersOf(d).length >= carCap() - 1; } // 탑승자(운전자 제외) 최대 = 정원-1
   function unassignedPass() { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && (!m.rideWith || !isValidDriver(m.rideWith)); }); }
   function memberCount() { return Object.keys(obj(DB.members)).length || 1; }
   function readyCount(p) { var mem = obj(DB.members); return Object.keys(obj(p.ready)).filter(function (id) { return mem[id]; }).length; }
@@ -238,14 +265,15 @@
     var m = me && obj(DB.members)[me];
     if (!me || !m || !m.claimed) { renderGate(); return; }
     $("#gate").classList.add("hidden");
-    if (state.tab === "vote") { state.tab = "prep"; state.prep = "vote"; } // 투표는 준비 탭으로 이동됨
+    if (state.tab === "vote" || state.tab === "settle") { state.alert = state.tab === "settle" ? "settle" : "vote"; state.tab = "alert"; } // 구 탭 → 알림으로 통합
     renderHeader(); renderNav();
     var main = $("#app-main");
     if (state.tab === "home") main.innerHTML = viewHome();
-    else if (state.tab === "settle") main.innerHTML = viewSettle();
+    else if (state.tab === "alert") main.innerHTML = viewAlert();
     else if (state.tab === "carpool") main.innerHTML = viewCarpool();
     else if (state.tab === "photo") main.innerHTML = viewPhotos();
-    else if (state.tab === "prep") main.innerHTML = viewPrep();
+    else if (state.tab === "prep") main.innerHTML = prepPacking();
+    else main.innerHTML = viewHome();
     window.scrollTo(0, 0);
   }
   function scheduleRender() { if (booted) render(); }
@@ -254,13 +282,13 @@
     var t = CFG.trip || {};
     $("#app-header").innerHTML =
       '<div class="hd-left"><div class="hd-title">' + esc(t.title || "MT") + "</div>" +
-      '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span>' : '<span class="badge-live">LIVE</span>') + " " + esc(t.subtitle || "") + "</div></div>" +
+      '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span>' : '<span class="badge-live">LIVE</span>') + (t.subtitle ? " " + esc(t.subtitle) : "") + "</div></div>" +
       '<button class="me-chip" data-action="open-profile">' + avatar(me, 30) + "<span>" + esc(memberName(me)) + "</span></button>";
   }
   function renderNav() {
-    var tabs = [["home", "🏠", "홈"], ["settle", "💸", "정산"], ["carpool", "🚗", "카풀"], ["photo", "📷", "사진"], ["prep", "🎒", "준비"]];
+    var tabs = [["home", "home", "홈"], ["alert", "bell", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "사진"], ["prep", "bag", "준비물"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
-      return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + t[1] + "</span><span>" + t[2] + "</span></button>";
+      return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
   }
 
@@ -310,12 +338,12 @@
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span><span class="step-dot on"></span></div>' +
       '<div class="profile-box">' +
       '<div class="profile-who">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
-      '<div class="fld"><label>🚇 출발지 (지하철역)</label>' +
+      '<div class="fld"><label>' + icon("pin", 16) + ' 출발지 (지하철역)</label>' +
       '<input type="text" id="i-station" list="stationlist" placeholder="예: 남영, 강남… (직접 입력 가능)" value="' + esc(st) + '" autocomplete="off">' +
       '<datalist id="stationlist">' + dl + "</datalist></div>" +
-      '<div class="fld"><label>🚗 자차 보유</label><div class="toggle2">' +
-      '<button id="car-no" class="' + (car ? "" : "on") + '" data-action="set-car" data-v="0">없음 🙋</button>' +
-      '<button id="car-yes" class="' + (car ? "on" : "") + '" data-action="set-car" data-v="1">있음 🚗</button></div></div>' +
+      '<div class="fld"><label>' + icon("car", 16) + ' 자차 보유</label><div class="toggle2">' +
+      '<button id="car-no" class="' + (car ? "" : "on") + '" data-action="set-car" data-v="0">없음</button>' +
+      '<button id="car-yes" class="' + (car ? "on" : "") + '" data-action="set-car" data-v="1">있음</button></div></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
       '<button class="btn-pri" data-action="intro-submit">입장하기</button></div>' +
       '<p class="gate-p" style="margin-top:14px;font-size:12px">출발지·자차 정보는 나중에 프로필에서 바꿀 수 있어요.</p>' +
@@ -333,7 +361,7 @@
     var h = "";
     if (Store.mode === "demo") h += '<div class="demo-note">📍 <b>데모 모드</b> — 이 기기에만 저장돼요. 실시간 공유는 Firebase 연결 후 켜집니다.</div>';
     h += '<div class="hero"><div class="hero-dday">' + ddayLabel() + "</div>" +
-      '<div class="hero-title">' + esc(t.title || "") + "</div><div class=\"hero-sub\">" + esc(t.subtitle || "") + "</div>" +
+      '<div class="hero-title">' + esc(t.title || "") + "</div>" + (t.subtitle ? '<div class="hero-sub">' + esc(t.subtitle) + "</div>" : '<div style="height:10px"></div>') +
       '<div class="hero-meta"><div>📅 ' + dateKo(t.startDate) + " → " + dateKo(t.endDate) + "</div>" +
       '<div>📍 <a href="' + mapUrl + '" target="_blank" rel="noopener">' + esc(t.location || "") + "</a> · " + esc(t.address || "") + "</div>" +
       '<div>🏠 ' + esc(t.lodging || "") + (t.airbnbUrl ? ' · <a href="' + esc(t.airbnbUrl) + '" target="_blank" rel="noopener">숙소 보기</a>' : "") + "</div>" +
@@ -393,7 +421,7 @@
   /* ---------- 투표 ---------- */
   function viewVote() {
     var polls = bySort(entries(DB.polls), function (kv) { return ((kv[1].status === "closed") ? 1e15 : 0) - (kv[1].ts || 0); });
-    var h = '<div class="page-head"><h1>🗳️ 의사결정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-poll">+ 새 투표</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>' + icon("ballot", 22) + ' 의사결정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-poll">+ 새 투표</button>' : "") + "</div>";
     if (!isMeAdmin()) h += '<div class="admin-only-note">투표 생성은 운영진만 가능해요. 올라온 투표에 참여해주세요!</div>';
     if (!polls.length) h += '<div class="empty">아직 투표가 없어요.</div>';
     h += '<div class="list-grid">';
@@ -404,9 +432,9 @@
   function viewPollDetail(id) {
     var p = obj(DB.polls)[id]; if (!p) { state.pollId = null; return viewVote(); }
     var opts = entries(p.options), voters = voterCount(p), myVote = obj(p.votes)[me] || {}, closed = p.status === "closed";
-    var canManage = isMeAdmin() || p.createdBy === me;
+    var canEdit = isMeAdmin() || p.createdBy === me;
     var h = '<div class="page-head"><button class="back" data-action="back-vote">‹ 투표</button>' +
-      (canManage ? '<button class="link-danger" data-action="del-poll" data-id="' + id + '">삭제</button>' : "") + "</div>";
+      (canEdit ? '<button class="link-danger" data-action="del-poll" data-id="' + id + '">삭제</button>' : "") + "</div>";
     h += '<div class="card poll-detail"><div class="pd-type">' + (p.type === "multi" ? "여러 개 선택 가능" : "하나만 선택") + (closed ? ' · <span class="closed-tag">마감됨</span>' : "") + "</div>" +
       '<h1 class="pd-title">' + esc(p.title) + "</h1>" + (p.desc ? '<p class="pd-desc">' + esc(p.desc) + "</p>" : "");
     opts.forEach(function (o) {
@@ -418,7 +446,7 @@
     });
     if (p.allowAddOptions && !closed) h += '<button class="add-opt" data-action="add-opt" data-id="' + id + '">+ 선택지 추가</button>';
     h += '<div class="pd-foot"><span>' + voters + "/" + memberCount() + "명 참여</span>" +
-      (canManage ? '<button class="link" data-action="toggle-poll" data-id="' + id + '">' + (closed ? "다시 열기" : "투표 마감") + "</button>" : "") + "</div></div>";
+      (canEdit ? '<button class="link" data-action="toggle-poll" data-id="' + id + '">' + (closed ? "다시 열기" : "투표 마감") + "</button>" : "") + "</div></div>";
     var comments = bySort(entries(p.comments), function (kv) { return (kv[1].ts || 0); });
     h += '<h2 class="sec">💬 댓글 ' + comments.length + "</h2><div class=\"comments\">";
     if (!comments.length) h += '<div class="empty sm">첫 댓글을 남겨보세요</div>';
@@ -435,7 +463,7 @@
   function viewSettle() {
     var exps = bySort(entries(DB.expenses), function (kv) { return -(kv[1].ts || 0); });
     var bal = computeBalances(), transfers = minimalTransfers(bal), total = totalSpent();
-    var h = '<div class="page-head"><h1>💸 정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
+    var h = '<div class="page-head"><h1>' + icon("wallet", 22) + ' 정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
     h += '<div class="settle-top"><div class="st-box"><div class="st-n">' + won(total) + '</div><div class="st-l">총 지출</div></div>' +
       '<div class="st-box"><div class="st-n">' + transfers.length + '<i>건</i></div><div class="st-l">송금</div></div></div>';
     if ((CFG.trip || {}).poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(CFG.trip.poolFee) + "은 현장 개별 결제라 정산에 포함되지 않아요.</div>";
@@ -469,7 +497,7 @@
   /* ---------- 카풀 ---------- */
   function viewCarpool() {
     var drv = drivers(), unas = unassignedPass(), notReady = claimedMembers().length === 0;
-    var h = '<div class="page-head"><h1>🚗 카풀</h1></div>';
+    var h = '<div class="page-head"><h1>' + icon("car", 22) + ' 카풀</h1></div>';
     h += '<div class="cp-top"><div class="st-box"><div class="st-n">' + drv.length + '<i>대</i></div><div class="st-l">운전자</div></div>' +
       '<div class="st-box"><div class="st-n">' + claimedMembers().filter(function (id) { return !DB.members[id].hasCar; }).length + '<i>명</i></div><div class="st-l">탑승 인원</div></div>' +
       '<div class="st-box"><div class="st-n">' + unas.length + '<i>명</i></div><div class="st-l">미배정</div></div></div>';
@@ -483,15 +511,15 @@
       var pax = passengersOf(d), myCar = (d === me) || (obj(DB.members)[me] || {}).rideWith === d;
       var canAdd = (d === me) || isMeAdmin();
       h += '<div class="cp-driver' + (myCar ? " cp-mine" : "") + '"><div class="cp-driver-head">' + avatar(d, 36) +
-        '<div><div class="dh-name">' + esc(memberName(d)) + (canManage(d) ? " " + roleBadge(d) : "") + "</div><div class=\"dh-stn\">🚇 " + stationLabel(d) + "</div></div>" +
-        '<span class="cp-cap">탑승 ' + pax.length + "명</span></div><div class=\"cp-pass-list\">";
+        '<div><div class="dh-name">' + esc(memberName(d)) + (canManage(d) ? " " + roleBadge(d) : "") + '</div><div class="dh-stn">' + icon("pin", 13) + " " + stationLabel(d) + "</div></div>" +
+        '<span class="cp-cap' + (carFull(d) ? " full" : "") + '">탑승 ' + pax.length + "/" + (carCap() - 1) + (carFull(d) ? " · 꽉참" : "") + "</span></div><div class=\"cp-pass-list\">";
       if (!pax.length) h += '<div class="cp-pass empty-slot">아직 탑승자가 없어요</div>';
       pax.forEach(function (pid) {
         var canRemove = (pid === me) || (d === me) || isMeAdmin();
         h += '<div class="cp-pass">' + avatar(pid, 24) + "<span>" + esc(memberName(pid)) + "</span><span class=\"cp-stn\">" + stationLabel(pid) + "</span>" +
           (sameCluster(d, pid) ? '<span class="cp-near">가까움</span>' : "") + (canRemove ? '<button class="x" data-action="ride-leave" data-p="' + pid + '">×</button>' : "") + "</div>";
       });
-      if (canAdd && unas.length) h += '<button class="btn-ghost btn-block" data-action="recruit" data-d="' + d + '">+ 주변 탑승자 모집</button>';
+      if (canAdd && unas.length && !carFull(d)) h += '<button class="btn-ghost btn-block" data-action="recruit" data-d="' + d + '">+ 주변 탑승자 모집</button>';
       h += "</div></div>";
     });
     h += "</div>";
@@ -514,7 +542,7 @@
 
   /* ---------- 사진 ---------- */
   function viewPhotos() {
-    var h = '<div class="page-head"><h1>📷 사진·영상</h1>' + (cloudOn() ? '<button class="btn-pri" data-action="pick-photos">+ 올리기</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>' + icon("camera", 22) + ' 사진·영상</h1>' + (cloudOn() ? '<button class="btn-pri" data-action="pick-photos">+ 올리기</button>' : "") + "</div>";
     if (!cloudOn()) {
       h += '<div class="demo-note">📷 사진·영상 기능을 켜려면 <b>Cloudinary 연결</b>이 필요해요. (config.js의 <code>cloudinary</code> 값) — 연결되면 앱 안에서 업로드 · 일부/전체 선택 · 일괄 다운로드가 켜집니다.</div>';
       return h;
@@ -541,20 +569,20 @@
     return h;
   }
 
-  /* ---------- 준비 ---------- */
-  function viewPrep() {
-    if (state.prep === "vote" && state.pollId) return viewPollDetail(state.pollId); // 투표 상세는 단독 화면
-    var seg = [["vote", "투표"], ["schedule", "일정"], ["notice", "공지"], ["packing", "준비물"]];
-    var h = '<div class="seg">' + seg.map(function (s) { return '<button class="seg-b' + (state.prep === s[0] ? " on" : "") + '" data-action="prep" data-prep="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</div>";
-    if (state.prep === "vote") h += viewVote();
-    else if (state.prep === "schedule") h += prepSchedule();
-    else if (state.prep === "notice") h += prepNotice();
-    else h += prepPacking();
+  /* ---------- 알림 (공지·일정·투표·정산 통합) ---------- */
+  function viewAlert() {
+    if (state.alert === "vote" && state.pollId) return viewPollDetail(state.pollId); // 투표 상세는 단독 화면
+    var seg = [["notice", "공지"], ["schedule", "일정"], ["vote", "투표"], ["settle", "정산"]];
+    var h = '<div class="seg">' + seg.map(function (s) { return '<button class="seg-b' + (state.alert === s[0] ? " on" : "") + '" data-action="alert-seg" data-seg="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</div>";
+    if (state.alert === "notice") h += prepNotice();
+    else if (state.alert === "schedule") h += prepSchedule();
+    else if (state.alert === "vote") h += viewVote();
+    else h += viewSettle();
     return h;
   }
   function prepSchedule() {
     var items = entries(DB.schedule).slice().sort(function (a, b) { var ka = (a[1].day || "") + (a[1].time || ""), kb = (b[1].day || "") + (b[1].time || ""); return ka < kb ? -1 : ka > kb ? 1 : 0; });
-    var h = '<div class="page-head sm"><h2>📅 일정</h2>' + (isMeAdmin() ? '<button class="btn-ghost" data-action="new-schedule">+ 추가</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>' + icon("calendar", 22) + ' 일정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-schedule">+ 추가</button>' : "") + "</div>";
     if (!items.length) h += '<div class="empty sm">일정이 없어요.</div>';
     var curDay = null;
     items.forEach(function (kv) {
@@ -566,7 +594,7 @@
   }
   function prepNotice() {
     var notices = bySort(entries(DB.notices), function (kv) { return -((kv[1].pinned ? 1e15 : 0) + (kv[1].ts || 0)); });
-    var h = '<div class="page-head sm"><h2>📢 공지</h2>' + (isMeAdmin() ? '<button class="btn-ghost" data-action="new-notice">+ 추가</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>' + icon("megaphone", 22) + ' 공지</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-notice">+ 추가</button>' : "") + "</div>";
     if (!notices.length) h += '<div class="empty sm">공지가 없어요.</div>';
     notices.forEach(function (kv) {
       var n = kv[1];
@@ -578,21 +606,22 @@
   function prepPacking() {
     var shared = bySort(entries(DB.packing).filter(function (kv) { return (kv[1] || {}).type !== "personal"; }), function (kv) { return kv[1].ts || 0; });
     var personal = bySort(entries(DB.packing).filter(function (kv) { return (kv[1] || {}).type === "personal"; }), function (kv) { return kv[1].ts || 0; });
-    var h = '<div class="page-head sm"><h2>🎒 준비물</h2>' + (isMeAdmin() ? '<button class="btn-ghost" data-action="new-packing">+ 추가</button>' : "") + "</div>";
-    h += '<div class="pk-sub">공용 (담당자가 챙겨요)</div>';
+    var mgr = canManage(me);
+    var h = '<div class="page-head"><h1>' + icon("bag", 22) + ' 준비물</h1></div>';
+    h += '<div class="pk-sec-head"><span class="pk-sub">공용 (담당자가 챙겨요 · 운영진 관리)</span>' + (mgr ? '<button class="btn-ghost sm" data-action="new-packing" data-type="shared">+ 추가</button>' : "") + "</div>";
     if (!shared.length) h += '<div class="empty sm">공용 준비물이 없어요.</div>';
     shared.forEach(function (kv) {
       var p = kv[1];
-      h += '<div class="pk-item' + (p.done ? " done" : "") + '"><button class="pk-check" data-action="toggle-pack" data-id="' + kv[0] + '">' + (p.done ? "✓" : "") + "</button>" +
+      h += '<div class="pk-item' + (p.done ? " done" : "") + '"><button class="pk-check' + (mgr ? "" : " ro") + '"' + (mgr ? ' data-action="toggle-pack" data-id="' + kv[0] + '"' : "") + ">" + (p.done ? "✓" : "") + "</button>" +
         '<div class="pk-label">' + esc(p.label) + (p.assignee ? ' <span class="pk-who">' + chip(p.assignee) + "</span>" : ' <span class="pk-need">담당 미정</span>') + "</div>" +
-        (isMeAdmin() ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
+        (mgr ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
     });
-    h += '<div class="pk-sub">개인 (전원 각자 · 본인 이름 눌러 체크)</div>';
+    h += '<div class="pk-sec-head"><span class="pk-sub">개인 (전원 각자 · 본인 이름 눌러 체크)</span><button class="btn-ghost sm" data-action="new-packing" data-type="personal">+ 추가</button></div>';
     if (!personal.length) h += '<div class="empty sm">개인 준비물이 없어요.</div>';
     personal.forEach(function (kv) {
-      var p = kv[1], iReady = !!obj(p.ready)[me], cnt = readyCount(p);
+      var p = kv[1], iReady = !!obj(p.ready)[me], cnt = readyCount(p), canDel = (p.by === me || mgr);
       h += '<div class="pk-item personal"><button class="pk-check ' + (iReady ? "on" : "") + '" data-action="toggle-ready" data-id="' + kv[0] + '">' + (iReady ? "✓" : "") + "</button>" +
-        '<div class="pk-label">' + esc(p.label) + '<span class="pk-prog">' + cnt + "/" + memberCount() + "명 준비완료</span></div>" + (isMeAdmin() ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
+        '<div class="pk-label">' + esc(p.label) + '<span class="pk-prog">' + cnt + "/" + memberCount() + "명 준비완료</span></div>" + (canDel ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
     });
     return h;
   }
@@ -663,10 +692,17 @@
   }
   function formNewNotice() { openModal('<h2>공지 추가</h2><label>내용</label><textarea id="f-text" rows="3"></textarea><label class="chk"><input type="checkbox" id="f-pin"> 상단 고정</label><div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-notice">등록</button></div>'); }
   function formNewSchedule() { openModal('<h2>일정 추가</h2><div class="row2"><div><label>날짜</label><input id="f-day" type="date" value="' + ((CFG.trip || {}).startDate || "") + '"></div><div><label>시간</label><input id="f-time" type="time"></div></div><label>내용</label><input id="f-title" placeholder="예: 바베큐 시작"><div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-schedule">추가</button></div>'); }
-  function formNewPacking() { openModal('<h2>준비물 추가</h2><label>준비물</label><input id="f-label" placeholder="예: 아이스박스"><label>종류</label><select id="f-type"><option value="shared">공용 (담당자가 챙김)</option><option value="personal">개인 (전원 각자)</option></select><label>담당자 (공용일 때, 선택)</label><select id="f-assignee"><option value="">미정</option>' + memberOptions("") + '</select><div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-packing">추가</button></div>'); }
+  function formNewPacking(type) {
+    var shared = (type === "shared");
+    openModal("<h2>" + (shared ? "공용" : "개인") + " 준비물 추가</h2>" +
+      '<label>준비물</label><input id="f-label" placeholder="예: ' + (shared ? "아이스박스" : "수영복·수건") + '">' +
+      (shared ? '<label>담당자 (선택)</label><select id="f-assignee"><option value="">미정</option>' + memberOptions("") + "</select>" : "") +
+      '<input type="hidden" id="f-ptype" value="' + (shared ? "shared" : "personal") + '">' +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-packing">추가</button></div>');
+  }
 
   function formPin() {
-    openModal('<h2>🔑 인증번호 설정</h2><p class="pf-note" style="margin-bottom:10px">다른 기기(PC 등)에서 같은 이름으로 입장할 때 쓰는 4자리 숫자예요.</p>' +
+    openModal("<h2>" + icon("key", 18) + ' 인증번호 설정</h2><p class="pf-note" style="margin-bottom:10px">다른 기기(PC 등)에서 같은 이름으로 입장할 때 쓰는 4자리 숫자예요.</p>' +
       '<label>새 인증번호 (숫자 4자리)</label><input id="np-pin" class="pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••">' +
       '<div id="np-err" class="pin-err"></div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="open-profile">취소</button><button class="btn-pri" data-action="save-pin">저장</button></div>');
@@ -681,14 +717,14 @@
       : '<div class="pf-note">프로필 사진은 사진 기능(Cloudinary) 연결 후 변경할 수 있어요</div>';
     var h = '<h2>내 프로필</h2>' +
       '<div class="pf-photo">' + avatar(me, 72) + '<div class="pf-photo-act"><div class="pf-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" + photoBtns + "</div></div>" +
-      '<label>🚇 출발지 (지하철역)</label><input type="text" id="p-station" list="stationlist2" value="' + esc(m.station || "") + '" placeholder="예: 남영"><datalist id="stationlist2">' + dl + "</datalist>" +
-      '<label>🚗 자차 보유</label><div class="toggle2"><button id="p-car-no" class="' + (m.hasCar ? "" : "on") + '" data-action="pf-car" data-v="0">없음 🙋</button><button id="p-car-yes" class="' + (m.hasCar ? "on" : "") + '" data-action="pf-car" data-v="1">있음 🚗</button></div>' +
-      '<label>🔑 인증번호</label><div class="pf-pin">' + (m.pin ? "설정됨 " : '<b class="warn">미설정 — 다른 기기 입장하려면 설정하세요 </b>') + '<button class="btn-ghost sm" data-action="set-pin">' + (m.pin ? "변경" : "설정") + "</button></div>" +
-      '<label>🎨 화면 모드</label><div class="seg">' + [["system", "시스템"], ["light", "라이트"], ["dark", "다크"]].map(function (o) { return '<button class="seg-b' + ((localStorage.getItem("srk_theme") || "system") === o[0] ? " on" : "") + '" data-action="set-theme" data-theme="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>" +
+      "<label>" + icon("pin", 16) + ' 출발지 (지하철역)</label><input type="text" id="p-station" list="stationlist2" value="' + esc(m.station || "") + '" placeholder="예: 남영"><datalist id="stationlist2">' + dl + "</datalist>" +
+      "<label>" + icon("car", 16) + ' 자차 보유</label><div class="toggle2"><button id="p-car-no" class="' + (m.hasCar ? "" : "on") + '" data-action="pf-car" data-v="0">없음</button><button id="p-car-yes" class="' + (m.hasCar ? "on" : "") + '" data-action="pf-car" data-v="1">있음</button></div>' +
+      "<label>" + icon("key", 16) + ' 인증번호</label><div class="pf-pin">' + (m.pin ? "설정됨 " : '<b class="warn">미설정 — 다른 기기 입장하려면 설정하세요 </b>') + '<button class="btn-ghost sm" data-action="set-pin">' + (m.pin ? "변경" : "설정") + "</button></div>" +
+      "<label>" + icon("theme", 16) + ' 화면 모드</label><div class="seg">' + [["system", "시스템"], ["light", "라이트"], ["dark", "다크"]].map(function (o) { return '<button class="seg-b' + ((localStorage.getItem("srk_theme") || "system") === o[0] ? " on" : "") + '" data-action="set-theme" data-theme="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>" +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button><button class="btn-pri" data-action="save-profile">저장</button></div>';
     if (canManage(me)) {
       var meMgr = isManager(me);
-      h += '<h2 style="margin-top:24px;font-size:16px">👑 멤버·권한 관리</h2>' +
+      h += '<h2 style="margin-top:24px;font-size:16px">' + icon("shield", 18) + ' 멤버·권한 관리</h2>' +
         '<p class="pf-note" style="margin:-2px 0 8px">관리자·운영진은 <b>운영진 지정</b>·<b>크루원 삭제</b> 가능. 운영진 해제는 관리자만.</p>' +
         '<div class="card" style="box-shadow:none;border:1px solid var(--line);margin:0">';
       (CFG.roster || []).forEach(function (r) {
@@ -708,7 +744,7 @@
       });
       h += "</div>";
     }
-    h += '<button class="btn-line btn-block" data-action="switch-me" style="margin-top:16px">다른 이름으로 입장 (현재 이름 비우기)</button>';
+    h += '<button class="btn-line btn-block logout-btn" data-action="switch-me" style="margin-top:16px">' + icon("logout", 18) + " 로그아웃</button>";
     openModal(h);
   }
   function chooserModal(title, ids, refForNear, action, extraData) {
@@ -784,12 +820,13 @@
 
     /* 탭 */
     if (a === "tab") { var nt = t.getAttribute("data-tab"); if (nt !== "photo") photoSel = {}; state.tab = nt; state.pollId = null; render(); return; }
-    if (a === "prep") { state.prep = t.getAttribute("data-prep"); state.pollId = null; render(); return; }
-    if (a === "go-vote") { state.tab = "prep"; state.prep = "vote"; state.pollId = null; render(); return; }
+    if (a === "alert-seg") { state.alert = t.getAttribute("data-seg"); state.pollId = null; render(); return; }
+    if (a === "go-vote") { state.tab = "alert"; state.alert = "vote"; state.pollId = null; render(); return; }
+    if (a === "go-settle") { state.tab = "alert"; state.alert = "settle"; state.pollId = null; render(); return; }
     if (a === "close-modal") { closeModal(); return; }
 
     /* 투표 */
-    if (a === "open-poll") { state.tab = "prep"; state.prep = "vote"; state.pollId = t.getAttribute("data-id"); render(); return; }
+    if (a === "open-poll") { state.tab = "alert"; state.alert = "vote"; state.pollId = t.getAttribute("data-id"); render(); return; }
     if (a === "back-vote") { state.pollId = null; render(); return; }
     if (a === "vote") { ev.stopPropagation(); doVote(t.getAttribute("data-poll"), t.getAttribute("data-opt")); return; }
     if (a === "new-poll") { if (isMeAdmin()) formNewPoll(); return; }
@@ -810,11 +847,11 @@
     if (a === "part-none") { ev.preventDefault(); document.querySelectorAll(".f-part").forEach(function (c) { c.checked = false; }); if (window.__expRefresh) window.__expRefresh(); return; }
 
     /* 카풀 */
-    if (a === "ride-pick") { var pp1 = t.getAttribute("data-p"); if (!(pp1 === me || isMeAdmin())) return; chooserModal("어느 차에 탈까요?", drivers(), pp1, "pick-driver"); window.__ridePass = pp1; return; }
-    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (pass && isValidDriver(d1)) Store.update("members/" + pass, { rideWith: d1 }); closeModal(); return; }
+    if (a === "ride-pick") { var pp1 = t.getAttribute("data-p"); if (!(pp1 === me || isMeAdmin())) return; chooserModal("어느 차에 탈까요? (정원 " + carCap() + "명)", drivers().filter(function (d) { return !carFull(d); }), pp1, "pick-driver"); window.__ridePass = pp1; return; }
+    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) Store.update("members/" + pass, { rideWith: d1 }); closeModal(); return; }
     if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || ((obj(DB.members)[pp2] || {}).rideWith === me) || isMeAdmin())) return; Store.update("members/" + pp2, { rideWith: null }); return; }
     if (a === "recruit") { var d2 = t.getAttribute("data-d"); if (!(d2 === me || isMeAdmin())) return; chooserModal("주변 탑승자 모집 — 누구를 태울까요?", unassignedPass(), d2, "assign-pass", d2); return; }
-    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (isValidDriver(d3)) Store.update("members/" + pid3, { rideWith: d3 }); closeModal(); return; }
+    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) Store.update("members/" + pid3, { rideWith: d3 }); closeModal(); return; }
 
     /* 사진 */
     if (a === "ph-open") { return; } // 앵커 기본 동작(원본 새 탭) 허용
@@ -836,10 +873,10 @@
     if (a === "new-schedule") { if (isMeAdmin()) formNewSchedule(); return; }
     if (a === "save-schedule") { saveSchedule(); return; }
     if (a === "del-schedule") { if (isMeAdmin() && confirm("일정을 삭제할까요?")) Store.remove("schedule/" + t.getAttribute("data-id")); return; }
-    if (a === "new-packing") { if (isMeAdmin()) formNewPacking(); return; }
+    if (a === "new-packing") { var pty = t.getAttribute("data-type") || "personal"; if (pty === "shared" && !canManage(me)) return; formNewPacking(pty); return; }
     if (a === "save-packing") { savePacking(); return; }
-    if (a === "del-pack") { if (isMeAdmin() && confirm("준비물을 삭제할까요?")) Store.remove("packing/" + t.getAttribute("data-id")); return; }
-    if (a === "toggle-pack") { var id = t.getAttribute("data-id"); var pk = obj(DB.packing)[id]; if (!pk) return; Store.update("packing/" + id, { done: !pk.done }); return; }
+    if (a === "del-pack") { var dpid = t.getAttribute("data-id"), dpk = obj(DB.packing)[dpid]; if (!dpk) return; var ok = dpk.type === "personal" ? (dpk.by === me || canManage(me)) : canManage(me); if (!ok) return; if (confirm("준비물을 삭제할까요?")) Store.remove("packing/" + dpid); return; }
+    if (a === "toggle-pack") { var id = t.getAttribute("data-id"); var pk = obj(DB.packing)[id]; if (!pk || !canManage(me)) return; Store.update("packing/" + id, { done: !pk.done }); return; }
     if (a === "toggle-ready") { var id2 = t.getAttribute("data-id"); var pk2 = obj(DB.packing)[id2]; if (!pk2) return; var rd = obj(pk2.ready); if (rd[me]) Store.remove("packing/" + id2 + "/ready/" + me); else Store.set("packing/" + id2 + "/ready/" + me, true); return; }
   });
 
@@ -899,7 +936,14 @@
   }
   function saveNotice() { if (!isMeAdmin()) return; var v = $("#f-text").value.trim(); if (!v) return; Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, ts: Date.now() }); closeModal(); }
   function saveSchedule() { if (!isMeAdmin()) return; var day = $("#f-day").value, time = $("#f-time").value, title = $("#f-title").value.trim(); if (!day || !time || !title) { alert("날짜·시간·내용을 모두 입력하세요"); return; } Store.push("schedule", { day: day, time: time, title: clampStr(title, 100), ts: Date.now() }); closeModal(); }
-  function savePacking() { if (!isMeAdmin()) return; var label = $("#f-label").value.trim(); if (!label) return; Store.push("packing", { label: clampStr(label, 80), type: $("#f-type").value, assignee: $("#f-assignee").value || null, done: false, ready: {}, ts: Date.now() }); closeModal(); }
+  function savePacking() {
+    var ptype = (($("#f-ptype") || {}).value) || "personal";
+    if (ptype === "shared" && !canManage(me)) return;
+    var label = $("#f-label").value.trim(); if (!label) return;
+    var item = { label: clampStr(label, 80), type: ptype, done: false, ready: {}, by: me, ts: Date.now() };
+    if (ptype === "shared") item.assignee = (($("#f-assignee") || {}).value) || null;
+    Store.push("packing", item); closeModal();
+  }
 
   /* Cloudinary unsigned 업로드 (이미지·영상) */
   function clUpload(file) {
