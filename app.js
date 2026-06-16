@@ -22,6 +22,10 @@
   var photoUploading = 0; // 업로드 중인 장수
   var avatarBusy = false; // 프로필 사진 변경 중
 
+  // 화면 모드: system(기본·OS설정 따름) / light / dark
+  function applyTheme(t) { t = t || localStorage.getItem("srk_theme") || "system"; var r = document.documentElement; if (t === "system") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", t); }
+  applyTheme();
+
   /* ============================================================
      유틸
      ============================================================ */
@@ -41,11 +45,17 @@
   function key() { return "k" + Date.now().toString(36) + (_kc++).toString(36) + Math.random().toString(36).slice(2, 6); }
 
   function memberName(id) { var m = obj(DB.members)[id]; return m && m.name ? m.name : (id || "?"); }
-  function isAdmin(id) { return !!(obj(DB.members)[id] || {}).admin; }
-  function isMeAdmin() { return isAdmin(me); }
+  // 위계: manager(관리자) > staff(운영진) > crew(크루원). 레거시 admin:true → staff로 간주
+  function roleOf(id) { var m = obj(DB.members)[id] || {}; return m.role || (m.admin ? "staff" : "crew"); }
+  function isManager(id) { return roleOf(id) === "manager"; }
+  function canManage(id) { return roleOf(id) !== "crew"; }   // 관리자·운영진 = 관리 권한
+  function isAdmin(id) { return canManage(id); }              // (구코드 호환 — 관리권한 여부)
+  function isMeAdmin() { return canManage(me); }              // 콘텐츠 생성/관리 가능 여부
+  function roleLabel(id) { var r = roleOf(id); return r === "manager" ? "관리자" : r === "staff" ? "운영진" : "크루원"; }
+  function roleBadge(id) { var r = roleOf(id); return '<span class="rbadge ' + (r === "manager" ? "mgr" : r === "staff" ? "admin" : "crew") + '">' + roleLabel(id) + "</span>"; }
+  function roleTag(id) { return canManage(id) ? roleBadge(id) : ""; } // 운영진/관리자만 배지 표시(크루원은 생략)
   // 4자리 인증번호 해시 (평문 저장 방지용 — 오픈 규칙이라 강력 보안은 아니고 글랜스 방지 수준)
   function hashPin(p) { p = "srk!" + String(p || ""); var h = 5381; for (var i = 0; i < p.length; i++) h = ((h << 5) + h + p.charCodeAt(i)) >>> 0; return "p" + h.toString(36); }
-  function roleBadge(id) { return isAdmin(id) ? '<span class="rbadge admin">운영진</span>' : '<span class="rbadge crew">크루원</span>'; }
   function initials(name) {
     name = String(name || "").trim(); if (!name) return "?";
     return name.length >= 3 ? name.slice(-2) : name.slice(0, 2);
@@ -138,7 +148,7 @@
      ============================================================ */
   function buildSeed() {
     var s = CFG.seed || {}, root = { trip: Object.assign({}, CFG.trip), members: {}, notices: {}, schedule: {}, packing: {}, polls: {}, expenses: {} };
-    (CFG.roster || []).forEach(function (m) { root.members[m.id] = { name: m.name, admin: !!m.admin }; });
+    (CFG.roster || []).forEach(function (m) { root.members[m.id] = { name: m.name, role: m.role || "crew" }; });
     var t = Date.now();
     (s.notices || []).forEach(function (n, i) { root.notices[key()] = { text: n.text, by: n.by || null, pinned: !!n.pinned, ts: t + i }; });
     (s.schedule || []).forEach(function (x, i) { root.schedule[key()] = { day: x.day, time: x.time, title: x.title, ts: t + i }; });
@@ -273,7 +283,7 @@
         var dm = obj(DB.members)[m.id] || {};
         var tag = dm.pin ? '<span class="lock-tag">🔑</span>' : '<span class="me-tag">처음</span>';
         return '<button class="gate-name" data-action="pick-name" data-id="' + m.id + '">' +
-          avatar(m.id, 34) + '<span class="nm-main"><span>' + esc(m.name) + "</span>" + (m.admin ? '<span class="rbadge admin">운영진</span>' : "") + "</span>" + tag + "</button>";
+          avatar(m.id, 34) + '<span class="nm-main"><span>' + esc(m.name) + "</span>" + roleTag(m.id) + "</span>" + tag + "</button>";
       }).join("") + "</div></div>";
   }
   function gatePin() {
@@ -281,8 +291,8 @@
     return '<div class="gate-card"><div class="gate-emoji">🔑</div>' +
       "<h1>" + (verify ? "인증번호 입력" : "인증번호 설정") + "</h1>" +
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span>' + (verify ? "" : '<span class="step-dot"></span>') + "</div>" +
-      '<div class="profile-who" style="justify-content:center">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + (dm.admin ? '<span class="rbadge admin">운영진</span>' : "") + "</div>" +
-      '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "다른 기기에서도 입장할 때 쓸 4자리 인증번호를 정하세요.") + "</p>" +
+      '<div class="profile-who" style="justify-content:center">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
+      '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "입장할 때 쓸 4자리 인증번호를 정하세요.") + "</p>" +
       '<input id="i-pin" class="pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••">' +
       '<div id="pin-err" class="pin-err"></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
@@ -299,7 +309,7 @@
       "<h1>거의 다 왔어요!</h1>" +
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span><span class="step-dot on"></span></div>' +
       '<div class="profile-box">' +
-      '<div class="profile-who">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + (dm.admin ? '<span class="rbadge admin">운영진</span>' : "") + "</div>" +
+      '<div class="profile-who">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
       '<div class="fld"><label>🚇 출발지 (지하철역)</label>' +
       '<input type="text" id="i-station" list="stationlist" placeholder="예: 남영, 강남… (직접 입력 가능)" value="' + esc(st) + '" autocomplete="off">' +
       '<datalist id="stationlist">' + dl + "</datalist></div>" +
@@ -473,7 +483,7 @@
       var pax = passengersOf(d), myCar = (d === me) || (obj(DB.members)[me] || {}).rideWith === d;
       var canAdd = (d === me) || isMeAdmin();
       h += '<div class="cp-driver' + (myCar ? " cp-mine" : "") + '"><div class="cp-driver-head">' + avatar(d, 36) +
-        '<div><div class="dh-name">' + esc(memberName(d)) + (isAdmin(d) ? ' <span class="rbadge admin">운영진</span>' : "") + "</div><div class=\"dh-stn\">🚇 " + stationLabel(d) + "</div></div>" +
+        '<div><div class="dh-name">' + esc(memberName(d)) + (canManage(d) ? " " + roleBadge(d) : "") + "</div><div class=\"dh-stn\">🚇 " + stationLabel(d) + "</div></div>" +
         '<span class="cp-cap">탑승 ' + pax.length + "명</span></div><div class=\"cp-pass-list\">";
       if (!pax.length) h += '<div class="cp-pass empty-slot">아직 탑승자가 없어요</div>';
       pax.forEach(function (pid) {
@@ -674,14 +684,27 @@
       '<label>🚇 출발지 (지하철역)</label><input type="text" id="p-station" list="stationlist2" value="' + esc(m.station || "") + '" placeholder="예: 남영"><datalist id="stationlist2">' + dl + "</datalist>" +
       '<label>🚗 자차 보유</label><div class="toggle2"><button id="p-car-no" class="' + (m.hasCar ? "" : "on") + '" data-action="pf-car" data-v="0">없음 🙋</button><button id="p-car-yes" class="' + (m.hasCar ? "on" : "") + '" data-action="pf-car" data-v="1">있음 🚗</button></div>' +
       '<label>🔑 인증번호</label><div class="pf-pin">' + (m.pin ? "설정됨 " : '<b class="warn">미설정 — 다른 기기 입장하려면 설정하세요 </b>') + '<button class="btn-ghost sm" data-action="set-pin">' + (m.pin ? "변경" : "설정") + "</button></div>" +
+      '<label>🎨 화면 모드</label><div class="seg">' + [["system", "시스템"], ["light", "라이트"], ["dark", "다크"]].map(function (o) { return '<button class="seg-b' + ((localStorage.getItem("srk_theme") || "system") === o[0] ? " on" : "") + '" data-action="set-theme" data-theme="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>" +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button><button class="btn-pri" data-action="save-profile">저장</button></div>';
-    if (isMeAdmin()) {
-      h += '<h2 style="margin-top:22px;font-size:16px">👑 운영진 관리</h2><div class="card" style="box-shadow:none;border:1px solid var(--line);margin:0">';
+    if (canManage(me)) {
+      var meMgr = isManager(me);
+      h += '<h2 style="margin-top:24px;font-size:16px">👑 멤버·권한 관리</h2>' +
+        '<p class="pf-note" style="margin:-2px 0 8px">관리자·운영진은 <b>운영진 지정</b>·<b>크루원 삭제</b> 가능. 운영진 해제는 관리자만.</p>' +
+        '<div class="card" style="box-shadow:none;border:1px solid var(--line);margin:0">';
       (CFG.roster || []).forEach(function (r) {
-        var dm = obj(DB.members)[r.id] || {};
-        h += '<div class="mem-row">' + avatar(r.id, 28) + '<div><div class="mr-name">' + esc(r.name) + " " + roleBadge(r.id) + '</div><div class="mr-sub">' + (dm.claimed ? "입장함 · " + (dm.hasCar ? "자차" : "탑승") + " · " + esc(normStation(dm.station) ? normStation(dm.station) + "역" : "역미정") : "미입장") + '</div></div><div class="mr-act">' +
-          (isAdmin(r.id) ? '<button class="link" data-action="set-admin" data-id="' + r.id + '" data-v="0">운영진 해제</button>' : '<button class="link" data-action="set-admin" data-id="' + r.id + '" data-v="1">운영진 지정</button>') +
-          (dm.claimed ? '<button class="link-danger" data-action="release-claim" data-id="' + r.id + '">입장 해제</button>' : "") + "</div></div>";
+        var dm = obj(DB.members)[r.id] || {}, tr = roleOf(r.id), self = (r.id === me), acts = "";
+        if (!self) {
+          if (tr === "manager") { acts = ""; }
+          else if (tr === "staff") {
+            if (meMgr) acts += '<button class="link" data-action="set-role" data-id="' + r.id + '" data-role="crew">운영진 해제</button>';
+            if (meMgr && dm.claimed) acts += '<button class="link-danger" data-action="release-claim" data-id="' + r.id + '">입장 해제</button>';
+          } else { // crew
+            acts += '<button class="link" data-action="set-role" data-id="' + r.id + '" data-role="staff">운영진 지정</button>';
+            if (dm.claimed) acts += '<button class="link-danger" data-action="release-claim" data-id="' + r.id + '">입장 해제</button>';
+            acts += '<button class="link-danger" data-action="del-member" data-id="' + r.id + '">삭제</button>';
+          }
+        }
+        h += '<div class="mem-row">' + avatar(r.id, 28) + '<div><div class="mr-name">' + esc(r.name) + " " + roleBadge(r.id) + (self ? ' <span class="rbadge crew">나</span>' : "") + '</div><div class="mr-sub">' + (dm.claimed ? "입장함 · " + (dm.hasCar ? "자차" : "탑승") + " · " + esc(normStation(dm.station) ? normStation(dm.station) + "역" : "역미정") : "미입장") + '</div></div><div class="mr-act">' + acts + "</div></div>";
       });
       h += "</div>";
     }
@@ -722,6 +745,7 @@
 
     /* 프로필/멤버 */
     if (a === "open-profile") { formProfile(); return; }
+    if (a === "set-theme") { var th = t.getAttribute("data-theme"); localStorage.setItem("srk_theme", th); applyTheme(th); formProfile(); return; }
     if (a === "set-pin") { formPin(); return; }
     if (a === "save-pin") { var v = (($("#np-pin") || {}).value || "").replace(/\D/g, ""); if (v.length !== 4) { $("#np-err").textContent = "숫자 4자리를 입력하세요."; return; } Store.update("members/" + me, { pin: hashPin(v), claimed: true }); if (obj(DB.members)[me]) { DB.members[me].pin = hashPin(v); DB.members[me].claimed = true; } alert("인증번호가 설정됐어요. 다른 기기에서도 이 번호로 입장하세요."); formProfile(); return; }
     if (a === "pick-avatar") { var af = $("#avatar-file"); if (af) af.click(); return; }
@@ -734,17 +758,29 @@
       }
       return;
     }
-    if (a === "set-admin") {
-      if (!isMeAdmin()) return;
-      var aid = t.getAttribute("data-id"), grant = t.getAttribute("data-v") === "1";
-      if (!grant) {
-        var nAdmin = Object.keys(obj(DB.members)).filter(function (x) { return isAdmin(x); }).length;
-        if (nAdmin <= 1) { alert("운영진이 최소 1명은 남아야 해요."); return; }
-        if (aid === me && !confirm("내 운영진 권한을 해제할까요? 다른 운영진만 다시 지정할 수 있어요.")) return;
-      }
-      Store.update("members/" + aid, { admin: grant }); formProfile(); return;
+    if (a === "set-role") {
+      if (!canManage(me)) return;
+      var aid = t.getAttribute("data-id"), nrole = t.getAttribute("data-role"), cur = roleOf(aid);
+      if (cur === "manager") return; // 관리자는 변경 불가
+      if (nrole === "staff") { if (cur !== "crew") return; }                 // 크루원 → 운영진 (관리자·운영진 모두)
+      else if (nrole === "crew") { if (!isManager(me) || cur !== "staff") return; } // 운영진 → 크루원 (관리자만)
+      else return;
+      Store.update("members/" + aid, { role: nrole }); formProfile(); return;
     }
-    if (a === "release-claim") { if (!isMeAdmin()) return; if (confirm(memberName(t.getAttribute("data-id")) + "님을 입장 해제(인증번호 초기화)할까요?\n이 이름은 다시 인증번호를 설정해 입장할 수 있게 됩니다.")) { Store.update("members/" + t.getAttribute("data-id"), { claimed: false, pin: null, station: null, hasCar: null, rideWith: null }); formProfile(); } return; }
+    if (a === "del-member") {
+      if (!canManage(me)) return;
+      var did = t.getAttribute("data-id"); if (did === me) return;
+      if (roleOf(did) !== "crew") { alert("크루원만 삭제할 수 있어요. (운영진은 먼저 해제하세요)"); return; }
+      if (confirm(memberName(did) + "님을 명단에서 삭제할까요?\n입장·프로필 기록이 사라지고 명단에서 빠집니다.")) { Store.remove("members/" + did); formProfile(); }
+      return;
+    }
+    if (a === "release-claim") {
+      if (!canManage(me)) return;
+      var rcid = t.getAttribute("data-id"), rcr = roleOf(rcid);
+      if (rcr === "manager" || (rcr === "staff" && !isManager(me))) return; // 관리자 보호, 운영진은 관리자만 초기화
+      if (confirm(memberName(rcid) + "님을 입장 해제(인증번호 초기화)할까요?\n이 이름은 다시 인증번호를 설정해 입장할 수 있게 됩니다.")) { Store.update("members/" + rcid, { claimed: false, pin: null, station: null, hasCar: null, rideWith: null }); formProfile(); }
+      return;
+    }
 
     /* 탭 */
     if (a === "tab") { var nt = t.getAttribute("data-tab"); if (nt !== "photo") photoSel = {}; state.tab = nt; state.pollId = null; render(); return; }

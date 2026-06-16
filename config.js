@@ -45,25 +45,25 @@ window.SRK_CONFIG = {
     airbnbUrl: "https://www.airbnb.co.kr/rooms/13856178"
   },
 
-  /* ── 3) 크루 명단 (admin:true = 운영진) ─────────────────────── */
+  /* ── 3) 크루 명단 (role: manager 관리자 / staff 운영진 / 미지정 크루원) ── */
   roster: [
-    { id: "m01", name: "김찬우", admin: true },
-    { id: "m02", name: "최수원" },
+    { id: "m01", name: "김찬우", role: "staff" },
+    { id: "m02", name: "최수원", role: "staff" },
     { id: "m03", name: "천재준" },
     { id: "m04", name: "정윤철" },
     { id: "m05", name: "장기범" },
     { id: "m06", name: "이은진" },
-    { id: "m07", name: "이은산" },
+    { id: "m07", name: "이은산", role: "staff" },
     { id: "m08", name: "이윤철" },
     { id: "m09", name: "이시윤" },
     { id: "m10", name: "으네" },
     { id: "m11", name: "세운" },
     { id: "m12", name: "서다정" },
-    { id: "m13", name: "백성흠" },
+    { id: "m13", name: "백성흠", role: "staff" },
     { id: "m14", name: "박설" },
     { id: "m15", name: "김태순" },
     { id: "m16", name: "김종민" },
-    { id: "m17", name: "강민관", admin: true }
+    { id: "m17", name: "강민관", role: "manager" }
   ],
 
   /* ── 4) 지하철역 목록 (출발지 선택용) · c = 권역(인접 그룹) ────────
