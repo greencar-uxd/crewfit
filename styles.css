@@ -454,10 +454,10 @@ h1, h2 { margin: 0; }
    ============================================================ */
 @media (min-width: 880px) {
   #app {
-    max-width: 1080px; display: grid; gap: 0 28px;
-    grid-template-columns: 200px minmax(0, 1fr);
+    max-width: none; display: grid; gap: 0 32px;
+    grid-template-columns: 220px minmax(0, 1fr);
     grid-template-areas: "header header" "nav main";
-    padding: 0 24px;
+    padding: 0 32px;
   }
   #app-header { grid-area: header; }
   #app-header .hd-left { display: none; }      /* PC: 제목·뱃지 숨김 */
@@ -475,14 +475,14 @@ h1, h2 { margin: 0; }
   #app-main { grid-area: main; padding: 18px 0 60px; }
   .page-head h1 { font-size: 26px; }
 
-  /* 와이드에서 2열로 펼치기 */
-  .list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  /* 풀폭에서 카드 그리드는 화면 너비에 맞춰 열 수 자동 증가 */
+  .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
   .list-grid > * { margin-bottom: 0; }
   .stat-row { gap: 12px; }
-  .gate-grid { grid-template-columns: repeat(3, 1fr); }
-  .cp-board { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  .gate-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .cp-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-items: start; }
   .cp-board > * { margin-bottom: 0; }
-  .ph-grid { grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .ph-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .ph-bar { top: 0; }
   .modal { left: 50%; right: auto; top: 50%; bottom: auto; margin: 0;
     transform: translate(-50%, -50%); border-radius: 20px; width: calc(100% - 48px); max-width: 480px; animation: pop .2s ease; }
