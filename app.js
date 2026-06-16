@@ -32,6 +32,8 @@
   }
   function won(n) { return (Math.round(Number(n) || 0)).toLocaleString("ko-KR") + "원"; }
   function clampStr(s, n) { s = String(s == null ? "" : s).trim(); return s.length > n ? s.slice(0, n) : s; }
+  // 이미 esc()된 텍스트의 http(s) 링크를 클릭 가능하게 (escape 후 호출 → XSS 안전)
+  function linkify(safe) { return String(safe).replace(/(https?:\/\/[^\s<]+)/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">' + u + "</a>"; }); }
   function obj(o) { return o && typeof o === "object" ? o : {}; }
   function entries(o) { return Object.keys(obj(o)).map(function (k) { return [k, o[k]]; }); }
   function bySort(arr, fn) { return arr.slice().sort(function (a, b) { return fn(a) - fn(b); }); }
@@ -550,7 +552,7 @@
     if (!notices.length) h += '<div class="empty sm">공지가 없어요.</div>';
     notices.forEach(function (kv) {
       var n = kv[1];
-      h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") + '<div class="notice-text">' + esc(n.text) + "</div>" +
+      h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") + '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" +
         '<div class="notice-by">' + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span>" + ((n.by === me || isMeAdmin()) ? ' <button class="cmt-del" data-action="del-notice" data-id="' + kv[0] + '">×</button>' : "") + "</div></div>";
     });
     return h;
