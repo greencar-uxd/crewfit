@@ -16,6 +16,7 @@
   var MYTOKEN = localStorage.getItem("srk_token") || ("t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
   localStorage.setItem("srk_token", MYTOKEN);
   var state = { tab: "home", pollId: null, alert: "notice" };
+  var viewHist = [], lastSig = null, backing = false; // 뒤로가기용 화면 히스토리
   var intro = { step: "name", pick: null, car: false };
   var booted = false;
   var photoSel = {};      // 선택된 사진 key 맵
@@ -95,7 +96,8 @@
       bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.8 5.6 1.8 5.6H4.2S6 14.5 6 10z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
       edit: '<path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
       link: '<path d="M9.5 14.5l5-5"/><path d="M11.5 7.5l1.2-1.2a3.6 3.6 0 0 1 5 5L17.5 12.5"/><path d="M12.5 16.5l-1.2 1.2a3.6 3.6 0 0 1-5-5L7.5 11.5"/>',
-      check: '<path d="M5 12.5l4.5 4.5L19 7"/>'
+      check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+      back: '<path d="M14.5 5.5 8 12l6.5 6.5"/>'
     };
     return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
   }
@@ -278,6 +280,9 @@
     $("#gate").classList.add("hidden");
     if (state.tab === "vote" || state.tab === "settle") { state.alert = state.tab === "settle" ? "settle" : "vote"; state.tab = "alert"; } // 구 탭 → 알림으로 통합
     if (state.tab === "prep") state.tab = "my"; // 준비물 → 마이 탭으로 이동
+    var sig = state.tab + "|" + state.alert + "|" + (state.pollId || ""); // 뒤로가기 히스토리 기록
+    if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
+    lastSig = sig;
     renderHeader(); renderNav();
     var main = $("#app-main");
     if (state.tab === "home") main.innerHTML = viewHome();
@@ -289,16 +294,22 @@
     window.scrollTo(0, 0);
   }
   function scheduleRender() { if (booted) render(); }
+  function goBack() {
+    if (viewHist.length) { var p = viewHist.pop().split("|"); state.tab = p[0]; state.alert = p[1] || "notice"; state.pollId = p[2] || null; backing = true; }
+    else { state.tab = "home"; state.pollId = null; }
+    render();
+  }
 
   function renderHeader() {
     var t = CFG.trip || {}, unread = unreadNotifs().length, dd = ddayLabel();
     $("#app-header").innerHTML =
+      '<button class="hd-back" data-action="nav-back" aria-label="뒤로가기">' + icon("back", 22) + "<span>뒤로</span></button>" +
       '<div class="hd-left"><div class="hd-title">' + esc(t.title || "MT") + "</div>" +
       '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span> ' : "") + (dd ? '<span class="badge-dday">' + dd + "</span>" : "") + (t.subtitle ? " " + esc(t.subtitle) : "") + "</div></div>" +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
   function renderNav() {
-    var tabs = [["home", "home", "홈"], ["alert", "bell", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "사진"], ["my", "user", "마이"]];
+    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
       return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
@@ -370,10 +381,10 @@
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span><span class="step-dot on"></span></div>' +
       '<div class="profile-box">' +
       '<div class="profile-who">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
-      '<div class="fld"><label>' + icon("pin", 16) + ' 출발지 (지하철역)</label>' +
+      '<div class="fld"><label>출발지 (지하철역)</label>' +
       '<input type="text" id="i-station" list="stationlist" placeholder="예: 남영, 강남… (직접 입력 가능)" value="' + esc(st) + '" autocomplete="off">' +
       '<datalist id="stationlist">' + dl + "</datalist></div>" +
-      '<div class="fld"><label>' + icon("car", 16) + ' 자차 보유</label><div class="toggle2">' +
+      '<div class="fld"><label>자차 보유</label><div class="toggle2">' +
       '<button id="car-no" class="' + (car ? "" : "on") + '" data-action="set-car" data-v="0">없음</button>' +
       '<button id="car-yes" class="' + (car ? "on" : "") + '" data-action="set-car" data-v="1">있음</button></div></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
@@ -394,7 +405,7 @@
     if (Store.mode === "demo") h += '<div class="demo-note">📍 <b>데모 모드</b> — 이 기기에만 저장돼요. 실시간 공유는 Firebase 연결 후 켜집니다.</div>';
     h += notifBanners();
     var heroImg = obj(DB.trip).heroImage || t.heroImage || "";
-    var heroStyle = heroImg ? ' style="background-image:linear-gradient(150deg, rgba(189,29,24,.78), rgba(20,17,15,.62)), url(' + esc(heroBg(heroImg)) + ')"' : "";
+    var heroStyle = heroImg ? ' style="background-image:linear-gradient(180deg, rgba(0,0,0,.34) 0%, rgba(0,0,0,.68) 100%), url(' + esc(heroBg(heroImg)) + ')"' : "";
     h += '<div class="hero' + (heroImg ? " has-img" : "") + '"' + heroStyle + ">" +
       (isMeAdmin() ? '<button class="hero-edit" data-action="pick-hero" aria-label="배경 변경"' + (heroBusy ? " disabled" : "") + ">" + icon("camera", 15) + (heroBusy ? '<span class="he-busy"></span>' : "") + "</button>" : "") +
       '<div class="hero-dday">' + ddayLabel() + "</div>" +
@@ -419,13 +430,13 @@
       '<div class="ms-sub">낸 돈 ' + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div></div>";
 
     if (openPolls.length) {
-      h += '<h2 class="sec">🗳️ 진행 중 투표</h2><div class="list-grid">';
+      h += '<h2 class="sec">진행 중 투표</h2><div class="list-grid">';
       bySort(openPolls, function (kv) { return -(kv[1].ts || 0); }).slice(0, 2).forEach(function (kv) { h += pollMiniCard(kv[0], kv[1]); });
       h += "</div>";
     }
     var notices = bySort(entries(DB.notices), function (kv) { return -((kv[1].pinned ? 1e15 : 0) + (kv[1].ts || 0)); });
     if (notices.length) {
-      h += '<h2 class="sec">📢 공지</h2>';
+      h += '<h2 class="sec">공지</h2>';
       notices.slice(0, 3).forEach(function (kv) {
         var n = kv[1];
         h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") +
@@ -459,7 +470,7 @@
   /* ---------- 투표 ---------- */
   function viewVote() {
     var polls = bySort(entries(DB.polls), function (kv) { return ((kv[1].status === "closed") ? 1e15 : 0) - (kv[1].ts || 0); });
-    var h = '<div class="page-head"><h1>' + icon("ballot", 22) + ' 의사결정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-poll">+ 새 투표</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>의사결정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-poll">+ 새 투표</button>' : "") + "</div>";
     if (!isMeAdmin()) h += '<div class="admin-only-note">투표 생성은 운영진만 가능해요. 올라온 투표에 참여해주세요!</div>';
     if (!polls.length) h += '<div class="empty">아직 투표가 없어요.</div>';
     h += '<div class="list-grid">';
@@ -486,7 +497,7 @@
     h += '<div class="pd-foot"><span>' + voters + "/" + memberCount() + "명 참여</span>" +
       (canEdit ? '<button class="link" data-action="toggle-poll" data-id="' + id + '">' + (closed ? "다시 열기" : "투표 마감") + "</button>" : "") + "</div></div>";
     var comments = bySort(entries(p.comments), function (kv) { return (kv[1].ts || 0); });
-    h += '<h2 class="sec">💬 댓글 ' + comments.length + "</h2><div class=\"comments\">";
+    h += '<h2 class="sec">댓글 ' + comments.length + "</h2><div class=\"comments\">";
     if (!comments.length) h += '<div class="empty sm">첫 댓글을 남겨보세요</div>';
     comments.forEach(function (kv) {
       var c = kv[1];
@@ -522,7 +533,7 @@
   }
   function expenseCards() {
     var exps = bySort(entries(DB.expenses), function (kv) { return -(kv[1].ts || 0); });
-    var h = '<h2 class="sec">' + icon("wallet", 18) + " 지출 내역 " + exps.length + " · 총 " + won(totalSpent()) + '</h2><div class="list-grid">';
+    var h = '<h2 class="sec">지출 내역 ' + exps.length + " · 총 " + won(totalSpent()) + '</h2><div class="list-grid">';
     if (!exps.length) h += '<div class="empty sm">아직 지출이 없어요.</div>';
     exps.forEach(function (kv) {
       var e = kv[1], n = e.participantsAll ? memberCount() : (e.participants ? Object.keys(e.participants).length : memberCount());
@@ -534,7 +545,7 @@
     return h;
   }
   function viewSettle() {
-    var h = '<div class="page-head"><h1>' + icon("wallet", 22) + ' 정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
+    var h = '<div class="page-head"><h1>정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
     h += mySettleCard();
     if ((CFG.trip || {}).poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(CFG.trip.poolFee) + "은 현장 개별 결제예요. · 정산 완료를 누르면 받을 분에게 알림이 가요.</div>";
     h += expenseCards();
@@ -544,13 +555,13 @@
   /* ---------- 마이 (프로필·내 차량·정산·준비물) ---------- */
   function viewMy() {
     var m = obj(DB.members)[me] || {};
-    var h = '<div class="page-head"><h1>' + icon("user", 22) + ' 마이</h1><button class="btn-line sm" data-action="open-profile">' + icon("edit", 14) + " 프로필·설정</button></div>";
+    var h = '<div class="page-head"><h1>마이</h1><button class="btn-line sm" data-action="open-profile">프로필·설정</button></div>';
     h += '<div class="card my-profile" data-action="open-profile"><div class="mp-top">' + avatar(me, 52) +
       '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" +
-      '<div class="mp-sub">' + (normStation(m.station) ? icon("pin", 13) + " " + esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : "탑승") + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
+      '<div class="mp-sub">' + (normStation(m.station) ? esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : "탑승") + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
       '<span class="mp-go">' + icon("edit", 18) + "</span></div></div>";
 
-    h += '<h2 class="sec">' + icon("wallet", 16) + " 내 정산</h2>";
+    h += '<h2 class="sec">내 정산</h2>';
     h += mySettleCard();
     h += '<button class="btn-line btn-block" data-action="go-settle">지출 내역 전체 보기 ›</button>';
 
@@ -563,7 +574,7 @@
     var m = obj(DB.members)[me] || {};
     if (!m.hasCar) return "";
     var pax = passengersOf(me);
-    var h = '<h2 class="sec">' + icon("car", 16) + " 내 차량 탑승자 " + pax.length + "/" + (carCap() - 1) + "</h2><div class=\"card\">";
+    var h = '<h2 class="sec">내 차량 탑승자 ' + pax.length + "/" + (carCap() - 1) + "</h2><div class=\"card\">";
     if (!pax.length) h += '<div class="empty sm">아직 탑승자가 없어요.<br>카풀 탭에서 주변 크루원을 모집해보세요.</div>';
     pax.forEach(function (pid) {
       h += '<div class="cp-pass">' + avatar(pid, 24) + "<span>" + esc(memberName(pid)) + '</span><span class="cp-stn">' + stationLabel(pid) + "</span>" +
@@ -576,7 +587,7 @@
   /* ---------- 알림 (notifications) UI ---------- */
   function openNotifs() {
     var list = myNotifs();
-    var h = "<h2>" + icon("bell", 18) + " 알림</h2>";
+    var h = "<h2>알림</h2>";
     if (!list.length) h += '<div class="empty sm">새 알림이 없어요.</div>';
     else {
       h += '<div class="notif-list">';
@@ -609,7 +620,7 @@
   /* ---------- 카풀 ---------- */
   function viewCarpool() {
     var drv = drivers(), unas = unassignedPass(), notReady = claimedMembers().length === 0;
-    var h = '<div class="page-head"><h1>' + icon("car", 22) + ' 카풀</h1></div>';
+    var h = '<div class="page-head"><h1>카풀</h1></div>';
     h += '<div class="cp-top"><div class="st-box"><div class="st-n">' + drv.length + '<i>대</i></div><div class="st-l">운전자</div></div>' +
       '<div class="st-box"><div class="st-n">' + claimedMembers().filter(function (id) { return !DB.members[id].hasCar; }).length + '<i>명</i></div><div class="st-l">탑승 인원</div></div>' +
       '<div class="st-box"><div class="st-n">' + unas.length + '<i>명</i></div><div class="st-l">미배정</div></div></div>';
@@ -654,7 +665,7 @@
 
   /* ---------- 사진 ---------- */
   function viewPhotos() {
-    var h = '<div class="page-head"><h1>' + icon("camera", 22) + ' 사진·영상</h1>' + (cloudOn() ? '<button class="btn-pri" data-action="pick-photos">+ 올리기</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>앨범</h1>' + (cloudOn() ? '<button class="btn-pri" data-action="pick-photos">+ 올리기</button>' : "") + "</div>";
     if (!cloudOn()) {
       h += '<div class="demo-note">📷 사진·영상 기능을 켜려면 <b>Cloudinary 연결</b>이 필요해요. (config.js의 <code>cloudinary</code> 값) — 연결되면 앱 안에서 업로드 · 일부/전체 선택 · 일괄 다운로드가 켜집니다.</div>';
       return h;
@@ -694,7 +705,7 @@
   }
   function prepSchedule() {
     var items = entries(DB.schedule).slice().sort(function (a, b) { var ka = (a[1].day || "") + (a[1].time || ""), kb = (b[1].day || "") + (b[1].time || ""); return ka < kb ? -1 : ka > kb ? 1 : 0; });
-    var h = '<div class="page-head"><h1>' + icon("calendar", 22) + ' 일정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-schedule">+ 추가</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>일정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-schedule">+ 추가</button>' : "") + "</div>";
     if (!items.length) h += '<div class="empty sm">일정이 없어요.</div>';
     var curDay = null;
     items.forEach(function (kv) {
@@ -711,7 +722,7 @@
   }
   function prepNotice() {
     var notices = bySort(entries(DB.notices), function (kv) { return -((kv[1].pinned ? 1e15 : 0) + (kv[1].ts || 0)); });
-    var h = '<div class="page-head"><h1>' + icon("megaphone", 22) + ' 공지</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-notice">+ 추가</button>' : "") + "</div>";
+    var h = '<div class="page-head"><h1>공지</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-notice">+ 추가</button>' : "") + "</div>";
     if (!notices.length) h += '<div class="empty sm">공지가 없어요.</div>';
     notices.forEach(function (kv) {
       var n = kv[1];
@@ -727,7 +738,7 @@
     var shared = bySort(entries(DB.packing).filter(function (kv) { return (kv[1] || {}).type !== "personal"; }), function (kv) { return kv[1].ts || 0; });
     var personal = bySort(entries(DB.packing).filter(function (kv) { return (kv[1] || {}).type === "personal"; }), function (kv) { return kv[1].ts || 0; });
     var mgr = canManage(me);
-    var h = '<div class="page-head"><h1>' + icon("bag", 22) + ' 준비물</h1></div>';
+    var h = '<div class="page-head"><h1>준비물</h1></div>';
     h += '<div class="pk-sec-head"><span class="pk-sub">공용 (담당자가 챙겨요 · 운영진 관리)</span>' + (mgr ? '<button class="btn-ghost sm" data-action="new-packing" data-type="shared">+ 추가</button>' : "") + "</div>";
     if (!shared.length) h += '<div class="empty sm">공용 준비물이 없어요.</div>';
     shared.forEach(function (kv) {
@@ -841,7 +852,7 @@
   }
 
   function formPin() {
-    openModal("<h2>" + icon("key", 18) + ' 인증번호 설정</h2><p class="pf-note" style="margin-bottom:10px">다른 기기(PC 등)에서 같은 이름으로 입장할 때 쓰는 4자리 숫자예요.</p>' +
+    openModal('<h2>인증번호 설정</h2><p class="pf-note" style="margin-bottom:12px">다른 기기(PC 등)에서 같은 이름으로 입장할 때 쓰는 4자리 숫자예요.</p>' +
       '<label>새 인증번호 (숫자 4자리)</label>' + pinCellsHtml("np-pin", "np-cells") +
       '<div id="np-err" class="pin-err"></div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="open-profile">취소</button><button class="btn-pri" data-action="save-pin">저장</button></div>');
@@ -856,16 +867,16 @@
       : '<div class="pf-note">프로필 사진은 사진 기능(Cloudinary) 연결 후 변경할 수 있어요</div>';
     var h = '<h2>내 프로필</h2>' +
       '<div class="pf-photo">' + avatar(me, 72) + '<div class="pf-photo-act"><div class="pf-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" + photoBtns + "</div></div>" +
-      "<label>" + icon("pin", 16) + ' 출발지 (지하철역)</label><input type="text" id="p-station" list="stationlist2" value="' + esc(m.station || "") + '" placeholder="예: 남영"><datalist id="stationlist2">' + dl + "</datalist>" +
-      "<label>" + icon("car", 16) + ' 자차 보유</label><div class="toggle2"><button id="p-car-no" class="' + (m.hasCar ? "" : "on") + '" data-action="pf-car" data-v="0">없음</button><button id="p-car-yes" class="' + (m.hasCar ? "on" : "") + '" data-action="pf-car" data-v="1">있음</button></div>' +
-      "<label>" + icon("key", 16) + ' 인증번호</label><div class="pf-pin">' + (m.pin ? "설정됨 " : '<b class="warn">미설정 — 다른 기기 입장하려면 설정하세요 </b>') + '<button class="btn-ghost sm" data-action="set-pin">' + (m.pin ? "변경" : "설정") + "</button></div>" +
-      "<label>" + icon("theme", 16) + ' 화면 모드</label><div class="seg">' + [["system", "시스템"], ["light", "라이트"], ["dark", "다크"]].map(function (o) { return '<button class="seg-b' + ((localStorage.getItem("srk_theme") || "system") === o[0] ? " on" : "") + '" data-action="set-theme" data-theme="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>" +
+      '<label>출발지 (지하철역)</label><input type="text" id="p-station" list="stationlist2" value="' + esc(m.station || "") + '" placeholder="예: 남영"><datalist id="stationlist2">' + dl + "</datalist>" +
+      '<label>자차 보유</label><div class="toggle2"><button id="p-car-no" class="' + (m.hasCar ? "" : "on") + '" data-action="pf-car" data-v="0">없음</button><button id="p-car-yes" class="' + (m.hasCar ? "on" : "") + '" data-action="pf-car" data-v="1">있음</button></div>' +
+      '<label>인증번호</label><div class="pf-pin">' + (m.pin ? "설정됨 " : '<b class="warn">미설정 — 다른 기기 입장하려면 설정하세요 </b>') + '<button class="btn-ghost sm" data-action="set-pin">' + (m.pin ? "변경" : "설정") + "</button></div>" +
+      '<label>화면 모드</label><div class="seg">' + [["system", "시스템"], ["light", "라이트"], ["dark", "다크"]].map(function (o) { return '<button class="seg-b' + ((localStorage.getItem("srk_theme") || "system") === o[0] ? " on" : "") + '" data-action="set-theme" data-theme="' + o[0] + '">' + o[1] + "</button>"; }).join("") + "</div>" +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button><button class="btn-pri" data-action="save-profile">저장</button></div>';
     if (canManage(me)) {
       var meMgr = isManager(me);
-      h += '<h2 style="margin-top:24px;font-size:16px">' + icon("shield", 18) + ' 멤버·권한 관리</h2>' +
-        '<p class="pf-note" style="margin:-2px 0 8px">관리자·운영진은 <b>운영진 지정</b>·<b>크루원 삭제</b> 가능. 운영진 해제는 관리자만.</p>' +
-        '<div class="card" style="box-shadow:none;border:1px solid var(--line);margin:0">';
+      h += '<h2 style="margin-top:24px;font-size:16px">멤버·권한 관리</h2>' +
+        '<p class="pf-note" style="margin:0 0 8px">관리자·운영진은 <b>운영진 지정</b>·<b>크루원 삭제</b> 가능. 운영진 해제는 관리자만.</p>' +
+        '<div class="card" style="margin:0">';
       (CFG.roster || []).forEach(function (r) {
         var dm = obj(DB.members)[r.id] || {}, tr = roleOf(r.id), self = (r.id === me), acts = "";
         if (!self) {
@@ -958,6 +969,7 @@
     }
 
     /* 탭 */
+    if (a === "nav-back") { goBack(); return; }
     if (a === "tab") { var nt = t.getAttribute("data-tab"); if (nt !== "photo") photoSel = {}; state.tab = nt; state.pollId = null; render(); return; }
     if (a === "alert-seg") { state.alert = t.getAttribute("data-seg"); state.pollId = null; render(); return; }
     if (a === "go-vote") { state.tab = "alert"; state.alert = "vote"; state.pollId = null; render(); return; }

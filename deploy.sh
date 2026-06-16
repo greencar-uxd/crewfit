@@ -31,6 +31,12 @@ git rev-parse --git-dir >/dev/null 2>&1 || git init -q
 git config user.name  >/dev/null 2>&1 || git config user.name "$LOGIN"
 git config user.email >/dev/null 2>&1 || git config user.email "${USER_ID}+${LOGIN}@users.noreply.github.com"
 
+# 캐시버스팅: 배포마다 css/js 버전 쿼리를 타임스탬프로 갱신 (브라우저 캐시로 수정이 안 보이는 문제 방지)
+VER="$(date +%Y%m%d%H%M%S)"
+sed -i '' -E "s#(styles\.css|app\.js|config\.js|favicon\.svg|favicon\.png)\?v=[0-9]+#\1?v=$VER#g" index.html 2>/dev/null \
+  || sed -i -E "s#(styles\.css|app\.js|config\.js|favicon\.svg|favicon\.png)\?v=[0-9]+#\1?v=$VER#g" index.html
+echo "→ 캐시버스팅 버전: $VER"
+
 # 커밋 (변경이 있을 때만)
 git add -A
 if ! git rev-parse HEAD >/dev/null 2>&1; then
