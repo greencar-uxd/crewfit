@@ -671,6 +671,7 @@
       return h;
     }
     var photos = bySort(entries(DB.photos), function (kv) { return -(kv[1].ts || 0); });
+    h += '<div class="hint">올린 사진·영상은 <b>48시간 뒤 자동 삭제</b>돼요. 간직할 파일은 미리 다운로드하세요.</div>';
     if (photoUploading) h += '<div class="hint">⏳ ' + photoUploading + "개 올리는 중… (영상은 조금 걸려요)</div>";
     var sel = selectedPhotoKeys();
     var allSel = photos.length > 0 && sel.length === photos.length;
@@ -1136,8 +1137,9 @@
   }
 
   /* Cloudinary unsigned 업로드 (이미지·영상) */
-  function clUpload(file) {
+  function clUpload(file, opts) {
     var c = CFG.cloudinary, fd = new FormData(); fd.append("file", file); fd.append("upload_preset", c.uploadPreset);
+    if (opts && opts.tags) fd.append("tags", opts.tags); // 앨범 사진은 srk-gallery 태그 → 48h 자동삭제 대상 (아바타/히어로는 태그 없음 = 영구)
     return fetch("https://api.cloudinary.com/v1_1/" + c.cloudName + "/auto/upload", { method: "POST", body: fd }).then(function (r) { return r.json(); });
   }
   /* 업로드 전 사진 자동 축소 (브라우저 canvas). 영상·GIF·디코딩 불가 파일은 원본 유지.
@@ -1171,7 +1173,7 @@
     if (!arr.length) return;
     photoUploading += arr.length; if (state.tab === "photo") render();
     arr.forEach(function (f) {
-      resizeImageFile(f).then(clUpload).then(function (j) {
+      resizeImageFile(f).then(function (rf) { return clUpload(rf, { tags: "srk-gallery" }); }).then(function (j) {
         if (j && j.secure_url) Store.push("photos", { url: j.secure_url, publicId: j.public_id || "", resourceType: j.resource_type || "image", format: j.format || "", w: j.width || 0, h: j.height || 0, name: clampStr(f.name, 80), by: me, ts: Date.now() });
         else alert("업로드 실패: " + ((j && j.error && j.error.message) || "Cloudinary 설정(프리셋이 Unsigned인지, 영상 용량 한도) 확인"));
       }).catch(function () { alert("사진 업로드 중 네트워크 오류가 발생했어요."); }).then(function () { photoUploading = Math.max(0, photoUploading - 1); if (state.tab === "photo") render(); });
