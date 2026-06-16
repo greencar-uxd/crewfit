@@ -60,15 +60,20 @@ h1, h2 { margin: 0; }
 #app-header {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  min-height: 60px; box-sizing: border-box;   /* 모든 화면에서 헤더 높이 동일 */
-  padding: 10px 16px; background: color-mix(in srgb, var(--surface) 88%, transparent);
+  height: 60px; min-height: 60px; box-sizing: border-box;   /* 모든 화면에서 헤더 높이 고정 */
+  padding: 0 16px; background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: saturate(180%) blur(12px); border-bottom: 1px solid var(--line);
 }
-.hd-left { min-width: 0; }
+.hd-left { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .hd-title { font-weight: 800; font-size: 16px; letter-spacing: -.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hd-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badge-demo { background: var(--warn); color: #fff; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
 .badge-live { background: var(--green); color: #fff; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+.badge-dday { background: var(--pri); color: #fff; padding: 1px 7px; border-radius: 6px; font-size: 10.5px; font-weight: 800; letter-spacing: .3px; }
+/* 알림 종 */
+.bell-btn { position: relative; flex: none; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--ink); }
+.bell-btn:active { transform: scale(.94); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.bell-badge { position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--pri); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); box-sizing: content-box; }
 .me-chip {
   display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
@@ -384,6 +389,64 @@ h1, h2 { margin: 0; }
 .preview { background: color-mix(in srgb, var(--ink) 4%, var(--surface)); border-radius: 10px; padding: 9px 12px; font-size: 12.5px; color: var(--muted); margin-top: 10px; font-weight: 600; }
 .preview .warn { color: var(--warn); }
 .hidden { display: none !important; }
+.warn { color: var(--warn); }
+.btn-line.sm, .btn-pri.sm { padding: 6px 11px; font-size: 12px; border-radius: 10px; }
+.btn-line.sm .ic { vertical-align: -.2em; }
+
+/* ---------- 알림: 홈 캐러셀 배너 ---------- */
+.notif-carousel { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.notif-banner { display: flex; align-items: center; gap: 9px; background: color-mix(in srgb, var(--pri) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--pri) 22%, transparent); border-radius: 13px; padding: 11px 12px; box-shadow: var(--shadow); }
+.notif-banner.unread { border-color: color-mix(in srgb, var(--pri) 42%, transparent); }
+.notif-banner .nb-ic { flex: none; color: var(--pri); display: flex; }
+.notif-banner .nb-text { flex: 1; font-size: 13px; font-weight: 600; line-height: 1.45; word-break: break-word; }
+.notif-banner .nb-text a { font-weight: 700; }
+.notif-banner .nb-x { flex: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 4px; align-self: flex-start; }
+
+/* ---------- 알림: 종 팝오버(모달) 목록 ---------- */
+.notif-list { display: flex; flex-direction: column; gap: 2px; max-height: 58vh; overflow-y: auto; margin: 0 -4px; }
+.notif-row { display: flex; align-items: flex-start; gap: 10px; padding: 11px 8px; border-bottom: 1px solid var(--line); }
+.notif-row:last-child { border-bottom: none; }
+.notif-row .notif-ic { flex: none; color: var(--muted); margin-top: 1px; display: flex; }
+.notif-row.unread { background: color-mix(in srgb, var(--pri) 5%, transparent); border-radius: 10px; }
+.notif-row.unread .notif-ic { color: var(--pri); }
+.notif-main { flex: 1; min-width: 0; }
+.notif-text { font-size: 13.5px; font-weight: 600; line-height: 1.5; word-break: break-word; }
+.notif-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.notif-x { flex: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 5px; }
+
+/* ---------- 마이 프로필 요약 ---------- */
+.my-profile { padding: 14px 16px; }
+.my-profile .mp-top { display: flex; align-items: center; gap: 13px; }
+.my-profile .mp-info { flex: 1; min-width: 0; }
+.my-profile .mp-name { font-weight: 850; font-size: 16px; letter-spacing: -.3px; }
+.my-profile .mp-sub { font-size: 12px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.my-profile .mp-go { flex: none; color: var(--muted); display: flex; }
+.my-profile:active { transform: scale(.995); }
+
+/* 정산 완료 표시 */
+.paid-done { display: inline-flex; align-items: center; gap: 4px; color: var(--pos); font-weight: 800; font-size: 12.5px; }
+.paid-done .link { margin-left: 4px; font-size: 11.5px; color: var(--muted); }
+.btn-pri.xs { padding: 5px 11px; font-size: 12px; border-radius: 9px; box-shadow: none; margin-left: auto; }
+.pay-line.out { justify-content: flex-start; }
+.pay-line.out .btn-pri.xs, .pay-line.out .paid-done { margin-left: auto; }
+
+/* ---------- 인증번호 셀(마스킹 입력) ---------- */
+.pin-wrap { position: relative; max-width: 280px; margin: 8px auto 0; }
+.pin-cells { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.pin-cell { aspect-ratio: 1 / 1; max-height: 62px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 850; color: var(--ink); transition: border-color .12s, box-shadow .12s; }
+.pin-cell.filled { border-color: var(--pri); }
+.pin-cell.active { border-color: var(--pri); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pri) 16%, transparent); }
+.pin-real { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: none; background: transparent; font-size: 16px; color: transparent; caret-color: transparent; cursor: pointer; }
+.pin-real:focus { outline: none; }
+
+/* ---------- 홈 히어로 배경 변경 ---------- */
+.hero.has-img { background-size: cover; background-position: center; }
+.hero.has-img::after { opacity: .1; }
+.hero-edit { position: absolute; top: 12px; right: 12px; z-index: 2; width: 32px; height: 32px; border-radius: 10px; background: rgba(0,0,0,.28); color: #fff; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.hero-edit:active { transform: scale(.92); }
+.hero-edit:disabled { opacity: .6; }
+.he-busy { position: absolute; inset: 0; border-radius: 10px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; animation: hespin .7s linear infinite; }
+@keyframes hespin { to { transform: rotate(360deg); } }
 
 /* ============================================================
    PC 반응형 — 880px 이상에서 좌측 사이드바 + 와이드 레이아웃

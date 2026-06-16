@@ -43,6 +43,7 @@ window.SRK_CONFIG = {
     lodging:  "양주전원주택체험 (별장·침실 3개·★4.74) · 기준 16인 / 참석 17명",
     note:     "",
     poolFee:  17000,
+    heroImage: "",   /* 홈 히어로 배경 이미지 URL — 앱 안에서 운영진이 변경(Cloudinary 연결 시) */
     airbnbUrl: "https://www.airbnb.co.kr/rooms/13856178"
   },
 
@@ -122,7 +123,8 @@ window.SRK_CONFIG = {
       { day: "2026-06-27", time: "17:30", title: "마트 장보기 & 숙소 체크인", place: "양주전원주택체험 (펜션)", link: "https://www.airbnb.co.kr/rooms/13856178", desc: "별장·침실 3개·★4.74 / 기준 16인" },
       { day: "2026-06-27", time: "20:30", title: "저녁식사 마무리 후 본격적으로 놀기" },
       { day: "2026-06-28", time: "11:00", title: "체크아웃" },
-      { day: "2026-06-28", time: "12:30", title: "아점", place: "연곡리 순두부", link: "https://naver.me/FHOoMk0T", desc: "이후 커피: 레드버치 https://naver.me/IFE9m03O" },
+      { day: "2026-06-28", time: "12:30", title: "아점 (순두부)", place: "연곡리 순두부", link: "https://naver.me/FHOoMk0T", desc: "" },
+      { day: "2026-06-28", time: "13:00", title: "커피", place: "레드버치", link: "https://naver.me/IFE9m03O", desc: "" },
       { day: "2026-06-28", time: "13:30", title: "해산" }
     ],
     packing: [

@@ -21,6 +21,7 @@
   var photoSel = {};      // 선택된 사진 key 맵
   var photoUploading = 0; // 업로드 중인 장수
   var avatarBusy = false; // 프로필 사진 변경 중
+  var heroBusy = false;   // 히어로 배경 변경 중
 
   // 화면 모드: system(기본·OS설정 따름) / light / dark
   function applyTheme(t) { t = t || localStorage.getItem("srk_theme") || "system"; var r = document.documentElement; if (t === "system") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", t); }
@@ -247,10 +248,18 @@
   function memberCount() { return Object.keys(obj(DB.members)).length || 1; }
   function readyCount(p) { var mem = obj(DB.members); return Object.keys(obj(p.ready)).filter(function (id) { return mem[id]; }).length; }
 
+  /* ---------- 알림 (notifications) ---------- */
+  function myNotifs() { return bySort(entries(obj(DB.notifications)[me]), function (kv) { return -(kv[1].ts || 0); }); }
+  function unreadNotifs() { return myNotifs().filter(function (kv) { return !kv[1].read; }); }
+  function notify(toId, text, type) { if (!toId) return; Store.push("notifications/" + toId, { text: clampStr(text, 200), by: me || null, type: type || "", ts: Date.now(), read: false }); }
+  function markNotifRead(k) { if (k) Store.update("notifications/" + me + "/" + k, { read: true }); }
+  function markAllNotifsRead() { unreadNotifs().forEach(function (kv) { Store.update("notifications/" + me + "/" + kv[0], { read: true }); }); }
+
   /* ---------- 사진 (Cloudinary) ---------- */
   function cloudOn() { var c = CFG.cloudinary || {}; return !!(c.cloudName && c.uploadPreset); }
   function thumbUrl(u) { u = String(u || ""); return u.indexOf("/upload/") >= 0 ? u.replace("/upload/", "/upload/c_fill,w_600,h_600,q_auto,f_auto/") : u; }
   function attachUrl(u) { u = String(u || ""); return u.indexOf("/upload/") >= 0 ? u.replace("/upload/", "/upload/fl_attachment/") : u; }
+  function heroBg(u) { u = String(u || ""); return u.indexOf("/upload/") >= 0 ? u.replace("/upload/", "/upload/c_fill,w_1080,h_640,g_auto,q_auto,f_auto/") : u; }
   function mediaThumb(p) {
     p = p || {}; var u = String(p.url || "");
     if (p.resourceType === "video" && u.indexOf("/upload/") >= 0) {
@@ -268,30 +277,52 @@
     if (!me || !m || !m.claimed) { renderGate(); return; }
     $("#gate").classList.add("hidden");
     if (state.tab === "vote" || state.tab === "settle") { state.alert = state.tab === "settle" ? "settle" : "vote"; state.tab = "alert"; } // 구 탭 → 알림으로 통합
+    if (state.tab === "prep") state.tab = "my"; // 준비물 → 마이 탭으로 이동
     renderHeader(); renderNav();
     var main = $("#app-main");
     if (state.tab === "home") main.innerHTML = viewHome();
     else if (state.tab === "alert") main.innerHTML = viewAlert();
     else if (state.tab === "carpool") main.innerHTML = viewCarpool();
     else if (state.tab === "photo") main.innerHTML = viewPhotos();
-    else if (state.tab === "prep") main.innerHTML = prepPacking();
+    else if (state.tab === "my") main.innerHTML = viewMy();
     else main.innerHTML = viewHome();
     window.scrollTo(0, 0);
   }
   function scheduleRender() { if (booted) render(); }
 
   function renderHeader() {
-    var t = CFG.trip || {};
+    var t = CFG.trip || {}, unread = unreadNotifs().length, dd = ddayLabel();
     $("#app-header").innerHTML =
       '<div class="hd-left"><div class="hd-title">' + esc(t.title || "MT") + "</div>" +
-      '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span>' : '<span class="badge-live">LIVE</span>') + (t.subtitle ? " " + esc(t.subtitle) : "") + "</div></div>" +
-      '<button class="me-chip" data-action="open-profile">' + avatar(me, 30) + "<span>" + esc(memberName(me)) + "</span></button>";
+      '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span> ' : "") + (dd ? '<span class="badge-dday">' + dd + "</span>" : "") + (t.subtitle ? " " + esc(t.subtitle) : "") + "</div></div>" +
+      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
   function renderNav() {
-    var tabs = [["home", "home", "홈"], ["alert", "bell", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "사진"], ["prep", "bag", "준비물"]];
+    var tabs = [["home", "home", "홈"], ["alert", "bell", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "사진"], ["my", "user", "마이"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
       return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
+  }
+
+  /* 인증번호 입력 — 입력 중인 숫자만 보이고 이전 숫자는 마스킹(•) */
+  function pinCellsHtml(inputId, cellsId) {
+    var cells = ""; for (var i = 0; i < 4; i++) cells += '<div class="pin-cell"></div>';
+    return '<div class="pin-wrap"><div class="pin-cells" id="' + cellsId + '">' + cells + "</div>" +
+      '<input id="' + inputId + '" class="pin-real" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" aria-label="인증번호 4자리"></div>';
+  }
+  function paintPinCells(cellsEl, val) {
+    if (!cellsEl) return; var s = String(val || ""), kids = cellsEl.children;
+    for (var i = 0; i < kids.length; i++) {
+      var filled = i < s.length, active = i === s.length;
+      kids[i].textContent = filled ? (i === s.length - 1 ? s.charAt(i) : "•") : ""; // 마지막(입력 중) 한 자리만 노출
+      kids[i].className = "pin-cell" + (filled ? " filled" : "") + (active ? " active" : "");
+    }
+  }
+  function bindPin(input, cellsEl, errEl) {
+    if (!input) return;
+    function upd() { input.value = input.value.replace(/\D/g, "").slice(0, 4); paintPinCells(cellsEl, input.value); if (errEl) errEl.textContent = ""; }
+    input.addEventListener("input", upd); input.addEventListener("focus", upd); upd();
+    setTimeout(function () { try { input.focus(); } catch (e) {} }, 60);
   }
 
   /* ---------- 인트로 (이름 → 출발역 → 자차) ---------- */
@@ -300,8 +331,7 @@
     if (intro.step === "pin" && intro.pick) g.innerHTML = gatePin();
     else if (intro.step === "profile" && intro.pick) g.innerHTML = gateProfile();
     else g.innerHTML = gateName();
-    var pin = $("#i-pin");
-    if (pin) { pin.addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 4); $("#pin-err").textContent = ""; }); setTimeout(function () { try { pin.focus(); } catch (e) {} }, 60); }
+    bindPin($("#i-pin"), $("#pin-cells"), $("#pin-err"));
   }
   function gateName() {
     var roster = CFG.roster || [];
@@ -311,7 +341,7 @@
       '<p class="gate-p">본인 이름을 선택하세요. 4자리 인증번호로 입장합니다.<br>어느 기기에서든 같은 인증번호로 들어올 수 있어요.</p>' +
       '<div class="gate-grid" id="gate-grid">' + roster.map(function (m) {
         var dm = obj(DB.members)[m.id] || {};
-        var tag = dm.pin ? '<span class="lock-tag">🔑</span>' : '<span class="me-tag">처음</span>';
+        var tag = dm.pin ? '<span class="lock-tag">🔑</span>' : "";
         return '<button class="gate-name" data-action="pick-name" data-id="' + m.id + '">' +
           avatar(m.id, 34) + '<span class="nm-main"><span>' + esc(m.name) + "</span>" + roleTag(m.id) + "</span>" + tag + "</button>";
       }).join("") + "</div></div>";
@@ -323,7 +353,7 @@
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span>' + (verify ? "" : '<span class="step-dot"></span>') + "</div>" +
       '<div class="profile-who" style="justify-content:center">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
       '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "입장할 때 쓸 4자리 인증번호를 정하세요.") + "</p>" +
-      '<input id="i-pin" class="pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••">' +
+      pinCellsHtml("i-pin", "pin-cells") +
       '<div id="pin-err" class="pin-err"></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
       '<button class="btn-pri" data-action="pin-submit" data-id="' + id + '">' + (verify ? "입장" : "다음 →") + "</button></div>" +
@@ -362,7 +392,12 @@
     var mapUrl = "https://map.naver.com/v5/search/" + encodeURIComponent(t.address || t.location || "");
     var h = "";
     if (Store.mode === "demo") h += '<div class="demo-note">📍 <b>데모 모드</b> — 이 기기에만 저장돼요. 실시간 공유는 Firebase 연결 후 켜집니다.</div>';
-    h += '<div class="hero"><div class="hero-dday">' + ddayLabel() + "</div>" +
+    h += notifBanners();
+    var heroImg = obj(DB.trip).heroImage || t.heroImage || "";
+    var heroStyle = heroImg ? ' style="background-image:linear-gradient(150deg, rgba(189,29,24,.78), rgba(20,17,15,.62)), url(' + esc(heroBg(heroImg)) + ')"' : "";
+    h += '<div class="hero' + (heroImg ? " has-img" : "") + '"' + heroStyle + ">" +
+      (isMeAdmin() ? '<button class="hero-edit" data-action="pick-hero" aria-label="배경 변경"' + (heroBusy ? " disabled" : "") + ">" + icon("camera", 15) + (heroBusy ? '<span class="he-busy"></span>' : "") + "</button>" : "") +
+      '<div class="hero-dday">' + ddayLabel() + "</div>" +
       '<div class="hero-title">' + esc(t.title || "") + "</div>" + (t.subtitle ? '<div class="hero-sub">' + esc(t.subtitle) + "</div>" : '<div style="height:10px"></div>') +
       '<div class="hero-meta"><div>📅 ' + dateKo(t.startDate) + " → " + dateKo(t.endDate) + "</div>" +
       '<div>📍 <a href="' + mapUrl + '" target="_blank" rel="noopener">' + esc(t.location || "") + "</a> · " + esc(t.address || "") + "</div>" +
@@ -372,7 +407,7 @@
     h += '<div class="stat-row">' +
       '<button class="stat" data-action="go-vote"><div class="stat-n">' + openPolls.length + '</div><div class="stat-l">진행 중 투표</div></button>' +
       '<button class="stat" data-action="tab" data-tab="settle"><div class="stat-n">' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
-      '<button class="stat" data-action="tab" data-tab="prep"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button></div>';
+      '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button></div>';
 
     // 내 이동(카풀)
     h += '<div class="card" data-action="tab" data-tab="carpool"><div class="ms-row"><span>🚗 내 이동</span><span class="ms-amt" style="font-size:13px">' + myRideLabel() + "</span></div></div>";
@@ -394,7 +429,8 @@
       notices.slice(0, 3).forEach(function (kv) {
         var n = kv[1];
         h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") +
-          '<div class="notice-text">' + esc(n.text) + "</div><div class=\"notice-by\">" + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span></div></div>";
+          '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" + (n.link ? '<a class="tl-link" href="' + esc(n.link) + '" target="_blank" rel="noopener">' + icon("link", 13) + " 링크 바로가기</a>" : "") +
+          "<div class=\"notice-by\">" + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span></div></div>";
       });
     }
     return h;
@@ -462,35 +498,109 @@
   }
 
   /* ---------- 정산 ---------- */
-  function viewSettle() {
+  // 내 정산 카드 (본인 것만 — 송금정리·전체잔액은 비공개). 정산/마이 탭 공용
+  function mySettleCard() {
+    var bal = computeBalances(), myNet = Math.round(bal[me] || 0);
+    var transfers = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; });
+    var paid = obj((obj(DB.members)[me] || {}).paid);
+    var h = '<div class="card my-settle big ' + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" +
+      (myNet > 0 ? "받을 돈 " + won(myNet) : myNet < 0 ? "낼 돈 " + won(-myNet) : "정산 완료 ✓") + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
+    if (transfers.length) {
+      h += '<div class="ms-actions">';
+      transfers.forEach(function (t) {
+        if (t.from === me) {
+          var done = !!paid[t.to];
+          h += '<div class="pay-line out">' + chip(t.to) + " 에게 <b>" + won(t.amount) + "</b> " +
+            (done ? '<span class="paid-done">' + icon("check", 13) + ' 완료 <button class="link" data-action="settle-undo" data-to="' + t.to + '">취소</button></span>'
+              : '<button class="btn-pri xs" data-action="settle-done" data-to="' + t.to + '" data-amt="' + t.amount + '">정산 완료</button>') + "</div>";
+        } else h += '<div class="pay-line in">' + chip(t.from) + " 에게서 <b>" + won(t.amount) + "</b> 받기</div>";
+      });
+      h += "</div>";
+    }
+    h += "</div>";
+    return h;
+  }
+  function expenseCards() {
     var exps = bySort(entries(DB.expenses), function (kv) { return -(kv[1].ts || 0); });
-    var bal = computeBalances(), transfers = minimalTransfers(bal), total = totalSpent();
-    var h = '<div class="page-head"><h1>' + icon("wallet", 22) + ' 정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
-    h += '<div class="settle-top"><div class="st-box"><div class="st-n">' + won(total) + '</div><div class="st-l">총 지출</div></div>' +
-      '<div class="st-box"><div class="st-n">' + transfers.length + '<i>건</i></div><div class="st-l">송금</div></div></div>';
-    if ((CFG.trip || {}).poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(CFG.trip.poolFee) + "은 현장 개별 결제라 정산에 포함되지 않아요.</div>";
-    var myNet = Math.round(bal[me] || 0);
-    h += '<div class="card my-settle big ' + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님</span><span class=\"ms-amt\">" +
-      (myNet > 0 ? "+" + won(myNet) : myNet < 0 ? "−" + won(-myNet) : "정산 완료 ✓") + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
-    var mine = transfers.filter(function (t) { return t.from === me || t.to === me; });
-    if (mine.length) { h += '<div class="ms-actions">'; mine.forEach(function (t) { h += t.from === me ? '<div class="pay-line out">' + chip(t.to) + " 에게 <b>" + won(t.amount) + "</b> 보내기</div>" : '<div class="pay-line in">' + chip(t.from) + " 에게서 <b>" + won(t.amount) + "</b> 받기</div>"; }); h += "</div>"; }
-    h += "</div>";
-    h += '<h2 class="sec">🔁 송금 정리 (최소 횟수)</h2>';
-    if (!transfers.length) h += '<div class="empty sm">정산할 송금이 없어요.</div>';
-    else { h += '<div class="card transfers">'; transfers.forEach(function (t) { h += '<div class="tr-line">' + chip(t.from) + '<span class="tr-arrow">→</span>' + chip(t.to) + '<span class="tr-amt">' + won(t.amount) + "</span></div>"; }); h += "</div>"; }
-    h += '<h2 class="sec">👥 멤버별 잔액</h2><div class="card balances">';
-    bySort(Object.keys(bal), function (id) { return bal[id]; }).forEach(function (id) {
-      var v = Math.round(bal[id]);
-      h += '<div class="bal-line">' + chip(id) + '<span class="bal-v ' + (v > 0 ? "pos" : v < 0 ? "neg" : "zero") + '">' + (v > 0 ? "+" + won(v) : v < 0 ? "−" + won(-v) : "0원") + "</span></div>";
-    });
-    h += "</div>";
-    h += '<h2 class="sec">🧾 지출 내역 ' + exps.length + "</h2><div class=\"list-grid\">";
+    var h = '<h2 class="sec">' + icon("wallet", 18) + " 지출 내역 " + exps.length + " · 총 " + won(totalSpent()) + '</h2><div class="list-grid">';
     if (!exps.length) h += '<div class="empty sm">아직 지출이 없어요.</div>';
     exps.forEach(function (kv) {
       var e = kv[1], n = e.participantsAll ? memberCount() : (e.participants ? Object.keys(e.participants).length : memberCount());
       var per = e.splitType === "custom" ? "항목별" : won(Math.round((Number(e.amount) || 0) / (n || 1))) + " / 인";
       h += '<div class="card exp" data-action="edit-expense" data-id="' + kv[0] + '"><div class="exp-top"><span class="exp-title">' + esc(e.title) + "</span><span class=\"exp-amt\">" + won(e.amount) + "</span></div>" +
         '<div class="exp-meta">' + (e.category ? '<span class="cat">' + esc(e.category) + "</span>" : "") + " 결제 " + chip(e.payer) + " · " + n + "명 · " + per + "</div>" + (e.note ? '<div class="exp-note">' + esc(e.note) + "</div>" : "") + "</div>";
+    });
+    h += "</div>";
+    return h;
+  }
+  function viewSettle() {
+    var h = '<div class="page-head"><h1>' + icon("wallet", 22) + ' 정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
+    h += mySettleCard();
+    if ((CFG.trip || {}).poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(CFG.trip.poolFee) + "은 현장 개별 결제예요. · 정산 완료를 누르면 받을 분에게 알림이 가요.</div>";
+    h += expenseCards();
+    return h;
+  }
+
+  /* ---------- 마이 (프로필·내 차량·정산·준비물) ---------- */
+  function viewMy() {
+    var m = obj(DB.members)[me] || {};
+    var h = '<div class="page-head"><h1>' + icon("user", 22) + ' 마이</h1><button class="btn-line sm" data-action="open-profile">' + icon("edit", 14) + " 프로필·설정</button></div>";
+    h += '<div class="card my-profile" data-action="open-profile"><div class="mp-top">' + avatar(me, 52) +
+      '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" +
+      '<div class="mp-sub">' + (normStation(m.station) ? icon("pin", 13) + " " + esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : "탑승") + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
+      '<span class="mp-go">' + icon("edit", 18) + "</span></div></div>";
+
+    h += '<h2 class="sec">' + icon("wallet", 16) + " 내 정산</h2>";
+    h += mySettleCard();
+    h += '<button class="btn-line btn-block" data-action="go-settle">지출 내역 전체 보기 ›</button>';
+
+    h += myCarSection();
+
+    h += '<div style="height:6px"></div>' + prepPacking();
+    return h;
+  }
+  function myCarSection() {
+    var m = obj(DB.members)[me] || {};
+    if (!m.hasCar) return "";
+    var pax = passengersOf(me);
+    var h = '<h2 class="sec">' + icon("car", 16) + " 내 차량 탑승자 " + pax.length + "/" + (carCap() - 1) + "</h2><div class=\"card\">";
+    if (!pax.length) h += '<div class="empty sm">아직 탑승자가 없어요.<br>카풀 탭에서 주변 크루원을 모집해보세요.</div>';
+    pax.forEach(function (pid) {
+      h += '<div class="cp-pass">' + avatar(pid, 24) + "<span>" + esc(memberName(pid)) + '</span><span class="cp-stn">' + stationLabel(pid) + "</span>" +
+        (sameCluster(me, pid) ? '<span class="cp-near">가까움</span>' : "") + '<button class="x" data-action="ride-leave" data-p="' + pid + '">×</button></div>';
+    });
+    h += '<button class="btn-ghost btn-block" data-action="tab" data-tab="carpool">카풀에서 관리 ›</button></div>';
+    return h;
+  }
+
+  /* ---------- 알림 (notifications) UI ---------- */
+  function openNotifs() {
+    var list = myNotifs();
+    var h = "<h2>" + icon("bell", 18) + " 알림</h2>";
+    if (!list.length) h += '<div class="empty sm">새 알림이 없어요.</div>';
+    else {
+      h += '<div class="notif-list">';
+      list.forEach(function (kv) {
+        var n = kv[1];
+        h += '<div class="notif-row' + (n.read ? "" : " unread") + '"><span class="notif-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
+          '<div class="notif-main"><div class="notif-text">' + linkify(esc(n.text)) + '</div><div class="notif-time">' + (n.by ? esc(memberName(n.by)) + " · " : "") + timeago(n.ts) + "</div></div>" +
+          '<button class="notif-x" data-action="del-notif" data-id="' + kv[0] + '" aria-label="삭제">×</button></div>';
+      });
+      h += "</div>";
+    }
+    h += '<div class="modal-foot">' + (list.length ? '<button class="link-danger" data-action="clear-notifs">전체 삭제</button>' : "") + '<button class="btn-line" data-action="close-modal">닫기</button></div>';
+    openModal(h);
+    markAllNotifsRead();
+  }
+  function notifBanners() {
+    var list = myNotifs().filter(function (kv) { return !kv[1].dismissed; });
+    if (!list.length) return "";
+    var h = '<div class="notif-carousel">';
+    list.slice(0, 6).forEach(function (kv) {
+      var n = kv[1];
+      h += '<div class="notif-banner' + (n.read ? "" : " unread") + '"><span class="nb-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
+        '<span class="nb-text">' + linkify(esc(n.text)) + "</span>" +
+        '<button class="nb-x" data-action="dismiss-notif" data-id="' + kv[0] + '" aria-label="닫기">×</button></div>';
     });
     h += "</div>";
     return h;
@@ -607,6 +717,7 @@
       var n = kv[1];
       var canEditN = (n.by === me || isMeAdmin());
       h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") + '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" +
+        (n.link ? '<a class="tl-link" href="' + esc(n.link) + '" target="_blank" rel="noopener">' + icon("link", 13) + " 링크 바로가기</a>" : "") +
         '<div class="notice-by">' + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span>" +
         (canEditN ? '<span class="notice-acts"><button class="link" data-action="edit-notice" data-id="' + kv[0] + '">' + icon("edit", 14) + " 수정</button><button class=\"cmt-del\" data-action=\"del-notice\" data-id=\"" + kv[0] + '">×</button></span>' : "") + "</div></div>";
     });
@@ -702,6 +813,7 @@
   function formNotice(editId) {
     var n = editId ? obj(DB.notices)[editId] : null;
     openModal("<h2>" + (editId ? "공지 수정" : "공지 등록") + "</h2><label>내용</label><textarea id=\"f-text\" rows=\"4\" placeholder=\"공지 내용\">" + (n ? esc(n.text) : "") + "</textarea>" +
+      '<label>링크 (선택)</label><input id="f-nlink" type="url" inputmode="url" placeholder="https://… (지도·예약 등)" value="' + (n && n.link ? esc(n.link) : "") + '">' +
       '<label class="chk"><input type="checkbox" id="f-pin"' + (n && n.pinned ? " checked" : "") + "> 상단 고정</label>" +
       '<div class="modal-foot">' + (editId ? '<button class="link-danger" data-action="del-notice" data-id="' + editId + '">삭제</button>' : "") +
       '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-notice" data-edit="' + (editId || "") + '">' + (editId ? "수정" : "등록") + "</button></div>");
@@ -730,10 +842,10 @@
 
   function formPin() {
     openModal("<h2>" + icon("key", 18) + ' 인증번호 설정</h2><p class="pf-note" style="margin-bottom:10px">다른 기기(PC 등)에서 같은 이름으로 입장할 때 쓰는 4자리 숫자예요.</p>' +
-      '<label>새 인증번호 (숫자 4자리)</label><input id="np-pin" class="pin-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="one-time-code" placeholder="••••">' +
+      '<label>새 인증번호 (숫자 4자리)</label>' + pinCellsHtml("np-pin", "np-cells") +
       '<div id="np-err" class="pin-err"></div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="open-profile">취소</button><button class="btn-pri" data-action="save-pin">저장</button></div>');
-    var i = $("#np-pin"); if (i) { i.addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 4); $("#np-err").textContent = ""; }); setTimeout(function () { try { i.focus(); } catch (e) {} }, 60); }
+    bindPin($("#np-pin"), $("#np-cells"), $("#np-err"));
   }
   /* 프로필 / 멤버 관리 시트 */
   function formProfile() {
@@ -852,6 +964,20 @@
     if (a === "go-settle") { state.tab = "alert"; state.alert = "settle"; state.pollId = null; render(); return; }
     if (a === "close-modal") { closeModal(); return; }
 
+    /* 알림 */
+    if (a === "open-notifs") { openNotifs(); return; }
+    if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
+    if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
+    if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
+
+    /* 홈 히어로 배경 */
+    if (a === "pick-hero") {
+      ev.stopPropagation();
+      if (!isMeAdmin()) return;
+      if (!cloudOn()) { alert("히어로 배경 사진을 바꾸려면 먼저 Cloudinary 연결이 필요해요.\n(config.js의 cloudinary 칸 — 자세한 방법은 안내를 참고)"); return; }
+      var hf = $("#hero-file"); if (hf) hf.click(); return;
+    }
+
     /* 투표 */
     if (a === "open-poll") { state.tab = "alert"; state.alert = "vote"; state.pollId = t.getAttribute("data-id"); render(); return; }
     if (a === "back-vote") { state.pollId = null; render(); return; }
@@ -866,6 +992,15 @@
     if (a === "del-cmt") { Store.remove("polls/" + t.getAttribute("data-poll") + "/comments/" + t.getAttribute("data-cmt")); return; }
 
     /* 정산 */
+    if (a === "settle-done") {
+      ev.stopPropagation();
+      var sdTo = t.getAttribute("data-to"), sdAmt = Number(t.getAttribute("data-amt")) || 0;
+      if (!sdTo) return;
+      Store.set("members/" + me + "/paid/" + sdTo, true);
+      notify(sdTo, memberName(me) + "님이 " + won(sdAmt) + " 정산 완료를 알렸어요.", "settle");
+      return;
+    }
+    if (a === "settle-undo") { ev.stopPropagation(); var suTo = t.getAttribute("data-to"); if (suTo) Store.remove("members/" + me + "/paid/" + suTo); return; }
     if (a === "new-expense") { formNewExpense(null); return; }
     if (a === "edit-expense") { formNewExpense(t.getAttribute("data-id")); return; }
     if (a === "save-expense") { saveExpense(t.getAttribute("data-edit")); return; }
@@ -966,8 +1101,9 @@
   function saveNotice(editId) {
     if (!isMeAdmin() && !(editId && (obj(DB.notices)[editId] || {}).by === me)) return;
     var v = $("#f-text").value.trim(); if (!v) return;
-    if (editId) Store.update("notices/" + editId, { text: clampStr(v, 1000), pinned: $("#f-pin").checked });
-    else Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, ts: Date.now() });
+    var lk = clampStr(($("#f-nlink") || {}).value, 300) || null;
+    if (editId) Store.update("notices/" + editId, { text: clampStr(v, 1000), pinned: $("#f-pin").checked, link: lk });
+    else Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, link: lk, ts: Date.now() });
     closeModal();
   }
   function saveSchedule(editId) {
@@ -1053,8 +1189,20 @@
       .then(function (blob) { triggerDl(URL.createObjectURL(blob), "슈리키-사진.zip"); })
       .catch(function () { alert("일괄 압축에 실패해 개별로 엽니다."); keys.forEach(function (k) { window.open(attachUrl(DB.photos[k].url), "_blank"); }); });
   }
+  /* 홈 히어로 배경 변경 (운영진) */
+  function uploadHero(file) {
+    if (!isMeAdmin()) return;
+    if (!cloudOn()) { alert("히어로 배경은 Cloudinary 연결 후 변경할 수 있어요."); return; }
+    if (!file || file.type.indexOf("image/") !== 0) { alert("이미지 파일을 선택하세요."); return; }
+    heroBusy = true; render();
+    resizeImageFile(file, 1600).then(clUpload).then(function (j) {
+      if (j && j.secure_url) { Store.update("trip", { heroImage: j.secure_url }); CFG.trip.heroImage = j.secure_url; }
+      else alert("업로드 실패: " + ((j && j.error && j.error.message) || "Cloudinary 설정 확인"));
+    }).catch(function () { alert("배경 이미지 업로드 오류가 발생했어요."); }).then(function () { heroBusy = false; render(); });
+  }
   (function bindPhotoInput() { var fi = $("#photo-file"); if (fi) fi.addEventListener("change", function () { uploadPhotos(this.files); this.value = ""; }); })();
   (function bindAvatarInput() { var af = $("#avatar-file"); if (af) af.addEventListener("change", function () { uploadAvatar(this.files && this.files[0]); this.value = ""; }); })();
+  (function bindHeroInput() { var hf = $("#hero-file"); if (hf) hf.addEventListener("change", function () { uploadHero(this.files && this.files[0]); this.value = ""; }); })();
 
   /* ============================================================
      부팅
