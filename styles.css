@@ -321,6 +321,14 @@ h1, h2 { margin: 0; }
 .tl-body { flex: 1; background: var(--surface); border-radius: 12px; padding: 9px 13px; box-shadow: var(--shadow); margin-bottom: 4px; }
 .tl-title { font-size: 14px; font-weight: 600; }
 .tl-del, .pk-item .tl-del { color: var(--muted); font-size: 17px; line-height: 1; padding: 6px; align-self: center; opacity: .5; }
+.tl-place, .tl-link { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; margin-top: 5px; text-decoration: none; }
+.tl-place { color: var(--muted); margin-right: 10px; }
+.tl-link { color: var(--pri); }
+.tl-desc { font-size: 12.5px; color: var(--muted); margin-top: 5px; white-space: pre-wrap; line-height: 1.5; }
+.tl-acts { display: flex; align-items: center; gap: 0; align-self: center; }
+.tl-edit { color: var(--muted); padding: 6px; display: flex; opacity: .6; }
+.notice-acts { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+.notice-acts .link { display: inline-flex; align-items: center; gap: 2px; }
 .notice .notice-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
 .notice.pin { border: 1.5px solid color-mix(in srgb, var(--pri) 35%, transparent); }
 .pin-tag { display: inline-block; font-size: 10.5px; font-weight: 800; color: var(--pri); margin-bottom: 6px; }

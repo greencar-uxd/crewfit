@@ -92,6 +92,8 @@
       plus: '<path d="M12 5.5v13M5.5 12h13"/>',
       logout: '<path d="M14.5 8V6.5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V16"/><path d="M19 12H9.5"/><path d="M16 9l3 3-3 3"/>',
       bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.5 1.8 5.6 1.8 5.6H4.2S6 14.5 6 10z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+      edit: '<path d="M4 20h4L18.5 9.5l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+      link: '<path d="M9.5 14.5l5-5"/><path d="M11.5 7.5l1.2-1.2a3.6 3.6 0 0 1 5 5L17.5 12.5"/><path d="M12.5 16.5l-1.2 1.2a3.6 3.6 0 0 1-5-5L7.5 11.5"/>',
       check: '<path d="M5 12.5l4.5 4.5L19 7"/>'
     };
     return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
@@ -176,7 +178,7 @@
     (CFG.roster || []).forEach(function (m) { root.members[m.id] = { name: m.name, role: m.role || "crew" }; });
     var t = Date.now();
     (s.notices || []).forEach(function (n, i) { root.notices[key()] = { text: n.text, by: n.by || null, pinned: !!n.pinned, ts: t + i }; });
-    (s.schedule || []).forEach(function (x, i) { root.schedule[key()] = { day: x.day, time: x.time, title: x.title, ts: t + i }; });
+    (s.schedule || []).forEach(function (x, i) { root.schedule[key()] = { day: x.day, time: x.time, title: x.title, place: x.place || "", link: x.link || "", desc: x.desc || "", ts: t + i }; });
     (s.packing || []).forEach(function (p, i) { root.packing[key()] = { label: p.label, type: p.type || "shared", assignee: p.assignee || null, done: !!p.done, ready: {}, ts: t + i }; });
     (s.polls || []).forEach(function (p, i) {
       var opts = {}; (p.options || []).forEach(function (o) { opts[key()] = { label: o }; });
@@ -587,8 +589,13 @@
     var curDay = null;
     items.forEach(function (kv) {
       var s = kv[1]; if (s.day !== curDay) { curDay = s.day; h += '<div class="day-head">' + dateKo(s.day) + "</div>"; }
-      h += '<div class="tl-item"><div class="tl-time">' + esc(s.time) + '</div><div class="tl-dot"></div><div class="tl-body"><div class="tl-title">' + esc(s.title) + "</div></div>" +
-        (isMeAdmin() ? '<button class="tl-del" data-action="del-schedule" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
+      var mapUrl = "https://map.naver.com/v5/search/" + encodeURIComponent(s.place || "");
+      h += '<div class="tl-item"><div class="tl-time">' + esc(s.time) + '</div><div class="tl-dot"></div><div class="tl-body"><div class="tl-title">' + esc(s.title) + "</div>" +
+        (s.place ? '<a class="tl-place" href="' + mapUrl + '" target="_blank" rel="noopener">' + icon("pin", 13) + " " + esc(s.place) + "</a>" : "") +
+        (s.link ? '<a class="tl-link" href="' + esc(s.link) + '" target="_blank" rel="noopener">' + icon("link", 13) + " 링크 바로가기</a>" : "") +
+        (s.desc ? '<div class="tl-desc">' + linkify(esc(s.desc)) + "</div>" : "") +
+        "</div>" +
+        (isMeAdmin() ? '<div class="tl-acts"><button class="tl-edit" data-action="edit-schedule" data-id="' + kv[0] + '">' + icon("edit", 16) + '</button><button class="tl-del" data-action="del-schedule" data-id="' + kv[0] + '">×</button></div>' : "") + "</div>";
     });
     return h;
   }
@@ -598,8 +605,10 @@
     if (!notices.length) h += '<div class="empty sm">공지가 없어요.</div>';
     notices.forEach(function (kv) {
       var n = kv[1];
+      var canEditN = (n.by === me || isMeAdmin());
       h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") + '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" +
-        '<div class="notice-by">' + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span>" + ((n.by === me || isMeAdmin()) ? ' <button class="cmt-del" data-action="del-notice" data-id="' + kv[0] + '">×</button>' : "") + "</div></div>";
+        '<div class="notice-by">' + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span>" +
+        (canEditN ? '<span class="notice-acts"><button class="link" data-action="edit-notice" data-id="' + kv[0] + '">' + icon("edit", 14) + " 수정</button><button class=\"cmt-del\" data-action=\"del-notice\" data-id=\"" + kv[0] + '">×</button></span>' : "") + "</div></div>";
     });
     return h;
   }
@@ -690,8 +699,26 @@
     rebuildCustom(); updatePreview();
     window.__expRefresh = function () { rebuildCustom(); updatePreview(); };
   }
-  function formNewNotice() { openModal('<h2>공지 추가</h2><label>내용</label><textarea id="f-text" rows="3"></textarea><label class="chk"><input type="checkbox" id="f-pin"> 상단 고정</label><div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-notice">등록</button></div>'); }
-  function formNewSchedule() { openModal('<h2>일정 추가</h2><div class="row2"><div><label>날짜</label><input id="f-day" type="date" value="' + ((CFG.trip || {}).startDate || "") + '"></div><div><label>시간</label><input id="f-time" type="time"></div></div><label>내용</label><input id="f-title" placeholder="예: 바베큐 시작"><div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-schedule">추가</button></div>'); }
+  function formNotice(editId) {
+    var n = editId ? obj(DB.notices)[editId] : null;
+    openModal("<h2>" + (editId ? "공지 수정" : "공지 등록") + "</h2><label>내용</label><textarea id=\"f-text\" rows=\"4\" placeholder=\"공지 내용\">" + (n ? esc(n.text) : "") + "</textarea>" +
+      '<label class="chk"><input type="checkbox" id="f-pin"' + (n && n.pinned ? " checked" : "") + "> 상단 고정</label>" +
+      '<div class="modal-foot">' + (editId ? '<button class="link-danger" data-action="del-notice" data-id="' + editId + '">삭제</button>' : "") +
+      '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-notice" data-edit="' + (editId || "") + '">' + (editId ? "수정" : "등록") + "</button></div>");
+  }
+  function formSchedule(editId) {
+    var s = editId ? obj(DB.schedule)[editId] : null;
+    var h = "<h2>" + (editId ? "일정 수정" : "일정 추가") + "</h2>" +
+      '<div class="row2"><div><label>날짜</label><input id="f-day" type="date" value="' + ((s && s.day) || (CFG.trip || {}).startDate || "") + '"></div>' +
+      '<div><label>시간</label><input id="f-time" type="time" value="' + ((s && s.time) || "") + '"></div></div>' +
+      '<label>제목</label><input id="f-title" placeholder="예: 바베큐 시작" value="' + (s ? esc(s.title) : "") + '">' +
+      '<label>장소 (선택)</label><input id="f-place" placeholder="예: 카루소" value="' + (s && s.place ? esc(s.place) : "") + '">' +
+      '<label>링크 (선택)</label><input id="f-link" type="url" inputmode="url" placeholder="https://naver.me/…" value="' + (s && s.link ? esc(s.link) : "") + '">' +
+      '<label>내용 (선택)</label><textarea id="f-desc2" rows="2" placeholder="메모">' + (s && s.desc ? esc(s.desc) : "") + "</textarea>" +
+      '<div class="modal-foot">' + (editId ? '<button class="link-danger" data-action="del-schedule" data-id="' + editId + '">삭제</button>' : "") +
+      '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-schedule" data-edit="' + (editId || "") + '">저장</button></div>';
+    openModal(h);
+  }
   function formNewPacking(type) {
     var shared = (type === "shared");
     openModal("<h2>" + (shared ? "공용" : "개인") + " 준비물 추가</h2>" +
@@ -867,12 +894,14 @@
     }
 
     /* 공지/일정/준비물 */
-    if (a === "new-notice") { if (isMeAdmin()) formNewNotice(); return; }
-    if (a === "save-notice") { saveNotice(); return; }
-    if (a === "del-notice") { var nid = t.getAttribute("data-id"); var nn = obj(DB.notices)[nid]; if (!nn || !(isMeAdmin() || nn.by === me)) return; if (confirm("공지를 삭제할까요?")) Store.remove("notices/" + nid); return; }
-    if (a === "new-schedule") { if (isMeAdmin()) formNewSchedule(); return; }
-    if (a === "save-schedule") { saveSchedule(); return; }
-    if (a === "del-schedule") { if (isMeAdmin() && confirm("일정을 삭제할까요?")) Store.remove("schedule/" + t.getAttribute("data-id")); return; }
+    if (a === "new-notice") { if (isMeAdmin()) formNotice(null); return; }
+    if (a === "edit-notice") { var en = obj(DB.notices)[t.getAttribute("data-id")]; if (en && (isMeAdmin() || en.by === me)) formNotice(t.getAttribute("data-id")); return; }
+    if (a === "save-notice") { saveNotice(t.getAttribute("data-edit")); return; }
+    if (a === "del-notice") { var nid = t.getAttribute("data-id"); var nn = obj(DB.notices)[nid]; if (!nn || !(isMeAdmin() || nn.by === me)) return; if (confirm("공지를 삭제할까요?")) { Store.remove("notices/" + nid); closeModal(); } return; }
+    if (a === "new-schedule") { if (isMeAdmin()) formSchedule(null); return; }
+    if (a === "edit-schedule") { if (isMeAdmin()) formSchedule(t.getAttribute("data-id")); return; }
+    if (a === "save-schedule") { saveSchedule(t.getAttribute("data-edit")); return; }
+    if (a === "del-schedule") { if (isMeAdmin() && confirm("일정을 삭제할까요?")) { Store.remove("schedule/" + t.getAttribute("data-id")); closeModal(); } return; }
     if (a === "new-packing") { var pty = t.getAttribute("data-type") || "personal"; if (pty === "shared" && !canManage(me)) return; formNewPacking(pty); return; }
     if (a === "save-packing") { savePacking(); return; }
     if (a === "del-pack") { var dpid = t.getAttribute("data-id"), dpk = obj(DB.packing)[dpid]; if (!dpk) return; var ok = dpk.type === "personal" ? (dpk.by === me || canManage(me)) : canManage(me); if (!ok) return; if (confirm("준비물을 삭제할까요?")) Store.remove("packing/" + dpid); return; }
@@ -934,8 +963,21 @@
     if (editId) Store.set("expenses/" + editId, data); else Store.push("expenses", data);
     closeModal();
   }
-  function saveNotice() { if (!isMeAdmin()) return; var v = $("#f-text").value.trim(); if (!v) return; Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, ts: Date.now() }); closeModal(); }
-  function saveSchedule() { if (!isMeAdmin()) return; var day = $("#f-day").value, time = $("#f-time").value, title = $("#f-title").value.trim(); if (!day || !time || !title) { alert("날짜·시간·내용을 모두 입력하세요"); return; } Store.push("schedule", { day: day, time: time, title: clampStr(title, 100), ts: Date.now() }); closeModal(); }
+  function saveNotice(editId) {
+    if (!isMeAdmin() && !(editId && (obj(DB.notices)[editId] || {}).by === me)) return;
+    var v = $("#f-text").value.trim(); if (!v) return;
+    if (editId) Store.update("notices/" + editId, { text: clampStr(v, 1000), pinned: $("#f-pin").checked });
+    else Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, ts: Date.now() });
+    closeModal();
+  }
+  function saveSchedule(editId) {
+    if (!isMeAdmin()) return;
+    var day = $("#f-day").value, time = $("#f-time").value, title = $("#f-title").value.trim();
+    if (!day || !time || !title) { alert("날짜·시간·제목을 입력하세요"); return; }
+    var data = { day: day, time: time, title: clampStr(title, 100), place: clampStr($("#f-place").value, 60), link: clampStr($("#f-link").value, 300), desc: clampStr($("#f-desc2").value, 500), ts: (editId && obj(DB.schedule)[editId] ? obj(DB.schedule)[editId].ts : Date.now()) };
+    if (editId) Store.set("schedule/" + editId, data); else Store.push("schedule", data);
+    closeModal();
+  }
   function savePacking() {
     var ptype = (($("#f-ptype") || {}).value) || "personal";
     if (ptype === "shared" && !canManage(me)) return;

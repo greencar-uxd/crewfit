@@ -106,8 +106,6 @@ window.SRK_CONFIG = {
     notices: [
       { by: "m01", pinned: true,
         text: "🏠 숙소: 양주전원주택체험 (별장·양주시·침실 3개·★4.74). 기준 16인 / 참석 17명이라 +1명만큼 아늑할 수 있어요 ❤️\nhttps://www.airbnb.co.kr/rooms/13856178" },
-      { by: "m01", pinned: true,
-        text: "🍽️ 식당·장소 링크\n• 1일차 집결(한식): 카루소 — 양주시 장흥면 일영로 403, 09시 오픈 (청국장·쭈삼 맛집) https://naver.me/xM51htvp\n• 2일차 아점: 연곡리 순두부 https://naver.me/FHOoMk0T\n• 2일차 커피: 레드버치 https://naver.me/IFE9m03O\n• 🏖️ 수영장 https://naver.me/x0OO0Iri" },
       { by: "m01",
         text: "🛟 수영장 이용 안전수칙\n• 머리 덮는 모자 필수 (야구모자·썬캡·두건 등)\n• 유리병 음료·주류 반입 금지 (캔 OK)\n• 혼잡 시 큰 튜브는 안전요원 판단에 따라 제한\n• 수영복·나일론 반바지/반팔/래쉬가드 OK (면 소재 불가)\n• 신장 120cm 이하는 성인풀 제한 / 가슴 넘는 물엔 구명조끼+보호자 동반\n• 우천시 정상영업, 천재지변 운영불가 시 전액 환불" },
       { by: "m01",
@@ -118,13 +116,13 @@ window.SRK_CONFIG = {
         text: "🚩 현수막 주문 완료했습니다!" }
     ],
     schedule: [
-      { day: "2026-06-27", time: "11:00", title: "식당(카루소) 집결 · 식사 🍚" },
-      { day: "2026-06-27", time: "12:00", title: "편의점에서 간식·음료 구매 후 수영장 입장" },
+      { day: "2026-06-27", time: "11:00", title: "식당 집결 · 식사", place: "카루소 (한식)", link: "https://naver.me/xM51htvp", desc: "양주시 장흥면 일영로 403 · 청국장·쭈삼 맛집 (09시 오픈)" },
+      { day: "2026-06-27", time: "12:00", title: "간식·음료 구매 후 수영장 입장", place: "일영랜드 수영장", link: "https://naver.me/x0OO0Iri", desc: "입장권 현장 별도 (인당 17,000원)" },
       { day: "2026-06-27", time: "16:00", title: "수영 종료" },
-      { day: "2026-06-27", time: "17:30", title: "마트 장보기 & 숙소 체크인" },
-      { day: "2026-06-27", time: "20:30", title: "저녁식사 마무리 후 본격적으로 놀기 🎉" },
+      { day: "2026-06-27", time: "17:30", title: "마트 장보기 & 숙소 체크인", place: "양주전원주택체험 (펜션)", link: "https://www.airbnb.co.kr/rooms/13856178", desc: "별장·침실 3개·★4.74 / 기준 16인" },
+      { day: "2026-06-27", time: "20:30", title: "저녁식사 마무리 후 본격적으로 놀기" },
       { day: "2026-06-28", time: "11:00", title: "체크아웃" },
-      { day: "2026-06-28", time: "12:30", title: "아점 & 커피 (연곡리 순두부 · 레드버치) ☕" },
+      { day: "2026-06-28", time: "12:30", title: "아점", place: "연곡리 순두부", link: "https://naver.me/FHOoMk0T", desc: "이후 커피: 레드버치 https://naver.me/IFE9m03O" },
       { day: "2026-06-28", time: "13:30", title: "해산" }
     ],
     packing: [
