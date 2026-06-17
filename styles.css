@@ -690,3 +690,18 @@ h1, h2 { margin: 0; }
 .paid-wait { display: inline-flex; align-items: center; gap: 8px; color: var(--warn); font-weight: 700; font-size: 13px; }
 .paid-wait .link, .paid-done .link { color: var(--muted); font-size: 12px; }
 .pay-wait-in { color: var(--muted); font-weight: 700; font-size: 13px; }
+
+
+/* ============================================================
+   B Quick wins — 게이트 세션 정체성 · 마감 투표 결과 · 포커스 가시성 · 상태 라벨 대비
+   ============================================================ */
+.gate-sess { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 12px; }
+.pd-result { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 800; color: var(--pos); margin: 8px 0 0; }
+.opt-row.win .opt { border-color: var(--pos); }
+.cp-near { color: var(--pos); font-size: 12px; }
+.gate-name .me-tag { color: var(--pos); font-size: 12px; }
+.sc-tag.live { color: var(--pos); }
+button:focus-visible, [data-action]:focus-visible, .opt:focus-visible, a:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}

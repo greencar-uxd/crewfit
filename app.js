@@ -448,7 +448,7 @@
       (loggedIn ? '<button class="me-chip" data-action="open-profile">' + avatar(me, 24) + "<span>" + esc(memberName(me)) + "</span></button>" : "");
   }
   function renderNav() {
-    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "알림"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
+    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
       return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
@@ -484,11 +484,11 @@
     bindPin($("#i-pin"), $("#pin-cells"), $("#pin-err"));
   }
   function gateName() {
-    var roster = CFG.roster || [];
+    var roster = CFG.roster || [], sess = currentSession() || {};
     return '<div class="gate-card">' +
       '<button class="gate-back" data-action="go-hub" aria-label="세션 목록으로">' + icon("back", 18) + "<span>세션 목록</span></button>" +
-      '<div class="gate-emoji">' + icon("mountain", 48) + '</div>' +
-      "<h1>" + esc((CFG.trip || {}).title || "MT") + "</h1>" +
+      '<div class="gate-emoji"' + (sess.emoji ? ' style="font-size:44px"' : "") + '>' + (sess.emoji ? esc(sess.emoji) : icon("mountain", 48)) + '</div>' +
+      "<h1>" + esc(sess.title || (CFG.trip || {}).title || "MT") + "</h1>" +
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot"></span></div>' +
       '<p class="gate-p">본인 이름을 선택하세요. 4자리 인증번호로 입장합니다.<br>어느 기기에서든 같은 인증번호로 들어올 수 있어요.</p>' +
       '<div class="gate-grid" id="gate-grid">' + roster.map(function (m) {
@@ -499,17 +499,18 @@
       }).join("") + "</div></div>";
   }
   function gatePin() {
-    var id = intro.pick, dm = obj(DB.members)[id] || {}, verify = !!dm.pin;
+    var id = intro.pick, dm = obj(DB.members)[id] || {}, verify = !!dm.pin, sess = currentSession() || {};
     return '<div class="gate-card"><div class="gate-emoji">' + icon("key", 48) + '</div>' +
       "<h1>" + (verify ? "인증번호 입력" : "인증번호 설정") + "</h1>" +
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span>' + (verify ? "" : '<span class="step-dot"></span>') + "</div>" +
+      '<div class="gate-sess">' + (sess.emoji ? esc(sess.emoji) + " " : "") + esc(sess.title || "") + "</div>" +
       '<div class="profile-who" style="justify-content:center">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
       '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "입장할 때 쓸 4자리 인증번호를 정하세요.") + "</p>" +
       pinCellsHtml("i-pin", "pin-cells") +
       '<div id="pin-err" class="pin-err"></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
       '<button class="btn-pri" data-action="pin-submit" data-id="' + id + '">' + (verify ? "입장" : "다음 →") + "</button></div>" +
-      (verify ? '<p class="gate-p" style="margin-top:12px;font-size:12px">인증번호를 잊었다면 운영진(김찬우·강민관)에게 초기화를 요청하세요.</p>' : "") +
+      (verify ? '<p class="gate-p" style="margin-top:12px;font-size:12px">인증번호를 잊었다면 단톡방에서 운영진에게 초기화를 요청하세요.</p>' : "") +
       "</div>";
   }
   function gateProfile() {
@@ -539,7 +540,7 @@
      ============================================================ */
   function viewHub() {
     var list = allSessions(), h = "";
-    if (Store.mode === "demo") h += '<div class="demo-note">📍 <b>데모 모드</b> — 이 기기에만 저장돼요. 실시간 공유는 Firebase 연결 후 켜집니다.</div>';
+    if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 지금 입력한 투표·정산·공지는 이 기기에만 저장되고 다른 크루원에겐 안 보여요. <button class="link" data-action="reload-app">새로고침</button> 후 다시 시도해 주세요.</div>';
     h += '<div class="hub-head"><h1>우리들의 세션</h1><p class="hub-sub">슈퍼리치키드가 함께한 · 함께할 일정을 모아봤어요.</p></div>';
     h += '<div class="list-grid sess-grid">';
     list.forEach(function (s) { h += sessionCard(s); });
@@ -621,7 +622,7 @@
     var bal = computeBalances(), myNet = Math.round(bal[me] || 0);
     var mapUrl = "https://map.naver.com/v5/search/" + encodeURIComponent(t.address || t.location || "");
     var h = "";
-    if (Store.mode === "demo") h += '<div class="demo-note">📍 <b>데모 모드</b> — 이 기기에만 저장돼요. 실시간 공유는 Firebase 연결 후 켜집니다.</div>';
+    if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 지금 입력한 투표·정산·공지는 이 기기에만 저장되고 다른 크루원에겐 안 보여요. <button class="link" data-action="reload-app">새로고침</button> 후 다시 시도해 주세요.</div>';
     h += notifBanners();
     var heroImg = obj(DB.trip).heroImage || t.heroImage || "";
     var heroStyle = heroImg ? ' style="background-image:linear-gradient(180deg, rgba(0,0,0,.34) 0%, rgba(0,0,0,.68) 100%), url(' + esc(heroBg(heroImg)) + ')"' : "";
@@ -701,15 +702,16 @@
   function viewPollDetail(id) {
     var p = obj(DB.polls)[id]; if (!p) { state.pollId = null; return viewVote(); }
     var opts = entries(p.options), voters = voterCount(p), myVote = obj(p.votes)[me] || {}, closed = p.status === "closed";
+    var maxCnt = -1; if (closed) opts.forEach(function (o) { var c = countVotes(p, o[0]); if (c > maxCnt) maxCnt = c; });
     var canEdit = isMeAdmin() || p.createdBy === me;
     var h = '<div class="page-head"><button class="back" data-action="back-vote">‹ 투표</button>' +
       (canEdit ? '<button class="link-danger" data-action="del-poll" data-id="' + id + '">삭제</button>' : "") + "</div>";
     h += '<div class="card poll-detail"><div class="pd-type">' + (p.type === "multi" ? "여러 개 선택 가능" : "하나만 선택") + (closed ? ' · <span class="closed-tag">마감됨</span>' : "") + "</div>" +
-      '<h1 class="pd-title">' + esc(p.title) + "</h1>" + (p.desc ? '<p class="pd-desc">' + esc(p.desc) + "</p>" : "");
+      '<h1 class="pd-title">' + esc(p.title) + "</h1>" + (p.desc ? '<p class="pd-desc">' + esc(p.desc) + "</p>" : "") + (closed && maxCnt > 0 ? '<div class="pd-result">' + icon("check", 15) + " 결정: " + opts.filter(function (o) { return countVotes(p, o[0]) === maxCnt; }).map(function (o) { return esc(o[1].label); }).join(" · ") + " (" + maxCnt + "표)</div>" : "");
     opts.forEach(function (o) {
       var oid = o[0], cnt = countVotes(p, oid), pct = voters ? Math.round(cnt / voters * 100) : 0;
       var who = entries(p.votes).filter(function (kv) { return kv[1] && kv[1][oid]; }).map(function (kv) { return kv[0]; });
-      h += '<div class="opt-row"><button class="opt big' + (myVote[oid] ? " mine" : "") + (closed ? " dis" : "") + '" ' + (closed ? "disabled" : 'data-action="vote" data-poll="' + id + '" data-opt="' + oid + '"') + ">" +
+      h += '<div class="opt-row' + (closed && maxCnt > 0 && cnt === maxCnt ? " win" : "") + '"><button class="opt big' + (myVote[oid] ? " mine" : "") + (closed ? " dis" : "") + '" ' + (closed ? "disabled" : 'data-action="vote" data-poll="' + id + '" data-opt="' + oid + '"') + ">" +
         '<span class="opt-bar" style="width:' + pct + '%"></span><span class="opt-l">' + (myVote[oid] ? "✓ " : "") + esc(o[1].label) + "</span><span class=\"opt-c\">" + cnt + " · " + pct + "%</span></button>" +
         (who.length ? '<div class="opt-who">' + who.map(function (w) { return avatar(w, 22); }).join("") + "</div>" : "") + "</div>";
     });
@@ -1206,6 +1208,7 @@
 
     /* 상위(허브) / 세션 */
     if (a === "go-hub") { state.screen = "hub"; state.pollId = null; render(); return; }
+    if (a === "reload-app") { location.reload(); return; }
     if (a === "open-session") {
       var sid = t.getAttribute("data-id"), so = sessionById(sid);
       if (!so) return;
