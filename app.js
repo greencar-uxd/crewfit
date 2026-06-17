@@ -618,11 +618,15 @@
   }
   function clubCard(c) {
     var n = sessionsOfClub(c.id).length;
+    var mine = !!(me && clubRoster(c.id).some(function (r) { return r.id === me; }));
+    var role = mine ? roleOf(me) : null;
+    var label = mine ? (role === "manager" ? "관리자" : role === "staff" ? "운영진" : "멤버") : "미가입";
+    var cls = mine ? (role === "manager" ? "mgr" : role === "staff" ? "admin" : "crew") : "guest";
     return '<div class="card sess-card acc-' + esc(c.accent || "red") + '" data-action="open-club" data-id="' + esc(c.id) + '">' +
       '<div class="sc-top"><span class="sc-emoji">' + (c.emoji || "🏅") + '</span><span class="sc-badge now">' + esc(sportLabel(c.sport)) + "</span></div>" +
       '<div class="sc-title">' + esc(c.name) + "</div>" +
       (c.desc ? '<div class="sc-subtitle">' + esc(c.desc) + "</div>" : "") +
-      '<div class="sc-foot"><span class="sc-tag live">동호회</span><span class="sc-go">세션 ' + n + "개 ›</span></div>" +
+      '<div class="sc-foot"><span class="sc-tag role-' + cls + '">' + label + '</span><span class="sc-go">세션 ' + n + "개 ›</span></div>" +
       "</div>";
   }
   function viewHub() {
@@ -663,7 +667,7 @@
   function hubRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
-    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) 기준</div></div>' +
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     if (!rows.length) {
       h += '<div class="empty-msg">아직 기록된 대전이 없어요.' + (canRec ? ' 위 <b>대전 기록</b>으로 첫 경기를 남겨보세요.' : ' 동호회 멤버로 입장하면 대전을 기록할 수 있어요.') + '</div>';
@@ -702,6 +706,7 @@
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
     var p2def = (roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "";
     openModal("<h2>3쿠션 대전 기록</h2>" +
+      '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 기준' + "</p>" +
       '<div class="mt-form">' +
       '<div class="mt-col"><label>선수 1</label><select id="m-p1">' + opt(me) + "</select>" +
         '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span><span><label>득점</label><input id="m-s1" type="number" inputmode="numeric" min="0"></span><span><label>하이런</label><input id="m-h1" type="number" inputmode="numeric" min="0" placeholder="선택"></span></div></div>' +

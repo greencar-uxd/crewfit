@@ -777,3 +777,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .mt-3 span { flex: 1; }
 .mt-3 label { font-size: 12px; margin-bottom: 4px; }
 .mt-3 input { width: 100%; }
+/* 동호회 카드: 내 자격 뱃지 */
+.sc-tag.role-mgr { color: var(--accent, var(--pri)); background: var(--accent-soft, rgba(229,48,42,.12)); }
+.sc-tag.role-admin { color: var(--text-primary, var(--ink)); background: var(--surface-sunken, rgba(0,0,0,.05)); }
+.sc-tag.role-crew { color: var(--text-secondary, var(--muted)); background: var(--surface-sunken, rgba(0,0,0,.05)); }
+.sc-tag.role-guest { color: var(--text-secondary, var(--muted)); background: transparent; border: 1px dashed var(--line); }
