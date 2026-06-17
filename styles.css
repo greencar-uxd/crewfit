@@ -736,3 +736,5 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   /* 읽기용 상세는 가독 폭 유지 */
   .sinfo { max-width: 760px; }
 }
+.sc-tag.cat { color: var(--text-secondary); background: var(--surface-sunken); }
+.tl-edit { background: none; border: none; color: var(--muted); padding: 4px; display: inline-flex; align-items: center; cursor: pointer; flex: none; }

@@ -605,7 +605,7 @@
         (s.lodging ? "<div>" + icon("home", 14) + " " + esc(s.lodging) + "</div>" : "") +
       "</div>" +
       (s.summary ? '<div class="sc-summary">' + esc(s.summary) + "</div>" : "") +
-      '<div class="sc-foot"><span class="sc-tag ' + (isApp ? "live" : "info") + '">' + (isApp ? "실시간 앱" : "일정 정보") + '</span><span class="sc-go">' + (isApp ? "입장" : "자세히") + " ›</span></div>" +
+      '<div class="sc-foot"><span class="sc-tag cat">' + esc(s.category || "모임") + '</span><span class="sc-go">' + (isApp ? "입장" : "자세히") + " ›</span></div>" +
       "" +
       "</div>";
   }
@@ -677,6 +677,7 @@
       '<label>\uC7A5\uC18C (\uC120\uD0DD)</label><input id="f-sloc" placeholder="\uC608: \uBE44\uBC1C\uB514\uD30C\uD06C" value="' + (ed ? esc(ed.location || "") : "") + '">' +
       '<label>\uC219\uC18C (\uC120\uD0DD)</label><input id="f-slodge" placeholder="\uC608: \uC18C\uB178\uBCA8 \uBE44\uBC1C\uB514\uD30C\uD06C" value="' + (ed ? esc(ed.lodging || "") : "") + '">' +
       '<label>\uC0C9\uC0C1</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + esc(curAcc) + '"></div>' +
+      '<label>분류</label><select id="f-scat">' + ["정기 모임", "외부 활동", "MT·여행", "대회·시합", "번개", "기타"].map(function (cc) { var curC = (ed && ed.category) || "정기 모임"; return '<option' + (cc === curC ? " selected" : "") + ">" + cc + "</option>"; }).join("") + '</select>' +
       '<label>\uCC38\uAC00 \uD06C\uB8E8\uC6D0 <button class="mini" data-action="sess-part-all">\uC804\uCCB4</button><button class="mini" data-action="sess-part-none">\uD574\uC81C</button></label>' +
       '<p class="pf-note" style="margin:0 0 8px">\uC774 \uC138\uC158\uC5D0 \uCC38\uAC00\uD560 \uC0AC\uB78C\uB9CC \uACE8\uB77C\uC694. \uC815\uC0B0\u00B7\uCE74\uD480\u00B7\uD22C\uD45C\uAC00 \uC120\uD0DD\uD55C \uC0AC\uB78C \uAE30\uC900\uC73C\uB85C \uAD6C\uC131\uB3FC\uC694.</p>' +
       '<div class="part-grid">' + (CFG.roster || []).map(function (m) { return '<label class="pchk"><input type="checkbox" class="f-sess-part" value="' + m.id + '"' + (spOn(m.id) ? " checked" : "") + ">" + avatar(m.id, 24) + "<span>" + esc(m.name) + "</span></label>"; }).join("") + '</div>' +
@@ -1046,7 +1047,7 @@
         var p = kv[1];
         h += '<div class="pk-item' + (p.done ? " done" : "") + '"><button class="pk-check' + (mgr ? "" : " ro") + '"' + (mgr ? ' data-action="toggle-pack" data-id="' + kv[0] + '"' : "") + ">" + (p.done ? "✓" : "") + "</button>" +
           '<div class="pk-label">' + esc(p.label) + (p.assignee ? ' <span class="pk-who">' + chip(p.assignee) + "</span>" : ' <span class="pk-need">담당 미정</span>') + "</div>" +
-          (mgr ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
+          (mgr ? '<button class="tl-edit" data-action="edit-pack" data-id="' + kv[0] + '" aria-label="수정">' + icon("edit", 14) + '</button><button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
       });
       h += "</div>";
     }
@@ -1057,7 +1058,7 @@
       personal.forEach(function (kv) {
         var p = kv[1], iReady = !!obj(p.ready)[me], cnt = readyCount(p), canDel = (p.by === me || mgr);
         h += '<div class="pk-item personal"><button class="pk-check ' + (iReady ? "on" : "") + '" data-action="toggle-ready" data-id="' + kv[0] + '">' + (iReady ? "✓" : "") + "</button>" +
-          '<div class="pk-label">' + esc(p.label) + '<span class="pk-prog">' + cnt + "/" + memberCount() + "명 준비완료</span></div>" + (canDel ? '<button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
+          '<div class="pk-label">' + esc(p.label) + '<span class="pk-prog">' + cnt + "/" + memberCount() + "명 준비완료</span></div>" + (canDel ? '<button class="tl-edit" data-action="edit-pack" data-id="' + kv[0] + '" aria-label="수정">' + icon("edit", 14) + '</button><button class="tl-del" data-action="del-pack" data-id="' + kv[0] + '">×</button>' : "") + "</div>";
       });
       h += "</div>";
     }
@@ -1149,13 +1150,14 @@
       '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-schedule" data-edit="' + (editId || "") + '">저장</button></div>';
     openModal(h);
   }
-  function formNewPacking(type) {
-    var shared = (type === "shared");
-    openModal("<h2>" + (shared ? "공용" : "개인") + " 준비물 추가</h2>" +
-      '<label>준비물</label><input id="f-label" placeholder="예: ' + (shared ? "아이스박스" : "수영복·수건") + '">' +
-      (shared ? '<label>담당자 (선택)</label><select id="f-assignee"><option value="">미정</option>' + memberOptions("") + "</select>" : "") +
+  function formNewPacking(type, editId) {
+    var ed = editId ? obj(DB.packing)[editId] : null;
+    var shared = ed ? ed.type === "shared" : (type === "shared");
+    openModal("<h2>" + (shared ? "공용" : "개인") + " 준비물 " + (ed ? "수정" : "추가") + "</h2>" +
+      '<label>준비물</label><input id="f-label" placeholder="예: ' + (shared ? "아이스박스" : "수영복·수건") + '" value="' + (ed ? esc(ed.label) : "") + '">' +
+      (shared ? '<label>담당자 (선택)</label><select id="f-assignee"><option value="">미정</option>' + memberOptions(ed ? ed.assignee || "" : "") + "</select>" : "") +
       '<input type="hidden" id="f-ptype" value="' + (shared ? "shared" : "personal") + '">' +
-      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-packing">추가</button></div>');
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-packing"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "추가") + "</button></div>");
   }
 
   function formPin() {
@@ -1319,7 +1321,8 @@
         emoji: ($("#f-emoji") || {}).value || "📌", accent: ($("#f-saccent") || {}).value || "red",
         title: stitle, subtitle: clampStr(($("#f-ssub") || {}).value, 40),
         startDate: sd, endDate: sed || sd,
-        location: clampStr(($("#f-sloc") || {}).value, 60), lodging: clampStr(($("#f-slodge") || {}).value, 60)
+        location: clampStr(($("#f-sloc") || {}).value, 60), lodging: clampStr(($("#f-slodge") || {}).value, 60),
+        category: ($("#f-scat") || {}).value || "정기 모임"
       };
       var spchecks = Array.prototype.slice.call(document.querySelectorAll(".f-sess-part:checked")).map(function (c) { return c.value; });
       var spmap = {}; spchecks.forEach(function (id) { spmap[id] = true; });
@@ -1427,7 +1430,8 @@
     if (a === "save-schedule") { saveSchedule(t.getAttribute("data-edit")); return; }
     if (a === "del-schedule") { if (isMeAdmin() && confirm("일정을 삭제할까요?")) { Store.remove("schedule/" + t.getAttribute("data-id")); closeModal(); } return; }
     if (a === "new-packing") { var pty = t.getAttribute("data-type") || "personal"; if (pty === "shared" && !canManage(me)) return; formNewPacking(pty); return; }
-    if (a === "save-packing") { savePacking(); return; }
+    if (a === "save-packing") { savePacking(t.getAttribute("data-edit")); return; }
+    if (a === "edit-pack") { var epid = t.getAttribute("data-id"), ep = obj(DB.packing)[epid]; if (!ep) return; var eok = ep.type === "personal" ? (ep.by === me || canManage(me)) : canManage(me); if (!eok) return; formNewPacking(ep.type, epid); return; }
     if (a === "del-pack") { var dpid = t.getAttribute("data-id"), dpk = obj(DB.packing)[dpid]; if (!dpk) return; var ok = dpk.type === "personal" ? (dpk.by === me || canManage(me)) : canManage(me); if (!ok) return; if (confirm("준비물을 삭제할까요?")) Store.remove("packing/" + dpid); return; }
     if (a === "toggle-pack") { var id = t.getAttribute("data-id"); var pk = obj(DB.packing)[id]; if (!pk || !canManage(me)) return; Store.update("packing/" + id, { done: !pk.done }); return; }
     if (a === "toggle-ready") { var id2 = t.getAttribute("data-id"); var pk2 = obj(DB.packing)[id2]; if (!pk2) return; var rd = obj(pk2.ready); if (rd[me]) Store.remove("packing/" + id2 + "/ready/" + me); else Store.set("packing/" + id2 + "/ready/" + me, true); return; }
@@ -1504,10 +1508,17 @@
     if (editId) Store.set("schedule/" + editId, data); else { Store.push("schedule", data); notifyCrew(memberName(me) + "님이 일정을 추가했어요: " + clampStr(title, 50), "schedule"); }
     closeModal();
   }
-  function savePacking() {
+  function savePacking(editId) {
     var ptype = (($("#f-ptype") || {}).value) || "personal";
     if (ptype === "shared" && !canManage(me)) return;
     var label = $("#f-label").value.trim(); if (!label) return;
+    if (editId) {
+      var cur = obj(DB.packing)[editId]; if (!cur) return;
+      var ok = cur.type === "personal" ? (cur.by === me || canManage(me)) : canManage(me); if (!ok) return;
+      var upd = { label: clampStr(label, 80) };
+      if (cur.type === "shared") upd.assignee = (($("#f-assignee") || {}).value) || null;
+      Store.update("packing/" + editId, upd); closeModal(); return;
+    }
     var item = { label: clampStr(label, 80), type: ptype, done: false, ready: {}, by: me, ts: Date.now() };
     if (ptype === "shared") item.assignee = (($("#f-assignee") || {}).value) || null;
     Store.push("packing", item); closeModal();
