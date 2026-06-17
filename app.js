@@ -430,7 +430,7 @@
     sess = sess || currentSession() || {};
     var unread = unreadNotifs().length, dd = ddayLabelOf(sess.startDate);
     $("#app-header").innerHTML =
-      '<button class="hd-back" data-action="nav-back" aria-label="뒤로가기">' + icon("back", 22) + "<span>세션</span></button>" +
+      '<button class="hd-back" data-action="go-hub" aria-label="세션 목록으로">' + icon("back", 22) + "<span>세션</span></button>" +
       '<div class="hd-left"><div class="hd-title">' + esc(sess.title || "MT") + "</div>" +
       '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span> ' : "") + (dd ? '<span class="badge-dday">' + dd + "</span>" : "") + (sess.subtitle ? " " + esc(sess.subtitle) : "") + "</div></div>" +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
@@ -593,7 +593,7 @@
     var emojis = ["🏖️", "🧗", "⛺", "🏔️", "🎿", "🏕️", "🍻", "🎉", "🚗", "🌊", "🍁", "❄️"];
     var accents = [["red", "레드"], ["blue", "블루"], ["green", "그린"], ["purple", "퍼플"], ["orange", "오렌지"]];
     openModal("<h2>세션 추가하기</h2>" +
-      '<p class="pf-note" style="margin:0 0 12px">새 일정을 카드로 추가해요. 추가한 카드는 누르면 일정 정보 페이지로 열립니다.</p>' +
+      '<p class="pf-note" style="margin:0 0 12px">새 세션을 추가해요. 추가하면 홈·정산·카풀·앨범·준비물이 있는 실시간 세션으로 열려요.</p>' +
       '<label>이모지</label><div class="emoji-pick" id="f-emoji-wrap">' +
         emojis.map(function (e, i) { return '<button type="button" class="emoji-b' + (i === 0 ? " on" : "") + '" data-action="pick-emoji" data-e="' + e + '">' + e + "</button>"; }).join("") +
         '<input type="hidden" id="f-emoji" value="' + emojis[0] + '"></div>' +
@@ -624,9 +624,9 @@
       (isMeAdmin() ? '<button class="hero-edit" data-action="pick-hero" aria-label="배경 변경"' + (heroBusy ? " disabled" : "") + ">" + icon("camera", 15) + (heroBusy ? '<span class="he-busy"></span>' : "") + "</button>" : "") +
       '<div class="hero-dday">' + ddayLabel() + "</div>" +
       '<div class="hero-title">' + esc(t.title || "") + "</div>" + (t.subtitle ? '<div class="hero-sub">' + esc(t.subtitle) + "</div>" : '<div style="height:10px"></div>') +
-      '<div class="hero-meta"><div>📅 ' + dateKo(t.startDate) + " → " + dateKo(t.endDate) + "</div>" +
-      '<div>📍 <a href="' + mapUrl + '" target="_blank" rel="noopener">' + esc(t.location || "") + "</a> · " + esc(t.address || "") + "</div>" +
-      '<div>🏠 ' + esc(t.lodging || "") + (t.airbnbUrl ? ' · <a href="' + esc(t.airbnbUrl) + '" target="_blank" rel="noopener">숙소 보기</a>' : "") + "</div>" +
+      '<div class="hero-meta"><div>' + icon("calendar", 14) + " " + dateKo(t.startDate) + " → " + dateKo(t.endDate) + "</div>" +
+      '<div>' + icon("pin", 14) + ' <a href="' + mapUrl + '" target="_blank" rel="noopener">' + esc(t.location || "") + "</a> · " + esc(t.address || "") + "</div>" +
+      '<div>' + icon("home", 14) + " " + esc(t.lodging || "") + (t.airbnbUrl ? ' · <a href="' + esc(t.airbnbUrl) + '" target="_blank" rel="noopener">숙소 보기</a>' : "") + "</div>" +
       (t.note ? '<div class="hero-note">' + esc(t.note) + "</div>" : "") + "</div></div>";
 
     h += '<div class="stat-row">' +
@@ -725,11 +725,11 @@
 
   /* ---------- 정산 ---------- */
   // 내 정산 카드 (본인 것만 — 송금정리·전체잔액은 비공개). 정산/마이 탭 공용
-  function mySettleCard() {
+  function mySettleCard(full) {
     var bal = computeBalances(), myNet = Math.round(bal[me] || 0);
     var transfers = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; });
     var paid = myPaidMap();
-    var h = '<div class="card my-settle big col ' + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" +
+    var h = '<div class="card my-settle big ' + (full ? "" : "col ") + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" +
       (myNet > 0 ? "받을 돈 " + won(myNet) : myNet < 0 ? "낼 돈 " + won(-myNet) : "정산 완료 ✓") + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
     if (transfers.length) {
       h += '<div class="ms-actions">';
@@ -761,7 +761,7 @@
   }
   function viewSettle() {
     var h = '<div class="page-head"><h1>정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
-    h += mySettleCard();
+    h += mySettleCard(true);
     if (tripMeta().poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(tripMeta().poolFee) + "은 현장 개별 결제예요. · 정산 완료를 누르면 받을 분에게 알림이 가요.</div>";
     h += expenseCards();
     return h;
@@ -1211,7 +1211,7 @@
       if (!stitle) { alert("세션 제목을 입력해주세요."); return; }
       var sd = ($("#f-sstart") || {}).value || "", ed = ($("#f-send") || {}).value || "";
       Store.push("sessions", {
-        kind: "info", emoji: ($("#f-emoji") || {}).value || "📌", accent: ($("#f-saccent") || {}).value || "red",
+        kind: "app", emoji: ($("#f-emoji") || {}).value || "📌", accent: ($("#f-saccent") || {}).value || "red",
         title: stitle, subtitle: clampStr(($("#f-ssub") || {}).value, 40),
         startDate: sd, endDate: ed || sd,
         location: clampStr(($("#f-sloc") || {}).value, 60), lodging: clampStr(($("#f-slodge") || {}).value, 60),
