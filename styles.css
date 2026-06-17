@@ -234,7 +234,7 @@ h1, h2 { margin: 0; }
 
 /* ---------- 홈 히어로 ---------- */
 .hero {
-  background: linear-gradient(135deg, var(--pri) 0%, #ff5a4d 50%, var(--pri-d) 120%);
+  background: linear-gradient(135deg, var(--pri-d) 0%, var(--pri) 62%, var(--pri-d) 120%);
   color: #fff; border-radius: 20px; padding: 20px; margin-bottom: 16px;
   position: relative; overflow: hidden;
 }
@@ -715,3 +715,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 /* #4 투표 더블탭 가드 — 라운드트립 동안 재탭 무시 (재렌더 시 자동 해제) */
 .opt-busy { opacity: .6; pointer-events: none; }
+
+
+/* sev2 폴리시 — 세그먼트 44px · 현장 별도 결제 라벨 */
+.seg-b { min-height: 44px; }
+.ms-onsite { color: var(--warn); font-weight: 700; }

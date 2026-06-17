@@ -64,13 +64,14 @@
   }
   var AV_COLORS = ["#e5302a", "#2fa85a", "#3b6fe0", "#e0489e", "#7c5cfc", "#f59f00", "#119d8d", "#d6336c", "#1f7ae0", "#8338ec", "#f4791f", "#08916a"];
   function avColor(id) { var s = String(id || ""), h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return AV_COLORS[h % AV_COLORS.length]; }
+  function avText(hex) { var c = String(hex).replace("#", ""); if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; var r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16); return (r*299 + g*587 + b*114) / 1000 > 140 ? "#1a1613" : "#fff"; }
   function avatarThumb(u, size) { u = String(u || ""); var px = Math.round((size || 28) * 2); return u.indexOf("/upload/") >= 0 ? u.replace("/upload/", "/upload/c_fill,g_auto,w_" + px + ",h_" + px + ",q_auto,f_auto/") : u; }
   function avatar(id, size) {
     size = size || 28;
     var m = obj(DB.members)[id] || {};
     var st = "width:" + size + "px;height:" + size + "px;";
     if (m.photoUrl) return '<span class="av av-img" style="' + st + '"><img loading="lazy" src="' + esc(avatarThumb(m.photoUrl, size)) + '" alt=""></span>';
-    return '<span class="av" style="' + st + "font-size:" + Math.round(size * 0.4) + "px;background:" + avColor(id) + '">' + esc(initials(memberName(id))) + "</span>";
+    var avbg = avColor(id); return '<span class="av" style="' + st + "font-size:" + Math.round(size * 0.4) + "px;background:" + avbg + ";color:" + avText(avbg) + '">' + esc(initials(memberName(id))) + "</span>";
   }
   function chip(id) { return '<span class="mchip">' + avatar(id, 22) + "<span>" + esc(memberName(id)) + "</span></span>"; }
 
@@ -508,7 +509,7 @@
       '<div class="steps"><span class="step-dot on"></span><span class="step-dot on"></span>' + (verify ? "" : '<span class="step-dot"></span>') + "</div>" +
       '<div class="gate-sess">' + (sess.emoji ? esc(sess.emoji) + " " : "") + esc(sess.title || "") + "</div>" +
       '<div class="profile-who" style="justify-content:center">' + avatar(id, 40) + "<span>" + esc(memberName(id)) + "</span>" + roleTag(id) + "</div>" +
-      '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "입장할 때 쓸 4자리 인증번호를 정하세요.") + "</p>" +
+      '<p class="gate-p">' + (verify ? "이 이름의 인증번호 4자리를 입력하세요." : "입장할 때 쓸 4자리 인증번호를 정하세요. 이 번호로 다른 기기에서도 '나'로 들어와요 · 1234·생일은 피해주세요.") + "</p>" +
       pinCellsHtml("i-pin", "pin-cells") +
       '<div id="pin-err" class="pin-err"></div>' +
       '<div class="intro-foot"><button class="btn-line" data-action="intro-back">‹ 뒤로</button>' +
@@ -646,7 +647,7 @@
       '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button></div>';
 
     // 내 이동(카풀)
-    h += '<div class="card col" data-action="tab" data-tab="carpool"><div class="ms-row"><span>🚗 내 이동</span><span class="ms-amt" style="font-size:12px">' + myRideLabel() + "</span></div></div>";
+    h += '<div class="card col" data-action="tab" data-tab="carpool"><div class="ms-row"><span>' + icon("car", 16) + ' 내 이동</span><span class="ms-amt" style="font-size:12px">' + myRideLabel() + "</span></div></div>";
 
     // 내 정산
     var shH = mySettleHead();
@@ -676,7 +677,7 @@
     var m = obj(DB.members)[me] || {};
     if (m.hasCar) return "운전자 · 탑승 " + passengersOf(me).length + "명";
     var rw = rideOf(me); if (rw && isValidDriver(rw)) return memberName(rw) + "님 차 탑승";
-    return "아직 미배정 — 눌러서 정하기";
+    return "아직 차 미정 — 눌러서 정하기";
   }
 
   function pollMiniCard(id, p) {
@@ -722,7 +723,7 @@
     });
     if (p.allowAddOptions && !closed) h += '<button class="add-opt" data-action="add-opt" data-id="' + id + '">+ 선택지 추가</button>';
     h += '<div class="pd-foot"><span>' + voters + "/" + memberCount() + "명 참여</span>" +
-      (canEdit ? '<button class="link" data-action="toggle-poll" data-id="' + id + '">' + (closed ? "다시 열기" : "투표 마감") + "</button>" : "") + "</div></div>";
+      (canEdit ? '<button class="link" data-action="toggle-poll" data-id="' + id + '">' + (closed ? "다시 열기 (표 유지)" : "투표 마감") + "</button>" : "") + "</div></div>";
     var comments = bySort(entries(p.comments), function (kv) { return (kv[1].ts || 0); });
     h += '<h2 class="sec">댓글 ' + comments.length + "</h2><div class=\"comments\">";
     if (!comments.length) h += '<div class="empty sm">첫 댓글을 남겨보세요</div>';
@@ -741,7 +742,7 @@
     var bal = computeBalances();
     var transfers = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; });
     var paid = myPaidMap(), recv = myReceivedMap(), sh = mySettleHead();
-    var h = '<div class="card my-settle big ' + (full ? "" : "col ") + sh.cls + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + sh.text + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
+    var h = '<div class="card my-settle big ' + (full ? "" : "col ") + sh.cls + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + sh.text + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + (tripMeta().poolFee ? ' · <span class="ms-onsite">현장 별도 ' + won(tripMeta().poolFee) + "</span>" : "") + "</div>";
     if (transfers.length) {
       h += '<div class="ms-actions">';
       transfers.forEach(function (t) {
@@ -780,7 +781,7 @@
   function viewSettle() {
     var h = '<div class="page-head"><h1>정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
     h += mySettleCard(true);
-    if (tripMeta().poolFee) h += '<div class="hint">ℹ️ 수영장 입장권 인당 ' + won(tripMeta().poolFee) + "은 현장 개별 결제예요. · 정산 완료를 누르면 받을 분에게 알림이 가요.</div>";
+    if (tripMeta().poolFee) h += '<div class="hint">정산 완료를 누르면 받을 분에게 알림이 가요. 현장 별도 결제(' + won(tripMeta().poolFee) + "/인)는 위 정산 금액에 안 들어가 있어요 — 각자 현장에서 내요.</div>";
     h += expenseCards();
     return h;
   }
@@ -791,7 +792,7 @@
     var h = '<div class="page-head"><h1>마이</h1><button class="btn-line sm" data-action="open-profile">프로필·설정</button></div>';
     h += '<div class="card my-profile col" data-action="open-profile"><div class="mp-top">' + avatar(me, 52) +
       '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" +
-      '<div class="mp-sub">' + (normStation(m.station) ? esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : "탑승") + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
+      '<div class="mp-sub">' + (normStation(m.station) ? esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : (rideOf(me) && isValidDriver(rideOf(me)) ? "탑승 (" + esc(memberName(rideOf(me))) + "님 차)" : "차 미정")) + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
       '<span class="mp-go">' + icon("edit", 18) + "</span></div></div>";
 
     h += mySettleCard();
@@ -855,8 +856,8 @@
     var h = '<div class="page-head"><h1>카풀</h1></div>';
     h += '<div class="cp-top"><div class="st-box"><div class="st-n">' + drv.length + '<i>대</i></div><div class="st-l">운전자</div></div>' +
       '<div class="st-box"><div class="st-n">' + claimedMembers().filter(function (id) { return !DB.members[id].hasCar; }).length + '<i>명</i></div><div class="st-l">탑승 인원</div></div>' +
-      '<div class="st-box"><div class="st-n">' + unas.length + '<i>명</i></div><div class="st-l">미배정</div></div></div>';
-    h += '<div class="hint">출발지(역)가 가까운 사람끼리 <b>가까움</b> 표시가 떠요. 운전자는 주변 탑승자를 모집하고, 탑승자는 직접 차를 고를 수 있어요.</div>';
+      '<div class="st-box"><div class="st-n">' + unas.length + '<i>명</i></div><div class="st-l">차 미정</div></div></div>';
+    h += '<div class="hint">같은 권역(예: 강남권·용산권)이거나 출발역이 같으면 <b>가까움</b>이 떠요. 안 떠도 직접 차를 고를 수 있어요.</div>';
 
     if (notReady) h += '<div class="empty">아직 입장한 크루원이 없어요.</div>';
     if (!drv.length && !notReady) h += '<div class="empty sm">아직 운전 가능한 분이 없어요. 인트로/프로필에서 <b>자차 있음</b>으로 설정하면 운전자 블록이 생겨요.</div>';
@@ -890,7 +891,7 @@
     }
     return h;
   }
-  function sameCluster(a, b) { var ca = clusterOf(a); return ca && ca !== "기타" && ca === clusterOf(b); }
+  function sameCluster(a, b) { var ca = clusterOf(a); if (ca && ca !== "기타" && ca === clusterOf(b)) return true; var sa = normStation((obj(DB.members)[a] || {}).station), sb = normStation((obj(DB.members)[b] || {}).station); return !!(sa && sa === sb); }
   function sortByProximity(ids, ref) {
     return ids.slice().sort(function (a, b) { return (sameCluster(ref, b) ? 1 : 0) - (sameCluster(ref, a) ? 1 : 0); });
   }
@@ -1021,9 +1022,9 @@
     var e = editId ? obj(DB.expenses)[editId] : null;
     var selPart = {}; if (e && e.participants) Object.keys(e.participants).forEach(function (k) { selPart[k] = e.participants[k]; });
     var all = !e || e.participantsAll || !e.participants;
-    var rosterChecks = (CFG.roster || []).map(function (m) {
-      var on = all || selPart[m.id] != null;
-      return '<label class="pchk"><input type="checkbox" class="f-part" value="' + m.id + '"' + (on ? " checked" : "") + ">" + avatar(m.id, 24) + "<span>" + esc(m.name) + "</span></label>";
+    var rosterChecks = sessionMemberIds().map(function (id) {
+      var on = all || selPart[id] != null;
+      return '<label class="pchk"><input type="checkbox" class="f-part" value="' + id + '"' + (on ? " checked" : "") + ">" + avatar(id, 24) + "<span>" + esc(memberName(id)) + "</span></label>";
     }).join("");
     openModal("<h2>" + (editId ? "지출 수정" : "지출 추가") + "</h2>" +
       '<label>내용</label><input id="f-title" placeholder="예: 마트 장보기" value="' + (e ? esc(e.title) : "") + '">' +
@@ -1106,7 +1107,7 @@
     var m = obj(DB.members)[me] || {};
     var dl = (CFG.stations || []).map(function (s) { return '<option value="' + esc(s.n) + '">'; }).join("");
     var photoBtns = cloudOn()
-      ? '<button class="btn-ghost sm" data-action="pick-avatar"' + (avatarBusy ? " disabled" : "") + ">" + (avatarBusy ? "변경 중…" : "📷 사진 변경") + "</button>" + (m.photoUrl && !avatarBusy ? ' <button class="link" data-action="remove-avatar">기본 이미지로</button>' : "")
+      ? '<button class="btn-ghost sm" data-action="pick-avatar"' + (avatarBusy ? " disabled" : "") + ">" + (avatarBusy ? "변경 중…" : icon("camera", 14) + " 사진 변경") + "</button>" + (m.photoUrl && !avatarBusy ? ' <button class="link" data-action="remove-avatar">기본 이미지로</button>' : "")
       : '<div class="pf-note">프로필 사진은 사진 기능(Cloudinary) 연결 후 변경할 수 있어요</div>';
     var h = '<h2>내 프로필</h2>' +
       '<div class="pf-photo">' + avatar(me, 72) + '<div class="pf-photo-act"><div class="pf-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" + photoBtns + "</div></div>" +
@@ -1261,7 +1262,7 @@
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
-    if (a === "open-notif") { var onT = t.getAttribute("data-ntype") || ""; closeModal(); state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : onT === "settle" ? "settle" : "notice"; state.pollId = null; render(); return; }
+    if (a === "open-notif") { var onT = t.getAttribute("data-ntype") || ""; closeModal(); state.pollId = null; if (onT === "ride") { state.tab = "carpool"; } else { state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : onT === "settle" ? "settle" : "notice"; } render(); return; }
 
     /* 홈 히어로 배경 */
     if (a === "pick-hero") {
@@ -1306,10 +1307,10 @@
 
     /* 카풀 */
     if (a === "ride-pick") { var pp1 = t.getAttribute("data-p"); if (!(pp1 === me || isMeAdmin())) return; chooserModal("어느 차에 탈까요? (정원 " + carCap() + "명)", drivers().filter(function (d) { return !carFull(d); }), pp1, "pick-driver"); window.__ridePass = pp1; return; }
-    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) Store.set(rideWritePath(pass), d1); closeModal(); return; }
+    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) { Store.set(rideWritePath(pass), d1); notify(d1, memberName(pass) + "님이 " + memberName(d1) + "님 차에 탔어요.", "ride"); } closeModal(); return; }
     if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || (rideOf(pp2) === me) || isMeAdmin())) return; if (pp2 !== me && !confirm(memberName(pp2) + "님을 이 차에서 내릴까요?")) return; Store.set(rideWritePath(pp2), null); return; }
     if (a === "recruit") { var d2 = t.getAttribute("data-d"); if (!(d2 === me || isMeAdmin())) return; chooserModal("주변 탑승자 모집 — 누구를 태울까요?", unassignedPass(), d2, "assign-pass", d2); return; }
-    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) Store.set(rideWritePath(pid3), d3); closeModal(); return; }
+    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) { Store.set(rideWritePath(pid3), d3); notify(pid3, memberName(d3) + "님 차에 배정됐어요.", "ride"); } closeModal(); return; }
 
     /* 사진 */
     if (a === "ph-open") { return; } // 앵커 기본 동작(원본 새 탭) 허용
