@@ -59,3 +59,15 @@
 8. 모바일 터치타깃<44px(RESP-2), 모달 오버플로우(RESP-1) 등 반응형 polish.
 
 전체 44건 원본 JSON: 이 머신 `wf_ec63dfcd-237.output` (집 머신엔 없음 — 위 요약이 이관본).
+
+## §8 전체 검증 (지시·사용성·디자인시스템, 워크플로 wf_5542f0a3-fb6)
+3트랙 7인스펙터 + 적대검증. **고칠것 40 / 기각 101.** 결론: 기능·지시·사용성은 거의 다 정상. 진짜 손본 것 3개(배포 완료):
+- 버튼 `:hover` 추가(`@media (hover:hover)`, PC 폴리시 — 기존 `:active`만 있었음)
+- 코발트 정합 토큰 추가: `--dur-fast/base/slow`, `--ease-in-out`, `--fw-*`, `--space-0/12/16/20/24` (가산적·무위험) + 버튼 transition 토큰화
+- 자가입 레이스 메시지 카피 개선(GATE-6)
+**에이전트 오판으로 안 고친 것**(검증 결과 멀쩡/의도/지시): 포커스링 "없음"=거짓(styles.css:704에 `:focus-visible` 2px focus-ring 있음), AppBar PC 제목숨김·BottomNav→사이드바=형 지시(task #1, PC헤더), Card shadow sm vs md=의도된 위계, 폰트 'Pretendard Variable'=실제 로드폰트(바꾸면 깨질 위험).
+**N/A(바닐라 앱이 안 쓰는 DS 컴포넌트 기능)**: Tag 삭제버튼, 정사각 아바타, 애니 체크마크, 전용 IconButton/Divider, Input label/hint/error 구조, chart 팔레트, 풀 타입스케일 토큰 — 필요시만 추가.
+
+## ⚠️ 형 결정 필요 (정산 관련, 코드 미변경)
+1. **신규 4명(세운·이창석·전민주·정윤)이 summer-MT 6/27 실제 참석?** → 참석이면 summer-mt memberIds에 추가(정산 분할 16→20, 5,625→4,500원). 불참이면 현행 유지.
+2. **장기범(m05) 탈퇴 맞나?** → 맞으면 roster + 두 세션 memberIds에서 제거. 아직 안 건드림(정산 묶여있어 임의제거 안 함).
