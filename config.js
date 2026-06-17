@@ -79,6 +79,7 @@ window.SRK_CONFIG = {
       clubId: "srk",
       kind: "app",
       category: "MT·여행",
+      memberIds: ["m01", "m02", "m03", "m04", "m05", "m06", "m07", "m08", "m09", "m10", "m12", "m13", "m14", "m15", "m16", "m17"],  // 정산 고정: 신규 멤버 추가해도 이 16명으로 분할 유지
       emoji: "🏖️",
       accent: "red",
       title: "슈퍼리치키드 하계 MT",
@@ -94,6 +95,7 @@ window.SRK_CONFIG = {
       clubId: "srk",
       kind: "app",
       category: "대회·시합",
+      memberIds: ["m01", "m02", "m03", "m04", "m05", "m06", "m07", "m08", "m09", "m10", "m12", "m13", "m14", "m15", "m16", "m17"],  // 정산 고정
       emoji: "🧗",
       accent: "blue",
       title: "슈퍼리치키드 딥워터솔로잉 원정",
@@ -178,7 +180,8 @@ window.SRK_CONFIG = {
     { id: "m14", name: "박설" },
     { id: "m15", name: "김태순" },
     { id: "m16", name: "김종민" },
-    { id: "m17", name: "강민관", role: "manager" }
+    { id: "m17", name: "강민관", role: "manager" },
+    { id: "m18", name: "세운" }, { id: "m19", name: "이창석" }, { id: "m20", name: "전민주" }, { id: "m21", name: "정윤" }
   ],
 
   /* ── 4) 지하철역 목록 (출발지 선택용) · c = 권역(인접 그룹) ────────

@@ -274,7 +274,9 @@
   }
   // 현재 세션의 멤버 ID (participants 있으면 그 부분집합, 없으면 전체 = summer-mt 호환)
   function sessionMemberIds() {
-    var p = DB.participants, ids = clubRoster().map(function (r) { return r.id; });
+    var s = currentSession() || {}, ids = clubRoster().map(function (r) { return r.id; });
+    if (s.memberIds && s.memberIds.length) return s.memberIds.slice();  // 세션 고정 멤버(정산 안정)
+    var p = DB.participants;
     if (p && Object.keys(p).length) return Object.keys(p).filter(function (id) { return ids.indexOf(id) >= 0; });
     return ids;
   }
