@@ -210,7 +210,7 @@
      - 콘텐츠(trip·notices·schedule·packing·polls·expenses·photos·participants·paid)는
        세션별. summer-mt는 레거시 호환으로 root에 그대로, 그 외는 s/{id}/ 아래.
      ============================================================ */
-  var SESSION_COLLS = { trip: 1, notices: 1, schedule: 1, packing: 1, polls: 1, expenses: 1, photos: 1, participants: 1, paid: 1, received: 1 };
+  var SESSION_COLLS = { trip: 1, notices: 1, schedule: 1, packing: 1, polls: 1, expenses: 1, photos: 1, participants: 1, paid: 1, received: 1, rides: 1 };
   function sessBase() { return state.sessionId === "summer-mt" ? "" : ("s/" + state.sessionId + "/"); }
   function P(path) { var first = String(path).split("/")[0]; return SESSION_COLLS[first] ? (sessBase() + path) : path; }
   var RawStore = Store;
@@ -234,7 +234,7 @@
       members: RAW.members, notifications: RAW.notifications, sessions: RAW.sessions,  // 전역
       trip: base.trip, notices: base.notices, schedule: base.schedule, packing: base.packing,
       polls: base.polls, expenses: base.expenses, photos: base.photos,
-      participants: base.participants, paid: base.paid, received: base.received
+      participants: base.participants, paid: base.paid, received: base.received, rides: base.rides
     };
   }
   // 현재 세션의 멤버 ID (participants 있으면 그 부분집합, 없으면 전체 = summer-mt 호환)
@@ -258,6 +258,8 @@
   function paidWritePath(creditor) { return state.sessionId === "summer-mt" ? ("members/" + me + "/paid/" + creditor) : ("paid/" + me + "/" + creditor); }
   function myReceivedMap() { return state.sessionId === "summer-mt" ? obj((obj(DB.members)[me] || {}).received) : obj(obj(DB.received)[me]); }
   function receivedWritePath(debtor) { return state.sessionId === "summer-mt" ? ("members/" + me + "/received/" + debtor) : ("received/" + me + "/" + debtor); }
+  function rideOf(id) { return state.sessionId === "summer-mt" ? (obj(DB.members)[id] || {}).rideWith : obj(DB.rides)[id]; }
+  function rideWritePath(id) { return state.sessionId === "summer-mt" ? ("members/" + id + "/rideWith") : ("rides/" + id); }
   function debtorMarkedPaid(debtor) { var mp = state.sessionId === "summer-mt" ? obj((obj(DB.members)[debtor] || {}).paid) : obj(obj(DB.paid)[debtor]); return !!mp[me]; }
   function creditorConfirmed(creditor) { var rc = state.sessionId === "summer-mt" ? obj((obj(DB.members)[creditor] || {}).received) : obj(obj(DB.received)[creditor]); return !!rc[me]; }
   function mySettleHead() { var bal = computeBalances(), myNet = Math.round(bal[me] || 0); var trs = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; }); var pd = myPaidMap(), rc = myReceivedMap(), rem = 0; trs.forEach(function (t) { if (t.from === me && !pd[t.to]) rem += t.amount; else if (t.to === me && !rc[t.from]) rem += t.amount; }); if (myNet === 0 || rem === 0) return { text: "정산 완료 ✓", cls: "", done: true }; return { text: (myNet > 0 ? "받을 돈 " : "보낼 돈 ") + won(rem), cls: (myNet > 0 ? "pos" : "neg"), done: false }; }
@@ -360,10 +362,10 @@
   function claimedMembers() { return sessionMemberIds().filter(function (id) { return DB.members[id] && DB.members[id].claimed; }); }
   function isValidDriver(id) { var m = obj(DB.members)[id]; return !!(m && m.claimed && m.hasCar); }
   function drivers() { return claimedMembers().filter(function (id) { return DB.members[id].hasCar; }); }
-  function passengersOf(d) { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && m.rideWith === d; }); }
+  function passengersOf(d) { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && rideOf(id) === d; }); }
   function carCap() { return tripMeta().carCapacity || 5; }       // 운전자 포함 총 정원
   function carFull(d) { return passengersOf(d).length >= carCap() - 1; } // 탑승자(운전자 제외) 최대 = 정원-1
-  function unassignedPass() { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && (!m.rideWith || !isValidDriver(m.rideWith)); }); }
+  function unassignedPass() { return claimedMembers().filter(function (id) { var m = DB.members[id]; return !m.hasCar && (!rideOf(id) || !isValidDriver(rideOf(id))); }); }
   function memberCount() { return sessionMemberIds().length || 1; }
   function readyCount(p) { var mem = obj(DB.members); return Object.keys(obj(p.ready)).filter(function (id) { return mem[id]; }).length; }
 
@@ -611,6 +613,8 @@
       '<label>장소 (선택)</label><input id="f-sloc" placeholder="예: 비발디파크">' +
       '<label>숙소 (선택)</label><input id="f-slodge" placeholder="예: 소노벨 비발디파크">' +
       '<label>색상</label><div class="seg">' + accents.map(function (a, i) { return '<button type="button" class="seg-b' + (i === 0 ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="red"></div>' +
+      '<label>참가 크루원</label><p class="pf-note" style="margin:0 0 8px">이 세션에 참가할 사람만 골라요. 정산·카풀·투표가 선택한 사람 기준으로 구성돼요.</p>' +
+      '<div class="part-grid">' + (CFG.roster || []).map(function (m) { return '<label class="pchk"><input type="checkbox" class="f-sess-part" value="' + m.id + '" checked>' + avatar(m.id, 24) + "<span>" + esc(m.name) + "</span></label>"; }).join("") + '</div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-session">추가</button></div>');
   }
 
@@ -671,7 +675,7 @@
   function myRideLabel() {
     var m = obj(DB.members)[me] || {};
     if (m.hasCar) return "운전자 · 탑승 " + passengersOf(me).length + "명";
-    if (m.rideWith && isValidDriver(m.rideWith)) return memberName(m.rideWith) + "님 차 탑승";
+    var rw = rideOf(me); if (rw && isValidDriver(rw)) return memberName(rw) + "님 차 탑승";
     return "아직 미배정 — 눌러서 정하기";
   }
 
@@ -859,7 +863,7 @@
 
     h += '<div class="cp-board">';
     drv.forEach(function (d) {
-      var pax = passengersOf(d), myCar = (d === me) || (obj(DB.members)[me] || {}).rideWith === d;
+      var pax = passengersOf(d), myCar = (d === me) || rideOf(me) === d;
       var canAdd = (d === me) || isMeAdmin();
       h += '<div class="cp-driver' + (myCar ? " cp-mine" : "") + '"><div class="cp-driver-head">' + avatar(d, 36) +
         '<div><div class="dh-name">' + esc(memberName(d)) + (canManage(d) ? " " + roleBadge(d) : "") + '</div><div class="dh-stn">' + icon("pin", 13) + " " + stationLabel(d) + "</div></div>" +
@@ -1176,7 +1180,7 @@
     if (a === "pick-avatar") { var af = $("#avatar-file"); if (af) af.click(); return; }
     if (a === "remove-avatar") { Store.remove("members/" + me + "/photoUrl"); if (obj(DB.members)[me]) delete DB.members[me].photoUrl; formProfile(); return; }
     if (a === "pf-car") { var v = t.getAttribute("data-v") === "1"; $("#p-car-yes").classList.toggle("on", v); $("#p-car-no").classList.toggle("on", !v); return; }
-    if (a === "save-profile") { var pon = $("#p-car-yes").classList.contains("on"); var upd = { station: cleanStation($("#p-station").value), hasCar: pon }; if (pon) upd.rideWith = null; Store.update("members/" + me, upd); closeModal(); return; }
+    if (a === "save-profile") { var pon = $("#p-car-yes").classList.contains("on"); var upd = { station: cleanStation($("#p-station").value), hasCar: pon }; Store.update("members/" + me, upd); if (pon) Store.set(rideWritePath(me), null); closeModal(); return; }
     if (a === "switch-me") {
       if (confirm("이 기기에서 로그아웃할까요?\n(이름·인증번호는 그대로 유지되고, 언제든 인증번호로 다시 입장할 수 있어요)")) {
         me = null; localStorage.removeItem("srk_me"); intro.step = "name"; intro.pick = null; closeModal(); renderGate();
@@ -1225,13 +1229,15 @@
       var stitle = clampStr(($("#f-stitle") || {}).value, 60);
       if (!stitle) { alert("세션 제목을 입력해주세요."); return; }
       var sd = ($("#f-sstart") || {}).value || "", ed = ($("#f-send") || {}).value || "";
-      Store.push("sessions", {
+      var skey = Store.push("sessions", {
         kind: "app", emoji: ($("#f-emoji") || {}).value || "📌", accent: ($("#f-saccent") || {}).value || "red",
         title: stitle, subtitle: clampStr(($("#f-ssub") || {}).value, 40),
         startDate: sd, endDate: ed || sd,
         location: clampStr(($("#f-sloc") || {}).value, 60), lodging: clampStr(($("#f-slodge") || {}).value, 60),
         by: me || null, ts: Date.now()
       });
+      var spchecks = Array.prototype.slice.call(document.querySelectorAll(".f-sess-part:checked")).map(function (c) { return c.value; });
+      if (spchecks.length && skey) { var spmap = {}; spchecks.forEach(function (id) { spmap[id] = true; }); RawStore.set("s/db:" + skey + "/participants", spmap); }
       closeModal(); render(); return;
     }
     if (a === "del-session") {
@@ -1300,10 +1306,10 @@
 
     /* 카풀 */
     if (a === "ride-pick") { var pp1 = t.getAttribute("data-p"); if (!(pp1 === me || isMeAdmin())) return; chooserModal("어느 차에 탈까요? (정원 " + carCap() + "명)", drivers().filter(function (d) { return !carFull(d); }), pp1, "pick-driver"); window.__ridePass = pp1; return; }
-    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) Store.update("members/" + pass, { rideWith: d1 }); closeModal(); return; }
-    if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || ((obj(DB.members)[pp2] || {}).rideWith === me) || isMeAdmin())) return; if (pp2 !== me && !confirm(memberName(pp2) + "님을 이 차에서 내릴까요?")) return; Store.update("members/" + pp2, { rideWith: null }); return; }
+    if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) Store.set(rideWritePath(pass), d1); closeModal(); return; }
+    if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || (rideOf(pp2) === me) || isMeAdmin())) return; if (pp2 !== me && !confirm(memberName(pp2) + "님을 이 차에서 내릴까요?")) return; Store.set(rideWritePath(pp2), null); return; }
     if (a === "recruit") { var d2 = t.getAttribute("data-d"); if (!(d2 === me || isMeAdmin())) return; chooserModal("주변 탑승자 모집 — 누구를 태울까요?", unassignedPass(), d2, "assign-pass", d2); return; }
-    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) Store.update("members/" + pid3, { rideWith: d3 }); closeModal(); return; }
+    if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) Store.set(rideWritePath(pid3), d3); closeModal(); return; }
 
     /* 사진 */
     if (a === "ph-open") { return; } // 앵커 기본 동작(원본 새 탭) 허용
