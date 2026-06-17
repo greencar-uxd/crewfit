@@ -169,7 +169,7 @@
     return base;
   }
   function rosterEntry(id) { var f = (CFG.roster || []).filter(function (r) { return r.id === id; })[0]; if (f) return f; var cs = allClubs(); for (var i = 0; i < cs.length; i++) { var rs = cs[i].roster || []; for (var j = 0; j < rs.length; j++) { if (rs[j].id === id) return rs[j]; } } var dr = obj(DB.roster); for (var ck in dr) { if (dr[ck] && dr[ck][id]) return { id: id, name: (dr[ck][id].name || id), role: (dr[ck][id].role || "crew") }; } return null; }
-  function clubHasRanking(c) { return !!(c && c.sport === "billiards"); }
+  function clubHasRanking(c) { return !!(c && (c.sport === "billiards" || c.sport === "climbing" || c.sport === "running")); }
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
   function billiardsStats(cid) {
     var agg = {};
@@ -182,6 +182,19 @@
     return Object.keys(agg).map(function (id) { var a = agg[id]; a.avg = a.innings ? a.score / a.innings : 0; a.winRate = a.games ? a.wins / a.games : 0; a.name = memberName(id); return a; }).sort(function (x, y) { return y.avg - x.avg || y.winRate - x.winRate || y.games - x.games; });
   }
   function fmtAvg(v) { return (Math.round((v || 0) * 1000) / 1000).toFixed(3); }
+  function fmtGrade(g) { return "V" + (g || 0); }
+  function fmtPace(p) { if (!p || !isFinite(p)) return "-"; var m = Math.floor(p), sec = Math.round((p - m) * 60); if (sec === 60) { m++; sec = 0; } return m + "'" + (sec < 10 ? "0" + sec : sec) + '"'; }
+  function clubRecords(cid, kind) { cid = cid || state.clubId; var m = obj((obj(DB.clubrecords) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).filter(function (x) { return !kind || x.kind === kind; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
+  function climbStats(cid) {
+    var agg = {};
+    clubRecords(cid, "climb").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, sends: 0, maxGrade: 0, ts: 0 }); a.sends++; if ((+r.grade || 0) > a.maxGrade) a.maxGrade = +r.grade || 0; if ((r.ts || 0) > a.ts) a.ts = r.ts || 0; });
+    return Object.keys(agg).map(function (id) { var a = agg[id]; a.name = memberName(id); return a; }).sort(function (x, y) { return y.maxGrade - x.maxGrade || y.sends - x.sends; });
+  }
+  function runStats(cid) {
+    var agg = {};
+    clubRecords(cid, "run").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, runs: 0, dist: 0, bestPace: Infinity }); a.runs++; a.dist += (+r.dist || 0); var pace = (+r.dist > 0 && +r.time > 0) ? (+r.time / +r.dist) : Infinity; if (pace < a.bestPace) a.bestPace = pace; });
+    return Object.keys(agg).map(function (id) { var a = agg[id]; a.name = memberName(id); return a; }).sort(function (x, y) { return x.bestPace - y.bestPace || y.dist - x.dist; });
+  }
 
   /* 역 → 권역 */
   var STN_MAP = {}; (CFG.stations || []).forEach(function (s) { STN_MAP[s.n] = s.c; });
@@ -266,7 +279,7 @@
   function rebuildDB() {
     var base = sessionData();
     DB = {
-      members: RAW.members, notifications: RAW.notifications, sessions: RAW.sessions, clubs: RAW.clubs, roster: RAW.roster, clubmatches: RAW.clubmatches,  // 전역
+      members: RAW.members, notifications: RAW.notifications, sessions: RAW.sessions, clubs: RAW.clubs, roster: RAW.roster, clubmatches: RAW.clubmatches, clubrecords: RAW.clubrecords,  // 전역
       trip: base.trip, notices: base.notices, schedule: base.schedule, packing: base.packing,
       polls: base.polls, expenses: base.expenses, photos: base.photos,
       participants: base.participants, paid: base.paid, received: base.received, rides: base.rides
@@ -667,6 +680,48 @@
     return h;
   }
   function hubRanking(club) {
+    if (club.sport === "climbing") return climbingRanking(club);
+    if (club.sport === "running") return runningRanking(club);
+    return billiardsRanking(club);
+  }
+  function rankCanRec(cid) { return !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; })); }
+  function climbingRanking(club) {
+    var cid = club.id, rows = climbStats(cid), canRec = rankCanRec(cid);
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">암장 난이도 순위</h2><div class="hint" style="margin-top:2px">최고 완등 등급(V스케일·볼더링) 기준</div></div>' +
+      (canRec ? '<button class="btn-pri btn-sm" data-action="add-climb">완등 기록</button>' : "") + "</div>";
+    if (!rows.length) { h += '<div class="empty-msg">아직 기록된 완등이 없어요.' + (canRec ? ' 위 <b>완등 기록</b>으로 첫 완등을 남겨보세요.' : ' 동호회 멤버로 입장하면 완등을 기록할 수 있어요.') + "</div>"; }
+    else {
+      h += '<div class="rank-list">';
+      rows.forEach(function (a, i) { h += '<div class="rank-row"><span class="rk-no rk-' + (i < 3 ? (i + 1) : "n") + '">' + (i + 1) + "</span>" + avatar(a.id, 30) + '<div class="rk-name"><div>' + esc(a.name) + '</div><div class="rk-sub">완등 ' + a.sends + '개</div></div><div class="rk-avg"><div class="rk-avg-n">' + fmtGrade(a.maxGrade) + '</div><div class="rk-avg-l">최고 난이도</div></div></div>'; });
+      h += "</div>";
+    }
+    var recs = clubRecords(cid, "climb");
+    if (recs.length) {
+      h += '<h2 class="sec" style="margin-top:24px">최근 완등</h2><div class="match-list">';
+      recs.slice(0, 12).forEach(function (r) { var canDel = (r.by === me || canManage(me)); h += '<div class="match-row"><span class="mt-p win">' + esc(memberName(r.member)) + '</span><span class="mt-vs">' + fmtGrade(r.grade) + '</span><span class="mt-p right">' + (r.gym ? esc(r.gym) : "") + '</span>' + (canDel ? '<button class="tl-del" data-action="del-record" data-id="' + r._key + '" aria-label="삭제">×</button>' : "") + "</div>"; });
+      h += "</div>";
+    }
+    return h;
+  }
+  function runningRanking(club) {
+    var cid = club.id, rows = runStats(cid).filter(function (a) { return a.runs > 0; }), canRec = rankCanRec(cid);
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">러닝 순위</h2><div class="hint" style="margin-top:2px">베스트 페이스(분/km) 기준 · 총거리 표기</div></div>' +
+      (canRec ? '<button class="btn-pri btn-sm" data-action="add-run">러닝 기록</button>' : "") + "</div>";
+    if (!rows.length) { h += '<div class="empty-msg">아직 기록된 러닝이 없어요.' + (canRec ? ' 위 <b>러닝 기록</b>으로 첫 러닝을 남겨보세요.' : ' 동호회 멤버로 입장하면 러닝을 기록할 수 있어요.') + "</div>"; }
+    else {
+      h += '<div class="rank-list">';
+      rows.forEach(function (a, i) { h += '<div class="rank-row"><span class="rk-no rk-' + (i < 3 ? (i + 1) : "n") + '">' + (i + 1) + "</span>" + avatar(a.id, 30) + '<div class="rk-name"><div>' + esc(a.name) + '</div><div class="rk-sub">' + a.runs + '회 · 총 ' + (Math.round(a.dist * 10) / 10) + 'km</div></div><div class="rk-avg"><div class="rk-avg-n">' + fmtPace(a.bestPace) + '</div><div class="rk-avg-l">베스트 페이스</div></div></div>'; });
+      h += "</div>";
+    }
+    var recs = clubRecords(cid, "run");
+    if (recs.length) {
+      h += '<h2 class="sec" style="margin-top:24px">최근 러닝</h2><div class="match-list">';
+      recs.slice(0, 12).forEach(function (r) { var canDel = (r.by === me || canManage(me)); var pace = (+r.dist > 0 && +r.time > 0) ? (+r.time / +r.dist) : 0; h += '<div class="match-row"><span class="mt-p win">' + esc(memberName(r.member)) + '</span><span class="mt-vs">' + (Math.round((+r.dist || 0) * 10) / 10) + 'km</span><span class="mt-p right">' + fmtPace(pace) + '/km</span>' + (canDel ? '<button class="tl-del" data-action="del-record" data-id="' + r._key + '" aria-label="삭제">×</button>' : "") + "</div>"; });
+      h += "</div>";
+    }
+    return h;
+  }
+  function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
@@ -737,6 +792,36 @@
     Store.set("clubmatches/" + cid + "/" + mk, match);
     DB.clubmatches = DB.clubmatches || {}; DB.clubmatches[cid] = DB.clubmatches[cid] || {}; DB.clubmatches[cid][mk] = match;
     closeModal(); render();
+  }
+  function rankMemberOpt(cid, sel) { return clubRoster(cid).map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); }
+  function saveRecord(rec) { var cid = state.clubId; if (!rankCanRec(cid)) return; var rk = key(); Store.set("clubrecords/" + cid + "/" + rk, rec); DB.clubrecords = DB.clubrecords || {}; DB.clubrecords[cid] = DB.clubrecords[cid] || {}; DB.clubrecords[cid][rk] = rec; closeModal(); render(); }
+  function formClimb() {
+    var cid = state.clubId; if (!rankCanRec(cid)) { alert("동호회 멤버로 입장한 뒤 기록할 수 있어요."); return; }
+    var grades = ""; for (var g = 0; g <= 12; g++) grades += '<option value="' + g + '">V' + g + "</option>";
+    openModal("<h2>완등 기록</h2>" +
+      '<p class="hint" style="margin:-4px 0 10px">V스케일 볼더링 기준</p>' +
+      '<label>멤버</label><select id="c-member">' + rankMemberOpt(cid, me) + "</select>" +
+      '<label>난이도</label><select id="c-grade">' + grades + "</select>" +
+      '<label>암장 (선택)</label><input id="c-gym" maxlength="30" placeholder="예: 더클라임 강남">' +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-climb">기록</button></div>');
+  }
+  function saveClimb() {
+    var member = ($("#c-member") || {}).value; if (!member) return;
+    saveRecord({ ts: Date.now(), by: me, kind: "climb", member: member, grade: +(($("#c-grade") || {}).value) || 0, gym: clampStr(($("#c-gym") || {}).value, 30), sessionId: null });
+  }
+  function formRun() {
+    var cid = state.clubId; if (!rankCanRec(cid)) { alert("동호회 멤버로 입장한 뒤 기록할 수 있어요."); return; }
+    openModal("<h2>러닝 기록</h2>" +
+      '<label>멤버</label><select id="r-member">' + rankMemberOpt(cid, me) + "</select>" +
+      '<div class="mt-3"><span><label>거리 (km)</label><input id="r-dist" type="number" inputmode="decimal" min="0" step="0.1" placeholder="예 5"></span><span><label>시간 (분)</label><input id="r-time" type="number" inputmode="decimal" min="0" step="0.1" placeholder="예 27.5"></span></div>' +
+      '<div id="r-err" class="pin-err"></div>' +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-run">기록</button></div>');
+  }
+  function saveRun() {
+    var member = ($("#r-member") || {}).value, dist = +(($("#r-dist") || {}).value) || 0, time = +(($("#r-time") || {}).value) || 0, err = $("#r-err");
+    if (!member) return;
+    if (dist <= 0 || time <= 0) { if (err) err.textContent = "거리와 시간을 입력해주세요."; return; }
+    saveRecord({ ts: Date.now(), by: me, kind: "run", member: member, dist: dist, time: time, sessionId: null });
   }
   function sessionCard(s) {
     var st = sessStatus(s), isApp = s.kind === "app", canDel = s._user && isMeAdmin();
@@ -1437,6 +1522,11 @@
     if (a === "add-match") { formMatch(); return; }
     if (a === "save-match") { saveMatch(); return; }
     if (a === "del-match") { var mk2 = t.getAttribute("data-id"), mc = obj((obj(DB.clubmatches) || {})[state.clubId])[mk2]; if (!mc) return; if (!(mc.by === me || canManage(me))) return; if (confirm("이 대전 기록을 삭제할까요?")) { Store.remove("clubmatches/" + state.clubId + "/" + mk2); if (DB.clubmatches && DB.clubmatches[state.clubId]) delete DB.clubmatches[state.clubId][mk2]; render(); } return; }
+    if (a === "add-climb") { formClimb(); return; }
+    if (a === "save-climb") { saveClimb(); return; }
+    if (a === "add-run") { formRun(); return; }
+    if (a === "save-run") { saveRun(); return; }
+    if (a === "del-record") { var rk2 = t.getAttribute("data-id"), rc = obj((obj(DB.clubrecords) || {})[state.clubId])[rk2]; if (!rc) return; if (!(rc.by === me || canManage(me))) return; if (confirm("이 기록을 삭제할까요?")) { Store.remove("clubrecords/" + state.clubId + "/" + rk2); if (DB.clubrecords && DB.clubrecords[state.clubId]) delete DB.clubrecords[state.clubId][rk2]; render(); } return; }
     if (a === "reload-app") { location.reload(); return; }
     if (a === "open-session") {
       var sid = t.getAttribute("data-id"), so = sessionById(sid);
