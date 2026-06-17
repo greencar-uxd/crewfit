@@ -371,6 +371,7 @@
   function myNotifs() { return bySort(entries(obj(DB.notifications)[me]), function (kv) { return -(kv[1].ts || 0); }); }
   function unreadNotifs() { return myNotifs().filter(function (kv) { return !kv[1].read; }); }
   function notify(toId, text, type) { if (!toId) return; Store.push("notifications/" + toId, { text: clampStr(text, 200), by: me || null, type: type || "", ts: Date.now(), read: false }); }
+  function notifyCrew(text, type) { claimedMembers().forEach(function (id) { if (id !== me) notify(id, text, type); }); }
   function markNotifRead(k) { if (k) Store.update("notifications/" + me + "/" + k, { read: true }); }
   function markAllNotifsRead() { unreadNotifs().forEach(function (kv) { Store.update("notifications/" + me + "/" + kv[0], { read: true }); }); }
 
@@ -820,7 +821,7 @@
       h += '<div class="notif-list">';
       list.forEach(function (kv) {
         var n = kv[1];
-        h += '<div class="notif-row' + (n.read ? "" : " unread") + '"><span class="notif-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
+        h += '<div class="notif-row' + (n.read ? "" : " unread") + '" data-action="open-notif" data-ntype="' + esc(n.type || "") + '"><span class="notif-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
           '<div class="notif-main"><div class="notif-text">' + linkify(esc(n.text)) + '</div><div class="notif-time">' + (n.by ? esc(memberName(n.by)) + " · " : "") + timeago(n.ts) + "</div></div>" +
           '<button class="notif-x" data-action="del-notif" data-id="' + kv[0] + '" aria-label="삭제">×</button></div>';
       });
@@ -836,7 +837,7 @@
     var h = '<div class="notif-carousel">';
     list.slice(0, 6).forEach(function (kv) {
       var n = kv[1];
-      h += '<div class="notif-banner' + (n.read ? "" : " unread") + '"><span class="nb-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
+      h += '<div class="notif-banner' + (n.read ? "" : " unread") + '" data-action="open-notif" data-ntype="' + esc(n.type || "") + '"><span class="nb-ic">' + icon(n.type === "settle" ? "wallet" : "bell", 16) + "</span>" +
         '<span class="nb-text">' + linkify(esc(n.text)) + "</span>" +
         '<button class="nb-x" data-action="dismiss-notif" data-id="' + kv[0] + '" aria-label="닫기">×</button></div>';
     });
@@ -1202,7 +1203,7 @@
       if (!canManage(me)) return;
       var rcid = t.getAttribute("data-id"), rcr = roleOf(rcid);
       if (rcr === "manager" || (rcr === "staff" && !isManager(me))) return; // 관리자 보호, 운영진은 관리자만 초기화
-      if (confirm(memberName(rcid) + "님을 입장 해제(인증번호 초기화)할까요?\n이 이름은 다시 인증번호를 설정해 입장할 수 있게 됩니다.")) { Store.update("members/" + rcid, { claimed: false, pin: null, station: null, hasCar: null, rideWith: null }); formProfile(); }
+      if (confirm(memberName(rcid) + "님의 인증번호를 초기화할까요?\n출발지·자차·카풀 배정은 그대로 유지되고, 다시 인증번호를 정해 입장할 수 있어요.")) { Store.update("members/" + rcid, { claimed: false, pin: null }); formProfile(); }
       return;
     }
 
@@ -1236,7 +1237,8 @@
     if (a === "del-session") {
       if (!isMeAdmin()) return;
       var dsid = t.getAttribute("data-id"); if (!dsid || dsid.indexOf("db:") !== 0) return;
-      if (confirm("이 세션 카드를 삭제할까요?")) { Store.remove("sessions/" + dsid.slice(3)); render(); }
+      var dso = sessionById(dsid), dsTitle = (dso && dso.title) || "이 세션";
+      if (confirm("\u2018" + dsTitle + "\u2019을(를) 삭제하면 이 세션의 공지·일정·투표·지출/정산·앨범이 모두 사라지고 되돌릴 수 없어요. 정말 삭제할까요?")) { Store.remove("sessions/" + dsid.slice(3)); RawStore.remove("s/" + dsid); render(); }
       return;
     }
 
@@ -1253,6 +1255,7 @@
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
+    if (a === "open-notif") { var onT = t.getAttribute("data-ntype") || ""; closeModal(); state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : onT === "settle" ? "settle" : "notice"; state.pollId = null; render(); return; }
 
     /* 홈 히어로 배경 */
     if (a === "pick-hero") {
@@ -1298,7 +1301,7 @@
     /* 카풀 */
     if (a === "ride-pick") { var pp1 = t.getAttribute("data-p"); if (!(pp1 === me || isMeAdmin())) return; chooserModal("어느 차에 탈까요? (정원 " + carCap() + "명)", drivers().filter(function (d) { return !carFull(d); }), pp1, "pick-driver"); window.__ridePass = pp1; return; }
     if (a === "pick-driver") { var d1 = t.getAttribute("data-id"); var pass = window.__ridePass; if (carFull(d1)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (pass && isValidDriver(d1)) Store.update("members/" + pass, { rideWith: d1 }); closeModal(); return; }
-    if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || ((obj(DB.members)[pp2] || {}).rideWith === me) || isMeAdmin())) return; Store.update("members/" + pp2, { rideWith: null }); return; }
+    if (a === "ride-leave") { var pp2 = t.getAttribute("data-p"); if (!(pp2 === me || ((obj(DB.members)[pp2] || {}).rideWith === me) || isMeAdmin())) return; if (pp2 !== me && !confirm(memberName(pp2) + "님을 이 차에서 내릴까요?")) return; Store.update("members/" + pp2, { rideWith: null }); return; }
     if (a === "recruit") { var d2 = t.getAttribute("data-d"); if (!(d2 === me || isMeAdmin())) return; chooserModal("주변 탑승자 모집 — 누구를 태울까요?", unassignedPass(), d2, "assign-pass", d2); return; }
     if (a === "assign-pass") { var pid3 = t.getAttribute("data-id"), d3 = t.getAttribute("data-d"); if (carFull(d3)) { alert("이 차는 정원(" + carCap() + "명)이 꽉 찼어요."); closeModal(); return; } if (isValidDriver(d3)) Store.update("members/" + pid3, { rideWith: d3 }); closeModal(); return; }
 
@@ -1367,6 +1370,7 @@
     if (opts.length < 2) { alert("선택지를 2개 이상 입력하세요"); return; }
     var optMap = {}; opts.forEach(function (o) { optMap[key()] = { label: clampStr(o, 80) }; });
     Store.push("polls", { title: clampStr(title, 100), desc: clampStr($("#f-desc").value, 1000), type: $("#f-type").value, status: "open", createdBy: me, allowAddOptions: $("#f-add").checked, options: optMap, votes: {}, comments: {}, ts: Date.now() });
+    notifyCrew(memberName(me) + "님이 새 투표를 올렸어요: " + clampStr(title, 60), "vote");
     closeModal();
   }
   function sendComment(pid) { var inp = $("#cmt-" + pid); if (!inp) return; var v = inp.value.trim(); if (!v) return; Store.push("polls/" + pid + "/comments", { by: me, text: clampStr(v, 500), ts: Date.now() }); inp.value = ""; }
@@ -1390,7 +1394,7 @@
     var v = $("#f-text").value.trim(); if (!v) return;
     var lk = clampStr(($("#f-nlink") || {}).value, 300) || null;
     if (editId) Store.update("notices/" + editId, { text: clampStr(v, 1000), pinned: $("#f-pin").checked, link: lk });
-    else Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, link: lk, ts: Date.now() });
+    else { Store.push("notices", { text: clampStr(v, 1000), by: me, pinned: $("#f-pin").checked, link: lk, ts: Date.now() }); notifyCrew(memberName(me) + "님이 공지를 올렸어요: " + clampStr(v, 50), "notice"); }
     closeModal();
   }
   function saveSchedule(editId) {
@@ -1398,7 +1402,7 @@
     var day = $("#f-day").value, time = $("#f-time").value, title = $("#f-title").value.trim();
     if (!day || !time || !title) { alert("날짜·시간·제목을 입력하세요"); return; }
     var data = { day: day, time: time, title: clampStr(title, 100), place: clampStr($("#f-place").value, 60), link: clampStr($("#f-link").value, 300), desc: clampStr($("#f-desc2").value, 500), ts: (editId && obj(DB.schedule)[editId] ? obj(DB.schedule)[editId].ts : Date.now()) };
-    if (editId) Store.set("schedule/" + editId, data); else Store.push("schedule", data);
+    if (editId) Store.set("schedule/" + editId, data); else { Store.push("schedule", data); notifyCrew(memberName(me) + "님이 일정을 추가했어요: " + clampStr(title, 50), "schedule"); }
     closeModal();
   }
   function savePacking() {

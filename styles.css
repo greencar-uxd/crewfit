@@ -705,3 +705,9 @@ button:focus-visible, [data-action]:focus-visible, .opt:focus-visible, a:focus-v
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--focus-ring); outline-offset: 2px;
 }
+
+
+/* 사용성 백로그 — 카풀 '내리기' 터치 타깃 44px · 알림 탭 가능 표시 */
+.cp-pass .x { margin-left: auto; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.notif-row[data-action], .notif-banner[data-action] { cursor: pointer; }
+.notif-row[data-action]:active, .notif-banner[data-action]:active { transform: scale(.99); }
