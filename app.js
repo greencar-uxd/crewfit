@@ -210,7 +210,7 @@
      - 콘텐츠(trip·notices·schedule·packing·polls·expenses·photos·participants·paid)는
        세션별. summer-mt는 레거시 호환으로 root에 그대로, 그 외는 s/{id}/ 아래.
      ============================================================ */
-  var SESSION_COLLS = { trip: 1, notices: 1, schedule: 1, packing: 1, polls: 1, expenses: 1, photos: 1, participants: 1, paid: 1 };
+  var SESSION_COLLS = { trip: 1, notices: 1, schedule: 1, packing: 1, polls: 1, expenses: 1, photos: 1, participants: 1, paid: 1, received: 1 };
   function sessBase() { return state.sessionId === "summer-mt" ? "" : ("s/" + state.sessionId + "/"); }
   function P(path) { var first = String(path).split("/")[0]; return SESSION_COLLS[first] ? (sessBase() + path) : path; }
   var RawStore = Store;
@@ -234,7 +234,7 @@
       members: RAW.members, notifications: RAW.notifications, sessions: RAW.sessions,  // 전역
       trip: base.trip, notices: base.notices, schedule: base.schedule, packing: base.packing,
       polls: base.polls, expenses: base.expenses, photos: base.photos,
-      participants: base.participants, paid: base.paid
+      participants: base.participants, paid: base.paid, received: base.received
     };
   }
   // 현재 세션의 멤버 ID (participants 있으면 그 부분집합, 없으면 전체 = summer-mt 호환)
@@ -256,6 +256,11 @@
   // 정산 '완료' 표시 — summer-mt는 레거시(members/me/paid), 그 외는 세션의 paid/me
   function myPaidMap() { return state.sessionId === "summer-mt" ? obj((obj(DB.members)[me] || {}).paid) : obj(obj(DB.paid)[me]); }
   function paidWritePath(creditor) { return state.sessionId === "summer-mt" ? ("members/" + me + "/paid/" + creditor) : ("paid/" + me + "/" + creditor); }
+  function myReceivedMap() { return state.sessionId === "summer-mt" ? obj((obj(DB.members)[me] || {}).received) : obj(obj(DB.received)[me]); }
+  function receivedWritePath(debtor) { return state.sessionId === "summer-mt" ? ("members/" + me + "/received/" + debtor) : ("received/" + me + "/" + debtor); }
+  function debtorMarkedPaid(debtor) { var mp = state.sessionId === "summer-mt" ? obj((obj(DB.members)[debtor] || {}).paid) : obj(obj(DB.paid)[debtor]); return !!mp[me]; }
+  function creditorConfirmed(creditor) { var rc = state.sessionId === "summer-mt" ? obj((obj(DB.members)[creditor] || {}).received) : obj(obj(DB.received)[creditor]); return !!rc[me]; }
+  function mySettleHead() { var bal = computeBalances(), myNet = Math.round(bal[me] || 0); var trs = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; }); var pd = myPaidMap(), rc = myReceivedMap(), rem = 0; trs.forEach(function (t) { if (t.from === me && !pd[t.to]) rem += t.amount; else if (t.to === me && !rc[t.from]) rem += t.amount; }); if (myNet === 0 || rem === 0) return { text: "정산 완료 ✓", cls: "", done: true }; return { text: (myNet > 0 ? "받을 돈 " : "보낼 돈 ") + won(rem), cls: (myNet > 0 ? "pos" : "neg"), done: false }; }
 
   /* ============================================================
      초기 데이터
@@ -638,9 +643,9 @@
     h += '<div class="card col" data-action="tab" data-tab="carpool"><div class="ms-row"><span>🚗 내 이동</span><span class="ms-amt" style="font-size:12px">' + myRideLabel() + "</span></div></div>";
 
     // 내 정산
-    h += '<div class="card my-settle col ' + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '" data-action="tab" data-tab="settle">' +
-      '<div class="ms-row"><span>' + avatar(me, 26) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" +
-      (myNet > 0 ? "받을 돈 " + won(myNet) : myNet < 0 ? "보낼 돈 " + won(-myNet) : "정산 완료 ✓") + "</span></div>" +
+    var shH = mySettleHead();
+    h += '<div class="card my-settle col ' + shH.cls + '" data-action="tab" data-tab="settle">' +
+      '<div class="ms-row"><span>' + avatar(me, 26) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + shH.text + "</span></div>" +
       '<div class="ms-sub">낸 돈 ' + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div></div>";
 
     if (openPolls.length) {
@@ -726,20 +731,26 @@
   /* ---------- 정산 ---------- */
   // 내 정산 카드 (본인 것만 — 송금정리·전체잔액은 비공개). 정산/마이 탭 공용
   function mySettleCard(full) {
-    var bal = computeBalances(), myNet = Math.round(bal[me] || 0);
+    var bal = computeBalances();
     var transfers = minimalTransfers(bal).filter(function (t) { return t.from === me || t.to === me; });
-    var paid = myPaidMap();
-    var h = '<div class="card my-settle big ' + (full ? "" : "col ") + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" +
-      (myNet > 0 ? "받을 돈 " + won(myNet) : myNet < 0 ? "낼 돈 " + won(-myNet) : "정산 완료 ✓") + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
+    var paid = myPaidMap(), recv = myReceivedMap(), sh = mySettleHead();
+    var h = '<div class="card my-settle big ' + (full ? "" : "col ") + sh.cls + '"><div class="ms-row"><span>' + avatar(me, 28) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + sh.text + "</span></div><div class=\"ms-sub\">낸 돈 " + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div>";
     if (transfers.length) {
       h += '<div class="ms-actions">';
       transfers.forEach(function (t) {
         if (t.from === me) {
-          var done = !!paid[t.to];
-          h += '<div class="pay-line out">' + chip(t.to) + " 에게 <b>" + won(t.amount) + "</b> " +
-            (done ? '<span class="paid-done">' + icon("check", 13) + ' 완료 <button class="link" data-action="settle-undo" data-to="' + t.to + '">취소</button></span>'
-              : '<button class="btn-pri xs" data-action="settle-done" data-to="' + t.to + '" data-amt="' + t.amount + '">정산 완료</button>') + "</div>";
-        } else h += '<div class="pay-line in">' + chip(t.from) + " 에게서 <b>" + won(t.amount) + "</b> 받기</div>";
+          var marked = !!paid[t.to], confirmed = creditorConfirmed(t.to);
+          h += '<div class="pay-line out"><div class="pl-head">' + chip(t.to) + " 에게 <b>" + won(t.amount) + "</b></div>" +
+            (!marked ? '<button class="btn-pri pay-btn" data-action="settle-done" data-to="' + t.to + '" data-amt="' + t.amount + '">보냈어요 · 정산 완료</button>'
+              : confirmed ? '<span class="paid-done">' + icon("check", 14) + " 정산 완료</span>"
+              : '<span class="paid-wait">상대 확인 대기 <button class="link" data-action="settle-undo" data-to="' + t.to + '" data-amt="' + t.amount + '">취소</button></span>') + "</div>";
+        } else {
+          var theyPaid = debtorMarkedPaid(t.from), iGot = !!recv[t.from];
+          h += '<div class="pay-line in"><div class="pl-head">' + chip(t.from) + " 에게서 <b>" + won(t.amount) + "</b></div>" +
+            (iGot ? '<span class="paid-done">' + icon("check", 14) + ' 받음 완료 <button class="link" data-action="settle-unconfirm" data-from="' + t.from + '">취소</button></span>'
+              : theyPaid ? '<button class="btn-pri pay-btn" data-action="settle-confirm" data-from="' + t.from + '" data-amt="' + t.amount + '">' + esc(memberName(t.from)) + "님이 보냄 · 받음 확인</button>"
+              : '<span class="pay-wait-in">받을 예정</span>') + "</div>";
+        }
       });
       h += "</div>";
     }
@@ -1266,11 +1277,14 @@
       ev.stopPropagation();
       var sdTo = t.getAttribute("data-to"), sdAmt = Number(t.getAttribute("data-amt")) || 0;
       if (!sdTo) return;
+      if (!confirm(memberName(sdTo) + "님께 " + won(sdAmt) + " 보냈다고 표시하고 알림을 보낼까요?")) return;
       Store.set(paidWritePath(sdTo), true);
-      notify(sdTo, memberName(me) + "님이 " + won(sdAmt) + " 정산 완료를 알렸어요.", "settle");
+      notify(sdTo, memberName(me) + "님이 " + won(sdAmt) + " 보냈다고 표시했어요. 받으셨으면 '받음 확인'을 눌러주세요.", "settle");
       return;
     }
-    if (a === "settle-undo") { ev.stopPropagation(); var suTo = t.getAttribute("data-to"); if (suTo) Store.remove(paidWritePath(suTo)); return; }
+    if (a === "settle-undo") { ev.stopPropagation(); var suTo = t.getAttribute("data-to"), suAmt = Number(t.getAttribute("data-amt")) || 0; if (suTo) { Store.remove(paidWritePath(suTo)); notify(suTo, memberName(me) + "님이 앞서 보낸 정산 완료 표시를 취소했어요. 아직 못 받았다면 확인해 주세요.", "settle"); } return; }
+    if (a === "settle-confirm") { ev.stopPropagation(); var scFrom = t.getAttribute("data-from"), scAmt = Number(t.getAttribute("data-amt")) || 0; if (!scFrom) return; Store.set(receivedWritePath(scFrom), true); notify(scFrom, memberName(me) + "님이 " + won(scAmt) + " 받았다고 확인했어요. 정산 완료 ✓", "settle"); return; }
+    if (a === "settle-unconfirm") { ev.stopPropagation(); var scuFrom = t.getAttribute("data-from"); if (scuFrom) Store.remove(receivedWritePath(scuFrom)); return; }
     if (a === "new-expense") { formNewExpense(null); return; }
     if (a === "edit-expense") { formNewExpense(t.getAttribute("data-id")); return; }
     if (a === "save-expense") { saveExpense(t.getAttribute("data-edit")); return; }

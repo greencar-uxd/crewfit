@@ -676,3 +676,17 @@ h1, h2 { margin: 0; }
 .stat-n { font-variant-numeric: tabular-nums; }
 .hero-dday { font-family: var(--font-mono); font-weight: 600; letter-spacing: 0; }
 .sc-badge, .sih-badge { font-variant-numeric: tabular-nums; }
+
+
+/* ============================================================
+   정산 신뢰 — 2단계 확정(보냄→받음 확인) + 엄지용 큰 액션 버튼
+   ============================================================ */
+.ms-actions { gap: 0; }
+.pay-line { font-size: 13px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0 0; margin: 0; border-top: 1px solid var(--line); flex-wrap: nowrap; }
+.pay-line:first-child { border-top: none; padding-top: 0; }
+.pl-head { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.pay-btn { width: 100%; min-height: 44px; margin: 0; font-size: 14px; border-radius: 12px; }
+.paid-done { display: inline-flex; align-items: center; gap: 4px; color: var(--pos); font-weight: 800; font-size: 13px; }
+.paid-wait { display: inline-flex; align-items: center; gap: 8px; color: var(--warn); font-weight: 700; font-size: 13px; }
+.paid-wait .link, .paid-done .link { color: var(--muted); font-size: 12px; }
+.pay-wait-in { color: var(--muted); font-weight: 700; font-size: 13px; }
