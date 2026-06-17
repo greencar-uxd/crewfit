@@ -463,7 +463,7 @@
     var loggedIn = !!(me && (obj(DB.members)[me] || {}).claimed);
     $("#app-header").innerHTML =
       '<div class="hd-brand"><span class="hd-brand-emoji">🤙</span>' +
-      '<div><div class="hd-title">동호회</div><div class="hd-sub">함께 모이는 우리들</div></div></div>' +
+      '<div><div class="hd-title">크루핏</div><div class="hd-sub">함께 모이는 동호회</div></div></div>' +
       (loggedIn ? '<button class="me-chip" data-action="open-profile">' + avatar(me, 24) + "<span>" + esc(memberName(me)) + "</span></button>" : "");
   }
   function renderHubHeader(club) {
