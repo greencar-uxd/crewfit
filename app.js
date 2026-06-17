@@ -421,7 +421,7 @@
       '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button></div>';
 
     // 내 이동(카풀)
-    h += '<div class="card col" data-action="tab" data-tab="carpool"><div class="ms-row"><span>🚗 내 이동</span><span class="ms-amt" style="font-size:13px">' + myRideLabel() + "</span></div></div>";
+    h += '<div class="card col" data-action="tab" data-tab="carpool"><div class="ms-row"><span>🚗 내 이동</span><span class="ms-amt" style="font-size:12px">' + myRideLabel() + "</span></div></div>";
 
     // 내 정산
     h += '<div class="card my-settle col ' + (myNet > 0 ? "pos" : myNet < 0 ? "neg" : "") + '" data-action="tab" data-tab="settle">' +
