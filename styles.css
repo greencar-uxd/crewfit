@@ -37,11 +37,11 @@
   /* ---- Spacing · radius · shadow · motion (4px grid) ---- */
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px;
   --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px; --radius-2xl:28px; --radius-pill:999px;
-  --shadow-xs:none;
-  --shadow-sm:none;
-  --shadow-md:none;
-  --shadow-lg:none;
-  --shadow-xl:none;
+  --shadow-xs:0 1px 2px rgba(16,18,29,.05);
+  --shadow-sm:0 1px 2px rgba(16,18,29,.06), 0 1px 3px rgba(16,18,29,.04);
+  --shadow-md:0 2px 4px rgba(16,18,29,.05), 0 8px 16px -8px rgba(16,18,29,.12);
+  --shadow-lg:0 4px 8px rgba(16,18,29,.05), 0 20px 40px -16px rgba(16,18,29,.18);
+  --shadow-xl:0 8px 16px rgba(16,18,29,.06), 0 32px 64px -24px rgba(16,18,29,.24);
   --ease-out:cubic-bezier(.2,.8,.2,1);
 
   /* ---- Type families ---- */
@@ -54,7 +54,7 @@
   --pri:var(--accent); --pri-d:var(--accent-hover);
   --green:var(--success-500); --yellow:var(--warning-500);
   --pos:var(--success-600); --neg:var(--danger-500); --warn:var(--warning-600); --blue:var(--cobalt-500);
-  --shadow:none;
+  --shadow:var(--shadow-sm);
   --s-1:var(--space-1); --s-2:var(--space-2); --s-3:var(--space-3); --s-4:var(--space-4);
   --s-5:var(--space-5); --s-6:var(--space-6); --s-8:var(--space-8); --s-10:var(--space-10);
   --r-1:var(--radius-sm); --r-2:var(--radius-md); --r-3:var(--radius-lg); --r-4:var(--radius-xl); --r-pill:var(--radius-pill);
