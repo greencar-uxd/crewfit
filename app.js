@@ -787,6 +787,7 @@
   /* ============================================================
      상위(허브) 페이지 — 세션 목록
      ============================================================ */
+  function markFeedSeen() { try { localStorage.setItem("srk_feedseen", String(Date.now())); } catch (e) {} }
   function feedItems() {
     var out = [];
     myClubs().forEach(function (c) {
@@ -798,25 +799,27 @@
     });
     return out.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }).slice(0, 30);
   }
-  function feedCard(it) {
+  function feedCard(it, isNew) {
     var c = it.club, ic = "megaphone", lab = "소식", body = "", tab = "board", bt = "notice";
     if (it.kind === "notice") { ic = "megaphone"; lab = "새 공지"; body = it.text; tab = "board"; bt = "notice"; }
     else if (it.kind === "poll") { ic = "ballot"; lab = it.closed ? "투표 마감" : "새 투표"; body = it.q; tab = "board"; bt = "poll"; }
     else if (it.kind === "dues") { ic = "wallet"; lab = "회비 등록"; body = it.title + " · 1인 " + won(it.amount); tab = "board"; bt = "dues"; }
     else if (it.kind === "match") { var m = it.m; ic = "ballot"; lab = "대전 결과"; body = memberName(m.p1.id) + " " + (+m.p1.score || 0) + " : " + (+m.p2.score || 0) + " " + memberName(m.p2.id) + (m.winner ? " · 🏆 " + memberName(m.winner) : ""); tab = "ranking"; bt = "notice"; }
     else if (it.kind === "session") { ic = "calendar"; lab = "새 일정"; body = it.s.title + (it.s.startDate ? " · " + dateRangeKo(it.s.startDate, it.s.endDate) : ""); tab = "schedule"; bt = "notice"; }
-    return '<div class="card feed-item acc-' + esc(c.accent || "red") + '" data-action="go-club-tab" data-id="' + esc(c.id) + '" data-tab="' + tab + '" data-bt="' + bt + '">' +
-      '<div class="fi-head"><span class="fi-club">' + (c.emoji ? c.emoji + " " : "") + esc(c.name) + '</span><span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
+    return '<div class="card feed-item' + (isNew ? " is-new" : "") + ' acc-' + esc(c.accent || "red") + '" data-action="go-club-tab" data-id="' + esc(c.id) + '" data-tab="' + tab + '" data-bt="' + bt + '">' +
+      '<div class="fi-head"><span class="fi-club">' + (c.emoji ? c.emoji + " " : "") + esc(c.name) + '</span>' + (isNew ? '<span class="fi-new">NEW</span>' : "") + '<span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
       '<div class="fi-body"><span class="fi-ic">' + icon(ic, 18) + '</span><div class="fi-main"><div class="fi-lab">' + lab + '</div><div class="fi-text">' + esc(body) + '</div></div></div>' +
       '</div>';
   }
   function viewFeed() {
     var items = feedItems(), h = '<div class="hub-wrap">';
+    var seen = +(localStorage.getItem("srk_feedseen") || 0);
+    var newCnt = items.filter(function (it) { return (it.ts || 0) > seen; }).length;
     if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 입력 내용이 이 기기에만 저장돼요.</div>';
-    h += '<div class="hub-head"><h1>홈</h1><p class="hub-sub">내 동호회 소식</p></div>';
+    h += '<div class="hub-head"><h1>홈</h1><p class="hub-sub">내 동호회 소식' + (newCnt ? ' · <b class="feed-newcnt">새 소식 ' + newCnt + '건</b>' : "") + '</p></div>';
     if (!items.length) return h + '<div class="empty-msg">아직 새 소식이 없어요.<br>\u2018내 크루\u2019 탭에서 동호회 활동을 시작해보세요.</div></div>';
     h += '<div class="feed">';
-    items.forEach(function (it) { h += feedCard(it); });
+    items.forEach(function (it) { h += feedCard(it, (it.ts || 0) > seen); });
     return h + "</div></div>";
   }
   function viewClubs() {
@@ -2069,10 +2072,10 @@
 
     /* 알림 */
     if (a === "open-notifs") { openNotifs(); return; }
-    if (a === "top-nav") { state.screen = t.getAttribute("data-screen") || "clubs"; state.clubId = null; state.pollId = null; render(); return; }
+    if (a === "top-nav") { if (state.screen === "clubs" && t.getAttribute("data-screen") !== "clubs") markFeedSeen(); state.screen = t.getAttribute("data-screen") || "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "go-explore") { state.screen = "explore"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "go-crews") { state.screen = "crews"; state.clubId = null; state.pollId = null; render(); return; }
-    if (a === "go-club-tab") { state.clubId = t.getAttribute("data-id"); state.hubTab = t.getAttribute("data-tab") || "schedule"; state.boardTab = t.getAttribute("data-bt") || "notice"; state.screen = "hub"; state.pollId = null; render(); return; }
+    if (a === "go-club-tab") { markFeedSeen(); state.clubId = t.getAttribute("data-id"); state.hubTab = t.getAttribute("data-tab") || "schedule"; state.boardTab = t.getAttribute("data-bt") || "notice"; state.screen = "hub"; state.pollId = null; render(); return; }
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }

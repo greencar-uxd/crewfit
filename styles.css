@@ -905,3 +905,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* 세션 기능 토글 */
 .feat-row { display: flex; gap: 16px; margin: 4px 0 0; }
 .feat-row .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+/* 피드 NEW 표시 */
+.fi-new { flex: none; font-size: 9px; font-weight: 800; letter-spacing: .3px; color: #fff; background: var(--pos); border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
+.feed-item.is-new { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }
+.feed-newcnt { color: var(--pos); font-weight: 800; }
