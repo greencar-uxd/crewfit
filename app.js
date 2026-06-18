@@ -451,14 +451,15 @@
   function render() {
     rebuildDB();   // 현재 세션 기준으로 DB 뷰 재구성
     if (!(me && (obj(DB.members)[me] || {}).claimed)) { renderLogin(); return; }  // 앱 레벨 로그인 필요
-    var sess = (state.screen === "hub" || state.screen === "clubs") ? null : currentSession();
-    var mode = state.screen === "clubs" ? "clubs" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : "app");
+    var sess = (state.screen === "hub" || state.screen === "clubs" || state.screen === "me") ? null : currentSession();
+    var mode = (state.screen === "clubs" || state.screen === "me") ? "top" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : "app");
     // 뒤로가기 히스토리 기록 (화면·세션·탭 단위)
     var sig = state.screen + "|" + (state.clubId || "") + "|" + (state.sessionId || "") + "|" + state.tab + "|" + state.alert + "|" + (state.pollId || "");
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
     lastSig = sig;
     var main = $("#app-main");
-    if (mode === "clubs") { $("#gate").classList.add("hidden"); renderClubsHeader(); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewClubs(); window.scrollTo(0, 0); return; }
+    $("#app").classList.remove("lvl-top");
+    if (mode === "top") { $("#app").classList.add("lvl-top"); $("#gate").classList.add("hidden"); renderTopHeader(); renderTopNav(); setChrome(false); main.innerHTML = (state.screen === "me") ? viewMeTop() : viewClubs(); window.scrollTo(0, 0); return; }
     if (mode === "hub") { $("#gate").classList.add("hidden"); renderHubHeader(currentClub()); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewHub(); window.scrollTo(0, 0); return; }
     if (mode === "info") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewSessionInfo(sess); window.scrollTo(0, 0); return; }
     // 실시간 앱 세션 — 입장(로그인) 필요
@@ -500,12 +501,30 @@
       '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span> ' : "") + (dd ? '<span class="badge-dday">' + dd + "</span>" : "") + (sess.subtitle ? " " + esc(sess.subtitle) : "") + "</div></div>" +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
-  function renderClubsHeader() {
-    var loggedIn = !!(me && (obj(DB.members)[me] || {}).claimed);
+  function renderTopHeader() {
+    var unread = unreadNotifs().length;
     $("#app-header").innerHTML =
       '<div class="hd-brand">' +
       '<div><div class="hd-title">크루핏</div><div class="hd-sub">내게 딱 맞는 동호회</div></div></div>' +
-      (loggedIn ? '<button class="me-chip" data-action="open-profile">' + avatar(me, 24) + "<span>" + esc(memberName(me)) + "</span></button>" : "");
+      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
+  }
+  function renderTopNav() {
+    var tabs = [["clubs", "home", "홈"], ["me", "user", "마이"]];
+    $("#app-nav").innerHTML = tabs.map(function (t) {
+      return '<button class="navbtn' + (state.screen === t[0] ? " on" : "") + '" data-action="top-nav" data-screen="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
+    }).join("");
+  }
+  function viewMeTop() {
+    var m = obj(DB.members)[me] || {}, h = '<div class="hub-wrap">';
+    if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 입력 내용이 이 기기에만 저장돼요.</div>';
+    h += '<div class="hub-head"><h1>마이</h1></div>';
+    h += '<div class="card my-profile" data-action="open-profile"><div class="mp-top">' + avatar(me, 52) +
+      '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + '</div>' +
+      '<div class="mp-sub">' + (m.pin ? "인증번호 설정됨 · 다른 기기에서도 같은 번호로 로그인" : '<span class="warn">인증번호 미설정 — 눌러서 설정</span>') + '</div></div>' +
+      '<span class="mp-go">' + icon("edit", 18) + '</span></div></div>';
+    h += '<button class="btn-line btn-block" data-action="open-profile" style="margin-top:12px">프로필 · 설정</button>';
+    h += '<button class="btn-line btn-block logout-btn" data-action="switch-me" style="margin-top:10px">' + icon("logout", 18) + ' 로그아웃</button>';
+    return h + "</div>";
   }
   function renderHubHeader(club) {
     club = club || {};
@@ -514,7 +533,7 @@
       '<button class="hd-back" data-action="go-clubs" aria-label="동호회 목록으로">' + icon("back", 22) + "<span>동호회</span></button>" +
       '<div class="hd-brand" style="flex:1;min-width:0"><span class="hd-brand-emoji">' + (club.emoji || "🤙") + '</span>' +
       '<div style="min-width:0"><div class="hd-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(club.name || "세션") + '</div><div class="hd-sub">' + esc(sportLabel(club.sport)) + '</div></div></div>' +
-      (loggedIn ? '<button class="me-chip" data-action="open-profile">' + avatar(me, 24) + "<span>" + esc(memberName(me)) + "</span></button>" : "");
+      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unreadNotifs().length ? '<span class="bell-badge">' + (unreadNotifs().length > 9 ? "9+" : unreadNotifs().length) + "</span>" : "") + "</button>";
   }
   function renderNav() {
     var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
@@ -1689,6 +1708,7 @@
 
     /* 알림 */
     if (a === "open-notifs") { openNotifs(); return; }
+    if (a === "top-nav") { state.screen = t.getAttribute("data-screen") || "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
