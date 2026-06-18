@@ -819,8 +819,7 @@
     h += '<div class="list-grid sess-grid">';
     list.forEach(function (c) { h += clubCard(c); });
     h += "</div>";
-    if (!list.length) h += '<div class="empty-msg">아직 가입한 동호회가 없어요. 아래 둘러보기로 동호회를 찾아보세요.</div>';
-    h += '<button class="btn-line btn-block" data-action="go-explore" style="margin-top:10px">' + icon("compass", 16) + ' 다른 동호회 둘러보기</button>';
+    if (!list.length) h += '<div class="empty-msg">아직 가입한 동호회가 없어요.<br>동호회 운영진에게 초대를 요청하세요.</div>';
     return '<div class="hub-wrap">' + h + "</div>";
   }
   function clubCard(c) {
