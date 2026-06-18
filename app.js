@@ -104,6 +104,7 @@
       download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
       expand: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>',
       compass: '<circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2 5.2-2z"/>',
+      users: '<circle cx="9" cy="8" r="3.1"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3.1 3.1 0 0 1 0 5.4"/><path d="M17.5 13.6a5.5 5.5 0 0 1 3 5.4"/>',
       gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
     };
     return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
@@ -458,8 +459,8 @@
   function render() {
     rebuildDB();   // 현재 세션 기준으로 DB 뷰 재구성
     if (!(me && (obj(DB.members)[me] || {}).claimed)) { renderLogin(); return; }  // 앱 레벨 로그인 필요
-    var sess = (state.screen === "hub" || state.screen === "clubs" || state.screen === "me" || state.screen === "explore") ? null : currentSession();
-    var mode = (state.screen === "clubs" || state.screen === "me" || state.screen === "explore") ? "top" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : sess && sess.kind === "match" ? "match" : "app");
+    var sess = (state.screen === "hub" || state.screen === "clubs" || state.screen === "me" || state.screen === "explore" || state.screen === "crews") ? null : currentSession();
+    var mode = (state.screen === "clubs" || state.screen === "me" || state.screen === "explore" || state.screen === "crews") ? "top" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : sess && sess.kind === "match" ? "match" : "app");
     // 뒤로가기 히스토리 기록 (화면·세션·탭 단위)
     var sig = state.screen + "|" + (state.clubId || "") + "|" + (state.sessionId || "") + "|" + state.tab + "|" + state.alert + "|" + (state.pollId || "");
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
@@ -468,7 +469,7 @@
     var appEl = $("#app");
     appEl.classList.remove("lvl-top", "club-themed", "acc-red", "acc-blue", "acc-green", "acc-purple", "acc-orange");
     if (mode !== "top") { var tclub = currentClub() || {}; if (tclub.accent) appEl.classList.add("club-themed", "acc-" + tclub.accent); }
-    if (mode === "top") { appEl.classList.add("lvl-top"); $("#gate").classList.add("hidden"); renderTopHeader(); renderTopNav(); setChrome(false); main.innerHTML = state.screen === "me" ? viewMeTop() : state.screen === "explore" ? viewExplore() : viewClubs(); window.scrollTo(0, 0); return; }
+    if (mode === "top") { appEl.classList.add("lvl-top"); $("#gate").classList.add("hidden"); renderTopHeader(); renderTopNav(); setChrome(false); main.innerHTML = state.screen === "me" ? viewMeTop() : state.screen === "crews" ? viewClubs() : state.screen === "explore" ? viewExplore() : viewFeed(); window.scrollTo(0, 0); return; }
     if (mode === "hub") { $("#gate").classList.add("hidden"); renderHubHeader(currentClub()); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewHub(); window.scrollTo(0, 0); return; }
     if (mode === "info") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewSessionInfo(sess); window.scrollTo(0, 0); return; }
     if (mode === "match") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewMatchSession(sess); window.scrollTo(0, 0); return; }
@@ -522,9 +523,10 @@
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
   function renderTopNav() {
-    var tabs = [["clubs", "home", "홈"], ["explore", "compass", "탐색"], ["me", "user", "마이"]];
+    var tabs = [["clubs", "home", "홈"], ["crews", "users", "내 크루"], ["me", "user", "마이"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
-      return '<button class="navbtn' + (state.screen === t[0] ? " on" : "") + '" data-action="top-nav" data-screen="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
+      var on = state.screen === t[0] || (t[0] === "crews" && state.screen === "explore");
+      return '<button class="navbtn' + (on ? " on" : "") + '" data-action="top-nav" data-screen="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
   }
   function viewMeTop() {
@@ -778,14 +780,47 @@
   /* ============================================================
      상위(허브) 페이지 — 세션 목록
      ============================================================ */
+  function feedItems() {
+    var out = [];
+    myClubs().forEach(function (c) {
+      clubNotices(c.id).forEach(function (n) { out.push({ kind: "notice", club: c, ts: n.ts || 0, text: n.text }); });
+      clubPolls(c.id).forEach(function (p) { out.push({ kind: "poll", club: c, ts: p.ts || 0, q: p.q, closed: p.closed }); });
+      clubDues(c.id).forEach(function (d) { out.push({ kind: "dues", club: c, ts: d.ts || 0, title: d.title, amount: d.amount }); });
+      clubMatches(c.id).forEach(function (m) { if (m.p1 && m.p2) out.push({ kind: "match", club: c, ts: m.ts || 0, m: m }); });
+      sessionsOfClub(c.id).forEach(function (sx) { if (sx._user && !sx.match && (sx.ts || 0) > 0) out.push({ kind: "session", club: c, ts: sx.ts || 0, s: sx }); });
+    });
+    return out.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }).slice(0, 30);
+  }
+  function feedCard(it) {
+    var c = it.club, ic = "megaphone", lab = "소식", body = "", tab = "board", bt = "notice";
+    if (it.kind === "notice") { ic = "megaphone"; lab = "새 공지"; body = it.text; tab = "board"; bt = "notice"; }
+    else if (it.kind === "poll") { ic = "ballot"; lab = it.closed ? "투표 마감" : "새 투표"; body = it.q; tab = "board"; bt = "poll"; }
+    else if (it.kind === "dues") { ic = "wallet"; lab = "회비 등록"; body = it.title + " · 1인 " + won(it.amount); tab = "board"; bt = "dues"; }
+    else if (it.kind === "match") { var m = it.m; ic = "ballot"; lab = "대전 결과"; body = memberName(m.p1.id) + " " + (+m.p1.score || 0) + " : " + (+m.p2.score || 0) + " " + memberName(m.p2.id) + (m.winner ? " · 🏆 " + memberName(m.winner) : ""); tab = "ranking"; bt = "notice"; }
+    else if (it.kind === "session") { ic = "calendar"; lab = "새 일정"; body = it.s.title + (it.s.startDate ? " · " + dateRangeKo(it.s.startDate, it.s.endDate) : ""); tab = "schedule"; bt = "notice"; }
+    return '<div class="card feed-item acc-' + esc(c.accent || "red") + '" data-action="go-club-tab" data-id="' + esc(c.id) + '" data-tab="' + tab + '" data-bt="' + bt + '">' +
+      '<div class="fi-head"><span class="fi-club">' + (c.emoji ? c.emoji + " " : "") + esc(c.name) + '</span><span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
+      '<div class="fi-body"><span class="fi-ic">' + icon(ic, 18) + '</span><div class="fi-main"><div class="fi-lab">' + lab + '</div><div class="fi-text">' + esc(body) + '</div></div></div>' +
+      '</div>';
+  }
+  function viewFeed() {
+    var items = feedItems(), h = '<div class="hub-wrap">';
+    if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 입력 내용이 이 기기에만 저장돼요.</div>';
+    h += '<div class="hub-head"><h1>홈</h1><p class="hub-sub">내 동호회 소식</p></div>';
+    if (!items.length) return h + '<div class="empty-msg">아직 새 소식이 없어요.<br>\u2018내 크루\u2019 탭에서 동호회 활동을 시작해보세요.</div></div>';
+    h += '<div class="feed">';
+    items.forEach(function (it) { h += feedCard(it); });
+    return h + "</div></div>";
+  }
   function viewClubs() {
     var list = myClubs(), h = "";
     if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 입력 내용이 이 기기에만 저장돼요. <button class="link" data-action="reload-app">새로고침</button> 후 다시 시도해 주세요.</div>';
-    h += '<div class="hub-head hub-head-row"><h1>동호회</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="create-club">+ 동호회 개설</button>' : "") + '</div>';
+    h += '<div class="hub-head hub-head-row"><h1>내 크루</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="create-club">+ 동호회 개설</button>' : "") + '</div>';
     h += '<div class="list-grid sess-grid">';
     list.forEach(function (c) { h += clubCard(c); });
     h += "</div>";
-    if (!list.length && !isMeAdmin()) h += '<div class="empty-msg">아직 속한 동호회가 없어요.<br>동호회 운영진에게 초대를 요청하세요.</div>';
+    if (!list.length) h += '<div class="empty-msg">아직 가입한 동호회가 없어요. 아래 둘러보기로 동호회를 찾아보세요.</div>';
+    h += '<button class="btn-line btn-block" data-action="go-explore" style="margin-top:10px">' + icon("compass", 16) + ' 다른 동호회 둘러보기</button>';
     return '<div class="hub-wrap">' + h + "</div>";
   }
   function clubCard(c) {
@@ -806,7 +841,8 @@
     var list = allClubs().filter(function (c) { return (c.visibility !== "private") || meClubs[c.id]; });
     var h = '<div class="hub-wrap">';
     if (Store.mode === "demo") h += '<div class="demo-note">⚠️ <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 입력 내용이 이 기기에만 저장돼요.</div>';
-    h += '<div class="hub-head"><h1>탐색</h1><p class="hub-sub">관심 있는 동호회를 둘러보고 가입해보세요</p></div>';
+    h += '<div class="page-head" style="margin-bottom:8px"><button class="back" data-action="go-crews">' + icon("back", 18) + ' 내 크루</button></div>';
+    h += '<div class="hub-head"><h1>동호회 둘러보기</h1><p class="hub-sub">관심 있는 동호회를 찾아 가입해보세요</p></div>';
     if (!list.length) return h + '<div class="empty-msg">아직 공개된 동호회가 없어요.</div></div>';
     h += '<div class="list-grid sess-grid">';
     list.forEach(function (c) { h += exploreCard(c); });
@@ -2029,6 +2065,9 @@
     /* 알림 */
     if (a === "open-notifs") { openNotifs(); return; }
     if (a === "top-nav") { state.screen = t.getAttribute("data-screen") || "clubs"; state.clubId = null; state.pollId = null; render(); return; }
+    if (a === "go-explore") { state.screen = "explore"; state.clubId = null; state.pollId = null; render(); return; }
+    if (a === "go-crews") { state.screen = "crews"; state.clubId = null; state.pollId = null; render(); return; }
+    if (a === "go-club-tab") { state.clubId = t.getAttribute("data-id"); state.hubTab = t.getAttribute("data-tab") || "schedule"; state.boardTab = t.getAttribute("data-bt") || "notice"; state.screen = "hub"; state.pollId = null; render(); return; }
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }

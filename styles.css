@@ -890,3 +890,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .av-dot { position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: var(--pos); border: 2px solid var(--bg); box-sizing: content-box; }
 .mr-sub .pres { color: var(--muted); }
 .mr-sub .pres.on { color: var(--pos); font-weight: 700; }
+/* 홈 피드 */
+.feed { display: flex; flex-direction: column; gap: 10px; }
+.feed-item { cursor: pointer; }
+.feed-item:active { transform: scale(.99); }
+.fi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.fi-club { font-weight: 700; font-size: 13px; color: var(--acc, var(--ink)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fi-ago { font-size: 11px; color: var(--muted); flex: none; }
+.fi-body { display: flex; align-items: flex-start; gap: 10px; }
+.fi-ic { flex: none; color: var(--acc, var(--pri)); margin-top: 1px; }
+.fi-main { flex: 1; min-width: 0; }
+.fi-lab { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
+.fi-text { font-size: 13px; color: var(--muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
