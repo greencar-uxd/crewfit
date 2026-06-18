@@ -4,7 +4,7 @@
 > 세션끼리는 서로의 메모리를 못 보므로, "지금 뭐 하는지 / 다음에 뭘 할지"를 여기에 적어두고
 > 작업 시작·종료 때 이 파일을 갱신한 뒤 commit/push 하세요. 상대 세션은 `git pull` 후 읽으면 됩니다.
 
-**마지막 갱신:** 2026-06-17 / 갱신한 세션: cloud (claude/work-status-queue-qmsv6l)
+**마지막 갱신:** 2026-06-19 08:36 / 자동 (deploy.sh @ GREENCAR_MAC.GREENCAR)
 
 ## 🤖 최근 배포 (자동 기록)
 
