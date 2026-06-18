@@ -32,10 +32,10 @@
   --border:var(--gray-200); --border-strong:var(--gray-300); --border-accent:var(--red-500);
   --accent:var(--red-500); --accent-hover:var(--red-600); --on-accent:var(--gray-0); --focus-ring:var(--red-500);
   --action-primary-bg:var(--gray-900); --action-primary-bg-hover:var(--gray-800); --action-primary-fg:var(--gray-0);
-  --info-50:var(--red-50);
+  --info-50:var(--red-50); --info-500:var(--red-500); --accent-soft:color-mix(in srgb, var(--accent) 12%, transparent);
 
   /* ---- Spacing · radius · shadow · motion (4px grid) ---- */
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px; --space-10:40px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:28px; --space-8:32px; --space-10:40px;
   --radius-xs:4px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px; --radius-2xl:28px; --radius-pill:999px;
   --shadow-xs:0 1px 2px rgba(16,18,29,.05);
   --shadow-sm:0 1px 2px rgba(16,18,29,.06), 0 1px 3px rgba(16,18,29,.04);
@@ -185,7 +185,7 @@ h1, h2 { margin: 0; }
 /* 아바타 / 멤버칩 / 역할배지 */
 .av { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; color: #fff; font-weight: 800; font-size: 12px; flex: none; letter-spacing: -.5px; }
 .mchip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; }
-.rbadge { font-size: 10px; font-weight: 800; padding: 0px 8px; border-radius: 8px; vertical-align: middle; }
+.rbadge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: var(--radius-pill); vertical-align: middle; }
 .rbadge.mgr { background: var(--pri); color: #fff; }
 .rbadge.admin { background: color-mix(in srgb, var(--pri) 14%, transparent); color: var(--pri); }
 .rbadge.crew { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--muted); }
@@ -295,7 +295,7 @@ h1, h2 { margin: 0; }
 .sc-summary { font-size: 12px; color: var(--ink); line-height: 1.6; margin-top: 8px;
   padding-top: 8px; border-top: 0px solid var(--line); }
 .sc-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 16px 16px; margin-top: 8px; }
-.sc-tag { font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 8px; }
+.sc-tag { font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: var(--radius-pill); }
 .sc-tag.live { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
 .sc-tag.info { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
 .sc-go { font-size: 12px; font-weight: 800; color: var(--acc); }
@@ -542,6 +542,7 @@ h1, h2 { margin: 0; }
 .modal label.chk { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); }
 .modal input:not([type=checkbox]), .modal textarea, .modal select { width: 100%; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); outline: none; }
 .modal input:focus, .modal textarea:focus, .modal select:focus { border-color: var(--pri); }
+input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
 .modal textarea { resize: vertical; }
 .opt-field { margin-bottom: 8px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -755,7 +756,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .hub-subnav { display: flex; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--line); }
 .hsub { flex: none; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--text-secondary, var(--muted)); font-size: 15px; font-weight: 600; cursor: pointer; }
 .hsub.on { color: var(--text-primary, var(--ink)); border-bottom-color: var(--accent, var(--pri)); }
-.empty-msg { padding: 28px 16px; text-align: center; color: var(--text-secondary, var(--muted)); font-size: 14px; line-height: 1.6; border: 1px dashed var(--line); border-radius: var(--r-md, 10px); }
+.empty-msg { padding: 28px 16px; text-align: center; color: var(--text-secondary, var(--muted)); font-size: 14px; line-height: 1.6; border: 1px dashed var(--line); border-radius: var(--radius-md); }
 /* 멤버 목록 */
 .mem-list-club .mem-row { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--line); }
 .mem-list-club .mem-row:last-child { border-bottom: none; }
