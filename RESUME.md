@@ -9,11 +9,24 @@
 - 동호회 3개: 슈퍼리치키드(클라이밍·SRK), 지리아드(당구), 그린 포인트(일반·종목 미확정)
 - 데이터: Firebase Realtime DB(클라우드) ↔ 미설정 시 localStorage 데모 폴백
 
+## 여러 기기에서 이어작업 (집 맥 · 모바일 · 아무 브라우저)
+> **원본은 GitHub 레포 하나뿐**(`Greencar-UXD/crewfit`). 어디서 작업하든 흐름은 같다: **고치기 → 커밋 → push → 1~2분 내 라이브 반영**(캐시버스팅 자동, `.github/workflows/cache-bust.yml`). `deploy.sh` 없이도 push만 하면 됨.
+
+| 기기 | 코드 받기 | 미리보기 | 배포 |
+|---|---|---|---|
+| **집 맥북** | `git clone https://github.com/Greencar-UXD/crewfit.git` | `./serve.sh` → http://localhost:8000 | 커밋 후 `git push` (또는 `./deploy.sh`) |
+| **모바일/아이패드/아무 맥 (브라우저)** | **Codespaces**: 레포 → `Code ▸ Codespaces ▸ Create`. 풀 VS Code + 8000 포트 자동 미리보기(`.devcontainer`) | 자동 포워딩된 8000 포트 | 커밋 → push (Codespaces 인증 내장) |
+| **폰에서 빠른 한 줄 수정** | 레포 페이지에서 **`.` 키**(또는 github.com → github.dev) | (미리보기 없음 · 텍스트 편집만) | 커밋 → push |
+
+- **안전장치(중요)**: localhost·Codespaces·`?demo=1` 에서는 앱이 **자동 데모 모드(localStorage)** — 둘러봐도 라이브 데이터 안 건드림. **프로덕션(`*.github.io`)만 클라우드.** 개발 중 라이브를 봐야 하면 URL에 `?live=1`(실데이터 주의). 판정: `app.js` Store `useCloud`.
+- **집 맥 최초 1회**: git push 인증 필요 → `gh auth login` 또는 GitHub PAT(키체인). Codespaces/github.dev는 인증 내장이라 불필요.
+- 맥 기본 `python3`만 있으면 `serve.sh` 동작(node/brew 불필요).
+
 ## 재개 방법 / 환경 주의
 - 파일: `index.html` / `styles.css` / `config.js`(명단·세션·동호회 시드·Firebase) / `app.js`(스토어·렌더·정산·실력모듈) / `deploy.sh`
 - 이 맥엔 **node/brew 없음**. `gh`는 `~/.local/bin`(`export PATH="$HOME/.local/bin:$PATH"`).
 - **JS 문법검증**: JXA — `osascript -l JavaScript -e 'var d=$.NSString.stringWithContentsOfFileEncodingError("…/app.js",4,null);try{new Function(ObjC.unwrap(d));"OK"}catch(e){e.message}'`
-- **프리뷰**: `/tmp/srk-preview`에 파일 복사 후 데모 강제(`config.js` 끝에 `window.SRK_CONFIG.firebase = {};` append). **단, 레포 `config.js`엔 절대 그 줄 넣지 말 것**(클라우드 모드 유지 = 실제 크루 데이터). 배포 전 `grep -c 'firebase = {}' config.js` 가 `0`인지 확인.
+- **프리뷰**: 이제 `./serve.sh`(localhost) 또는 `?demo=1`이 **자동 데모**라 예전 `/tmp/srk-preview` + `firebase = {}` append 트릭은 불필요. **단, 레포 `config.js`엔 여전히 `firebase = {}` 줄을 절대 넣지 말 것**(클라우드 모드 유지 = 실제 크루 데이터). 안전망으로 배포 전 `grep -c 'firebase = {}' config.js` 가 `0`인지 확인.
 - **배포**: `cd ~/Downloads/srk-mt && ./deploy.sh "메시지"` (캐시버스팅 자동, 1~2분 내 반영)
 - 편집은 원자적 파이썬 스크립트(`.count()==n` 단언)로 안전하게.
 

@@ -1,0 +1,14 @@
+{
+  "name": "CREWFIT (정적 미리보기)",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": { "label": "CREWFIT 미리보기", "onAutoForward": "openPreview" }
+  },
+  "postAttachCommand": "nohup python3 -m http.server 8000 >/tmp/serve.log 2>&1 &",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ritwickdey.LiveServer"]
+    }
+  }
+}

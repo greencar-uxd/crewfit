@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+*.log
+
+# 보류: 현재 gh 토큰에 workflow 스코프가 없어 push 불가.
+#   활성화 → `gh auth refresh -h github.com -s workflow` 후 `git add -f .github/workflows/cache-bust.yml && git push`
+.github/workflows/cache-bust.yml

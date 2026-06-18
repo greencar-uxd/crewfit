@@ -116,10 +116,18 @@ srk-mt/
 - public 저장소로 배포되므로 `config.js`의 **명단(이름)과 일정이 공개**된다. 민감 정보(전화번호·계좌 등)는 넣지 말 것.
 - Firebase의 `apiKey`는 비밀이 아니다(클라이언트 공개가 정상). 데이터를 지키는 건 **Realtime Database 규칙**이다. 더 잠그고 싶다면: Firebase **익명 인증**을 켜고 규칙을 `".read"/".write": "auth != null"`로 바꾸거나, MT가 끝난 뒤 규칙을 `".write": false`로 바꿔 읽기 전용으로 동결한다.
 
-## 로컬에서 보기
+## 로컬에서 보기 / 여러 기기에서 이어작업
 
-`index.html`을 더블클릭(`file://`)하면 폰트/실시간 모듈 로딩이 막힐 수 있다. 정확히 보려면 간단한 정적 서버로 연다:
+`index.html`을 더블클릭(`file://`)하면 폰트/실시간 모듈 로딩이 막힐 수 있다. 정확히 보려면 간단한 정적 서버로 연다(맥 기본 `python3`만 있으면 됨):
 
 ```sh
-python3 -m http.server 8000     # 그 후 http://localhost:8000 접속
+./serve.sh            # = python3 -m http.server 8000 → http://localhost:8000
 ```
+
+> **데이터 안전**: localhost·Codespaces·`?demo=1` 에서는 앱이 **자동 데모 모드(localStorage)** 라, 클릭하며 둘러봐도 라이브 크루 데이터(Firebase)를 건드리지 않는다. **프로덕션(`*.github.io`)만 실시간 클라우드.** 개발 중 라이브 데이터를 봐야 하면 URL에 `?live=1`(실데이터 주의).
+
+**원본은 GitHub 레포 하나뿐.** 어디서 작업하든 *고치기 → 커밋 → `git push`* 하면 1~2분 내 라이브 반영(캐시버스팅 자동, `.github/workflows/cache-bust.yml`). `deploy.sh` 없이 push만으로도 배포된다.
+
+- **집 맥북**: `git clone` → `./serve.sh` 로 미리보기 → 커밋/push (최초 1회 `gh auth login` 또는 PAT)
+- **모바일·아이패드·아무 맥(브라우저)**: 레포에서 **Codespaces** 생성 → 풀 VS Code + 8000 포트 자동 미리보기(`.devcontainer`)
+- **폰에서 빠른 수정**: 레포 페이지에서 **`.` 키**(github.dev) → 편집 → 커밋/push

@@ -225,7 +225,12 @@
   function onWriteError(e) { try { console.warn("write fail", e); } catch (_) {} if (pendingRetry) { var r = pendingRetry; pendingRetry = null; try { r(); } catch (_) {} } var n = Date.now(); if (n - _lastWErr < 4000) return; _lastWErr = n; }
   var Store = (function () {
     var fb = CFG.firebase || {};
-    var useCloud = !!(fb.apiKey && fb.databaseURL && window.firebase);
+    /* 데이터 안전: 프로덕션(github.io)에서만 클라우드. 로컬·Codespaces·?demo=1 은 자동 데모(localStorage)라
+       다른 기기에서 미리보기해도 라이브 크루 데이터를 건드리지 않음. 개발환경에서 클라우드를 봐야 하면 ?live=1. */
+    var _host = location.hostname, _q = location.search;
+    var _devHost = location.protocol === "file:" || _host === "localhost" || _host === "127.0.0.1" || _host === "0.0.0.0" || _host === "::1" || /\.app\.github\.dev$|\.githubpreview\.dev$|\.gitpod\.io$|\.csb\.app$/i.test(_host);
+    var _forceDemo = /[?&]demo=1(&|$)/.test(_q), _forceLive = /[?&]live=1(&|$)/.test(_q);
+    var useCloud = !!(fb.apiKey && fb.databaseURL && window.firebase) && !_forceDemo && (!_devHost || _forceLive);
     if (useCloud) { try { firebase.initializeApp({ apiKey: fb.apiKey, authDomain: fb.authDomain, databaseURL: fb.databaseURL, projectId: fb.projectId, appId: fb.appId }); } catch (e) {} }
 
     if (useCloud) {
