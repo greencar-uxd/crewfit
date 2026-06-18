@@ -39,19 +39,30 @@ echo "→ 캐시버스팅 버전: $VER"
 
 # 공유 상태판(STATUS.md) 자동 스탬프 — 어느 기기에서 배포했는지/뭘 바꿨는지 기록
 if [ -f STATUS.md ]; then
-  HOST="$(hostname 2>/dev/null | sed 's/\.local$//')"
+  HOST="$(hostname -s 2>/dev/null || hostname 2>/dev/null)"
+  HOST="${HOST%%.*}"
   [ -z "$HOST" ] && HOST="unknown-host"
   STAMP_WHEN="$(date '+%Y-%m-%d %H:%M')"
   # 이번에 바뀐 파일 (STATUS.md 자신·index.html 버전노이즈 제외, 최대 8개)
   CHANGED="$(git status --porcelain 2>/dev/null | awk '{print $2}' | grep -vE '^(STATUS\.md|index\.html)$' | head -8 | tr '\n' ' ')"
   [ -z "$CHANGED" ] && CHANGED="(코드 변경 없음 — 재배포)"
-  NEWBLOCK="$(printf '<!-- DEPLOY-STAMP:BEGIN -->\n**최근 배포(자동):** %s · 기기 `%s` · 버전 `%s`\n\n- 바뀐 파일: %s\n<!-- DEPLOY-STAMP:END -->' "$STAMP_WHEN" "$HOST" "$VER" "$CHANGED")"
-  # 마커 사이를 새 블록으로 교체 (awk = BSD/GNU 공통)
-  awk -v repl="$NEWBLOCK" '
-    /<!-- DEPLOY-STAMP:BEGIN -->/ { print repl; skip=1; next }
-    /<!-- DEPLOY-STAMP:END -->/   { skip=0; next }
-    skip!=1 { print }
+  # 새 스탬프 블록을 임시 파일로 생성 (멀티라인을 awk -v로 넘기면 BSD awk에서 깨지므로 파일 경유)
+  {
+    printf '<!-- DEPLOY-STAMP:BEGIN -->\n'
+    printf '**최근 배포(자동):** %s · 기기 `%s` · 버전 `%s`\n\n' "$STAMP_WHEN" "$HOST" "$VER"
+    printf -- '- 바뀐 파일: %s\n' "$CHANGED"
+    printf '<!-- DEPLOY-STAMP:END -->\n'
+  } > .deploy-stamp.tmp
+  # 마커 사이를 새 블록으로 교체 (getline = BSD/GNU awk 공통 동작)
+  awk '
+    /<!-- DEPLOY-STAMP:BEGIN -->/ {
+      while ((getline line < ".deploy-stamp.tmp") > 0) print line
+      close(".deploy-stamp.tmp"); drop=1; next
+    }
+    /<!-- DEPLOY-STAMP:END -->/ { drop=0; next }
+    drop!=1 { print }
   ' STATUS.md > STATUS.md.tmp && mv STATUS.md.tmp STATUS.md
+  rm -f .deploy-stamp.tmp
   # 맨 위 '마지막 갱신' 줄도 함께 갱신
   sed -i '' -E "s#^\*\*마지막 갱신:\*\*.*#**마지막 갱신:** $STAMP_WHEN / 자동 (deploy.sh @ $HOST)#" STATUS.md 2>/dev/null \
     || sed -i -E "s#^\*\*마지막 갱신:\*\*.*#**마지막 갱신:** $STAMP_WHEN / 자동 (deploy.sh @ $HOST)#" STATUS.md
