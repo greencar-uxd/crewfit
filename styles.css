@@ -816,3 +816,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .pf-club-name { font-weight: 700; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 동호회별 테마 — 해당 동호회 색(--acc)을 글로벌 액센트로 스코프 */
 #app.club-themed { --accent: var(--acc); --accent-hover: var(--acc2); --pri: var(--acc); --pri-d: var(--acc2); --focus-ring: var(--acc); --accent-soft: color-mix(in srgb, var(--acc) 14%, transparent); }
+/* 1:1 대결 세션 */
+.match-detail { padding-top: 4px; }
+.md-vs { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 20px 8px; background: var(--surface-sunken); border-radius: var(--radius-lg); }
+.md-player { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.md-name { font-weight: 800; font-size: 15px; text-align: center; }
+.md-suji { font-size: 12px; color: var(--text-secondary, var(--muted)); }
+.md-mid { flex: none; padding: 0 6px; }
+.md-vs-txt { font-weight: 850; font-size: 18px; color: var(--text-secondary, var(--muted)); }
+.md-score { font-weight: 850; font-size: 26px; font-variant-numeric: tabular-nums; }
+.md-result { text-align: center; font-size: 15px; margin-top: 16px; padding: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-radius: var(--radius-md); }
+.md-mystat { display: flex; gap: 8px; }
+.ms-stat { flex: 1; text-align: center; }
+.ms-stat-n { font-size: 20px; font-weight: 850; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
+.ms-stat-l { font-size: 11px; color: var(--text-secondary, var(--muted)); margin-top: 2px; }

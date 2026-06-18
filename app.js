@@ -452,7 +452,7 @@
     rebuildDB();   // 현재 세션 기준으로 DB 뷰 재구성
     if (!(me && (obj(DB.members)[me] || {}).claimed)) { renderLogin(); return; }  // 앱 레벨 로그인 필요
     var sess = (state.screen === "hub" || state.screen === "clubs" || state.screen === "me") ? null : currentSession();
-    var mode = (state.screen === "clubs" || state.screen === "me") ? "top" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : "app");
+    var mode = (state.screen === "clubs" || state.screen === "me") ? "top" : state.screen === "hub" ? "hub" : (sess && sess.kind === "info" ? "info" : sess && sess.kind === "match" ? "match" : "app");
     // 뒤로가기 히스토리 기록 (화면·세션·탭 단위)
     var sig = state.screen + "|" + (state.clubId || "") + "|" + (state.sessionId || "") + "|" + state.tab + "|" + state.alert + "|" + (state.pollId || "");
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
@@ -464,6 +464,7 @@
     if (mode === "top") { appEl.classList.add("lvl-top"); $("#gate").classList.add("hidden"); renderTopHeader(); renderTopNav(); setChrome(false); main.innerHTML = (state.screen === "me") ? viewMeTop() : viewClubs(); window.scrollTo(0, 0); return; }
     if (mode === "hub") { $("#gate").classList.add("hidden"); renderHubHeader(currentClub()); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewHub(); window.scrollTo(0, 0); return; }
     if (mode === "info") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewSessionInfo(sess); window.scrollTo(0, 0); return; }
+    if (mode === "match") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewMatchSession(sess); window.scrollTo(0, 0); return; }
     $("#gate").classList.add("hidden");  // 앱 로그인만 하면 세션 자유 진입(추가 인증 없음)
     if (state.tab === "vote" || state.tab === "settle") { state.alert = state.tab === "settle" ? "settle" : "vote"; state.tab = "alert"; }
     if (state.tab === "prep") state.tab = "my";
@@ -518,8 +519,33 @@
       '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + '</div>' +
       '<div class="mp-sub">' + (m.bio ? esc(m.bio) : (m.pin ? "눌러서 프로필 설정" : '<span class="warn">인증번호 미설정 — 눌러서 설정</span>')) + '</div></div>' +
       '<span class="mp-go">' + icon("edit", 18) + '</span></div></div>';
+    h += myMatchStatsHtml();
     h += '<p class="pf-note" style="text-align:center;margin-top:14px">프로필 카드를 눌러 설정 · 로그아웃</p>';
     return h + "</div>";
+  }
+  function myMatchStatsHtml() {
+    var clubs = myClubs().filter(function (c) { return c.sport === "billiards"; }), h = "";
+    clubs.forEach(function (c) {
+      var st = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0];
+      if (!st || !st.games) return;
+      h += '<h2 class="sec" style="margin-top:20px">' + (c.emoji || "🎱") + " " + esc(c.name) + ' 내 기록</h2>';
+      h += '<div class="card"><div class="md-mystat">' +
+        '<div class="ms-stat"><div class="ms-stat-n">' + fmtAvg(st.avg) + '</div><div class="ms-stat-l">에버리지</div></div>' +
+        '<div class="ms-stat"><div class="ms-stat-n">' + st.games + '</div><div class="ms-stat-l">경기</div></div>' +
+        '<div class="ms-stat"><div class="ms-stat-n">' + st.wins + '</div><div class="ms-stat-l">승</div></div>' +
+        '<div class="ms-stat"><div class="ms-stat-n">' + st.highRun + '</div><div class="ms-stat-l">하이런</div></div></div>';
+      var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 6);
+      if (recent.length) {
+        h += '<div class="match-list" style="margin-top:12px">';
+        recent.forEach(function (mm) {
+          var meP = mm.p1.id === me ? mm.p1 : mm.p2, opP = mm.p1.id === me ? mm.p2 : mm.p1, win = mm.winner === me;
+          h += '<div class="match-row"><span class="mt-p win">나 <b>' + (+meP.score || 0) + '</b></span><span class="mt-vs">' + (win ? "승" : "패") + '</span><span class="mt-p right"><b>' + (+opP.score || 0) + "</b> " + esc(memberName(opP.id)) + "</span></div>";
+        });
+        h += "</div>";
+      }
+      h += "</div>";
+    });
+    return h;
   }
   function myClubsRolesHtml() {
     var clubs = myClubs();
@@ -728,6 +754,7 @@
     var list = sessionsOfClub(club.id), h = '<div class="list-grid sess-grid">';
     list.forEach(function (s) { h += sessionCard(s); });
     if (isMeAdmin()) h += '<button class="card sess-add" data-action="add-session">' + icon("plus", 24) + "<span>세션 추가하기</span></button>";
+    if (club.sport === "billiards" && rankCanRec(club.id)) h += '<button class="card sess-add" data-action="add-match-session">' + icon("ballot", 24) + "<span>1:1 대결 만들기</span></button>";
     h += "</div>";
     if (!list.length && !isMeAdmin()) h += '<div class="empty-msg">아직 등록된 일정이 없어요.</div>';
     if (canManage(me)) h += '<div class="card" style="margin-top:12px"><h2 class="sec" style="margin:0 0 12px">동호회 관리</h2><button class="btn-line btn-block" data-action="edit-club" data-id="' + esc(club.id) + '">동호회 정보 수정</button>' + (club._user ? '<button class="link-danger" data-action="del-club" data-id="' + esc(club.id) + '" style="display:block;width:100%;text-align:center;margin-top:12px">동호회 삭제</button>' : '') + '</div>';
@@ -914,7 +941,58 @@
     armRetry(function () { formRun(sid); });
     saveRecord({ ts: Date.now(), by: me, kind: "run", member: member, dist: dist, time: time, sessionId: sid });
   }
+  function matchCard(s) {
+    var m = s.match || {}, done = m.status === "done", p1 = m.p1 || {}, p2 = m.p2 || {};
+    return '<div class="card sess-card acc-' + esc(s.accent || "blue") + '" data-action="open-session" data-id="' + esc(s.id) + '">' +
+      '<div class="sc-top"><span class="sc-emoji">🎱</span><span class="sc-badge ' + (done ? "past" : "now") + '">' + (done ? "종료" : "진행 중") + "</span></div>" +
+      '<div class="sc-title">' + esc(memberName(p1.id)) + " vs " + esc(memberName(p2.id)) + "</div>" +
+      '<div class="sc-meta"><div>' + icon("ballot", 14) + " 3쿠션 대결 · 수지 " + (p1.target || "-") + ":" + (p2.target || "-") + "</div>" + (s.startDate ? "<div>" + icon("calendar", 14) + " " + esc(dateRangeKo(s.startDate, s.endDate)) + "</div>" : "") + "</div>" +
+      (done ? '<div class="sc-summary">' + (m.p1score || 0) + " : " + (m.p2score || 0) + " · 🏆 " + esc(memberName(m.winner)) + "</div>" : "") +
+      '<div class="sc-foot"><span class="sc-tag cat">1:1 대결</span><span class="sc-go">' + (done ? "결과 보기" : "결과 입력") + " ›</span></div></div>";
+  }
+  function formMatchSession() {
+    var cid = state.clubId, roster = clubRoster(cid);
+    if (!rankCanRec(cid)) { alert("동호회 멤버로 입장한 뒤 만들 수 있어요."); return; }
+    var p2def = (roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "";
+    var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
+    openModal("<h2>1:1 대결 일정</h2>" +
+      '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 3쿠션. 각자 수지를 미리 정해두고, 대결 후 결과를 입력하면 순위에 반영돼요.</p>' +
+      '<div class="mt-form">' +
+      '<div class="mt-col"><label>선수 1</label><select id="ms-p1">' + opt(me) + "</select>" +
+        '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span></div></div>' +
+      '<div class="mt-col"><label>선수 2</label><select id="ms-p2">' + opt(p2def) + "</select>" +
+        '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span></div></div>' +
+      '<label>날짜 (선택)</label><input id="ms-date" type="date">' +
+      "</div>" +
+      '<div id="ms-err" class="pin-err"></div>' +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match-session">대결 만들기</button></div>');
+  }
+  function viewMatchSession(s) {
+    var m = s.match || {}, cid = s.clubId, done = m.status === "done", p1 = m.p1 || {}, p2 = m.p2 || {}, canFin = rankCanRec(cid);
+    var h = '<div class="hub-wrap"><div class="match-detail">';
+    h += '<div class="md-vs">' +
+      '<div class="md-player">' + avatar(p1.id, 56) + '<div class="md-name">' + esc(memberName(p1.id)) + '</div><div class="md-suji">수지 ' + (p1.target || "-") + '</div></div>' +
+      '<div class="md-mid">' + (done ? '<div class="md-score">' + (m.p1score || 0) + " : " + (m.p2score || 0) + "</div>" : '<div class="md-vs-txt">VS</div>') + "</div>" +
+      '<div class="md-player">' + avatar(p2.id, 56) + '<div class="md-name">' + esc(memberName(p2.id)) + '</div><div class="md-suji">수지 ' + (p2.target || "-") + "</div></div></div>";
+    if (done) {
+      h += '<div class="md-result">🏆 <b>' + esc(memberName(m.winner)) + "</b> 승 · 순위에 반영됐어요</div>";
+      h += '<button class="btn-line btn-block" data-action="go-club-ranking" style="margin-top:12px">동호회 순위 보기 ›</button>';
+    } else if (canFin) {
+      h += '<h2 class="sec" style="margin-top:20px">대결 결과 입력</h2>' +
+        '<label>승자</label><div class="toggle2"><button type="button" id="md-w1" class="on" data-action="md-pick-winner" data-w="p1">' + esc(memberName(p1.id)) + '</button><button type="button" id="md-w2" data-action="md-pick-winner" data-w="p2">' + esc(memberName(p2.id)) + '</button></div>' +
+        '<input type="hidden" id="md-winner" value="p1">' +
+        '<div class="mt-3"><span><label>' + esc(memberName(p1.id)) + ' 득점</label><input id="md-s1" type="number" inputmode="numeric" min="0"></span><span><label>' + esc(memberName(p2.id)) + ' 득점</label><input id="md-s2" type="number" inputmode="numeric" min="0"></span></div>' +
+        '<label>이닝 수 (공통)</label><input id="md-inn" type="number" inputmode="numeric" min="1" placeholder="예 25">' +
+        '<div id="md-err" class="pin-err"></div>' +
+        '<button class="btn-pri btn-block" data-action="finish-match" data-sid="' + esc(s.id) + '" style="margin-top:14px">대결 종료 · 순위 반영</button>';
+    } else {
+      h += '<div class="empty-msg" style="margin-top:16px">진행 중인 대결이에요. 멤버가 결과를 입력하면 순위에 반영돼요.</div>';
+    }
+    if (s.by === me || canManage(me)) h += '<button class="link-danger" data-action="del-session" data-id="' + esc(s.id) + '" style="display:block;width:100%;text-align:center;margin-top:18px">대결 삭제</button>';
+    return h + "</div></div>";
+  }
   function sessionCard(s) {
+    if (s.match) return matchCard(s);
     var st = sessStatus(s), isApp = s.kind === "app", canDel = s._user && isMeAdmin();
     return '<div class="card sess-card acc-' + esc(s.accent || "red") + " st-" + st + '" data-action="open-session" data-id="' + esc(s.id) + '">' +
       '<div class="sc-top"><span class="sc-emoji">' + (s.emoji || "📌") + '</span><span class="sc-badge ' + st + '">' + esc(sessStatusLabel(s)) + "</span></div>" +
@@ -1638,6 +1716,30 @@
       render(); return;
     }
     if (a === "add-session") { formAddSession(); return; }
+    if (a === "add-match-session") { formMatchSession(); return; }
+    if (a === "save-match-session") {
+      var mcid = state.clubId; if (!rankCanRec(mcid)) return;
+      var mp1 = ($("#ms-p1") || {}).value, mp2 = ($("#ms-p2") || {}).value, merr = $("#ms-err");
+      if (!mp1 || !mp2 || mp1 === mp2) { if (merr) merr.textContent = "서로 다른 두 선수를 골라주세요."; return; }
+      var mt1 = +(($("#ms-t1") || {}).value) || 0, mt2 = +(($("#ms-t2") || {}).value) || 0, mdate = ($("#ms-date") || {}).value || "";
+      var msdata = { kind: "match", clubId: mcid, by: me, ts: Date.now(), emoji: "🎱", accent: (currentClub() || {}).accent || "blue", category: "1:1 대결", title: memberName(mp1) + " vs " + memberName(mp2), startDate: mdate, endDate: mdate, match: { p1: { id: mp1, target: mt1 }, p2: { id: mp2, target: mt2 }, status: "pending", winner: null, p1score: 0, p2score: 0 } };
+      Store.push("sessions", msdata); closeModal(); render(); return;
+    }
+    if (a === "md-pick-winner") { var mw = t.getAttribute("data-w"); var mwi = $("#md-winner"); if (mwi) mwi.value = mw; var w1 = $("#md-w1"), w2 = $("#md-w2"); if (w1) w1.classList.toggle("on", mw === "p1"); if (w2) w2.classList.toggle("on", mw === "p2"); return; }
+    if (a === "finish-match") {
+      var fsid = t.getAttribute("data-sid"), fso = sessionById(fsid);
+      if (!fso || !fso.match || !rankCanRec(fso.clubId)) return;
+      var ferr = $("#md-err"), finn = +(($("#md-inn") || {}).value) || 0;
+      if (finn < 1) { if (ferr) ferr.textContent = "이닝 수를 입력해주세요."; return; }
+      var fwin = (($("#md-winner") || {}).value === "p2") ? fso.match.p2.id : fso.match.p1.id;
+      var fs1 = +(($("#md-s1") || {}).value) || 0, fs2 = +(($("#md-s2") || {}).value) || 0, fcid = fso.clubId;
+      var fmk = key();
+      var fcm = { ts: Date.now(), by: me, sessionId: fsid, p1: { id: fso.match.p1.id, target: fso.match.p1.target, score: fs1, innings: finn, highRun: 0 }, p2: { id: fso.match.p2.id, target: fso.match.p2.target, score: fs2, innings: finn, highRun: 0 }, winner: fwin };
+      Store.set("clubmatches/" + fcid + "/" + fmk, fcm);
+      DB.clubmatches = DB.clubmatches || {}; DB.clubmatches[fcid] = DB.clubmatches[fcid] || {}; DB.clubmatches[fcid][fmk] = fcm;
+      if (fsid.indexOf("db:") === 0) Store.update("sessions/" + fsid.slice(3), { match: Object.assign({}, fso.match, { status: "done", winner: fwin, p1score: fs1, p2score: fs2, matchKey: fmk }) });
+      render(); return;
+    }
     if (a === "open-club") { state.clubId = t.getAttribute("data-id"); state.screen = "hub"; state.hubTab = "schedule"; state.pollId = null; render(); return; }
     if (a === "go-clubs") { state.screen = "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "create-club") { formAddClub(); return; }
