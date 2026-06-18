@@ -102,7 +102,8 @@
       mountain: '<path d="M3 19h18L14 6l-4 7-2.5-3L3 19z"/><path d="M14 6l3.5 6"/>',
       play: '<path d="M7 5l11 7-11 7z"/>',
       download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
-      expand: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>'
+      expand: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>',
+      gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
     };
     return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
   }
@@ -504,8 +505,7 @@
   function renderTopHeader() {
     var unread = unreadNotifs().length;
     $("#app-header").innerHTML =
-      '<div class="hd-brand">' +
-      '<div><div class="hd-title">크루핏</div><div class="hd-sub">내게 딱 맞는 동호회</div></div></div>' +
+      '<div class="hd-brand"><div class="hd-title">CREWFIT</div></div>' +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
   function renderTopNav() {
@@ -564,9 +564,13 @@
   function renderHubHeader(club) {
     club = club || {};
     var loggedIn = !!(me && (obj(DB.members)[me] || {}).claimed);
+    var nb = unreadNotifs().length;
     $("#app-header").innerHTML =
       '<button class="hd-back" data-action="go-clubs" aria-label="동호회 목록으로">' + icon("back", 22) + "</button>" +
-      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unreadNotifs().length ? '<span class="bell-badge">' + (unreadNotifs().length > 9 ? "9+" : unreadNotifs().length) + "</span>" : "") + "</button>";
+      '<div class="hd-actions">' +
+      (canManage(me) ? '<button class="hd-gear" data-action="open-club-manage" aria-label="동호회 관리">' + icon("gear", 22) + "</button>" : "") +
+      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (nb ? '<span class="bell-badge">' + (nb > 9 ? "9+" : nb) + "</span>" : "") + "</button>" +
+      "</div>";
   }
   function renderNav() {
     var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
@@ -754,26 +758,37 @@
     else h += hubSchedule(club);
     return '<div class="hub-wrap">' + h + "</div>";
   }
+  function isSessionDone(s) {
+    if (s && s.match) return s.match.status === "done";
+    return sessStatus(s) === "past";
+  }
   function hubSchedule(club) {
-    var list = sessionsOfClub(club.id), h = '<div class="list-grid sess-grid">';
-    list.forEach(function (s) { h += sessionCard(s); });
-    if (isMeAdmin()) h += '<button class="card sess-add" data-action="add-session">' + icon("plus", 24) + "<span>세션 추가하기</span></button>";
+    var list = sessionsOfClub(club.id);
+    var active = list.filter(function (s) { return !isSessionDone(s); });
+    var done = list.filter(function (s) { return isSessionDone(s); }).reverse();
+    var h = '<div class="list-grid sess-grid">';
+    active.forEach(function (s) { h += sessionCard(s); });
+    if (isMeAdmin()) h += '<button class="card sess-add" data-action="add-session">' + icon("plus", 24) + "<span>일정 추가하기</span></button>";
     if (club.sport === "billiards" && rankCanRec(club.id)) h += '<button class="card sess-add" data-action="add-match-session">' + icon("ballot", 24) + "<span>1:1 대결 만들기</span></button>";
     h += "</div>";
-    if (!list.length && !isMeAdmin()) h += '<div class="empty-msg">아직 등록된 일정이 없어요.</div>';
-    if (canManage(me)) h += '<div class="card" style="margin-top:12px"><h2 class="sec" style="margin:0 0 12px">동호회 관리</h2><button class="btn-line btn-block" data-action="edit-club" data-id="' + esc(club.id) + '">동호회 정보 수정</button>' + (club._user ? '<button class="link-danger" data-action="del-club" data-id="' + esc(club.id) + '" style="display:block;width:100%;text-align:center;margin-top:12px">동호회 삭제</button>' : '') + '</div>';
+    if (!active.length && !done.length && !isMeAdmin()) h += '<div class="empty-msg">아직 등록된 일정이 없어요.</div>';
+    if (done.length) {
+      h += '<h2 class="sec sec-done" style="margin-top:24px">완료된 일정 <span class="sec-count">' + done.length + '</span></h2>';
+      h += '<div class="list-grid sess-grid">';
+      done.forEach(function (s) { h += sessionCard(s, true); });
+      h += "</div>";
+    }
     return h;
   }
   function hubMembers(club) {
-    var roster = clubRoster(club.id), bill = clubHasRanking(club), stats = {};
-    if (bill) billiardsStats(club.id).forEach(function (a) { stats[a.id] = a; });
+    var roster = clubRoster(club.id);
     var canMng = canManage(me), meMgr = isManager(me);
     var h = "";
     if (canMng) h += '<p class="hint" style="margin-bottom:10px">멤버 권한 관리 — <b>운영진 지정</b>·<b>크루원 삭제</b>·<b>입장 해제</b>. 운영진 해제는 관리자만.</p>';
     h += '<div class="mem-list-club">';
     roster.forEach(function (r) {
       var dm = obj(DB.members)[r.id] || {}, self = (r.id === me), tr = roleOf(r.id), acts = "";
-      var sub = (bill && stats[r.id] && stats[r.id].games) ? ("에버리지 " + fmtAvg(stats[r.id].avg) + " · " + stats[r.id].games + "전") : (dm.claimed ? "입장함" : "미입장");
+      var sub = clampStr(dm.bio || "", 80);
       if (canMng && !self) {
         if (tr === "manager") { acts = ""; }
         else if (tr === "staff") {
@@ -785,7 +800,7 @@
           acts += '<button class="link-danger" data-action="del-member" data-id="' + r.id + '">삭제</button>';
         }
       }
-      h += '<div class="mem-row">' + avatar(r.id, 32) + '<div style="flex:1;min-width:0"><div class="mr-name">' + esc(r.name) + " " + roleTag(r.id) + (self ? ' <span class="rbadge crew">나</span>' : "") + '</div><div class="mr-sub">' + esc(sub) + '</div></div>' + (acts ? '<div class="mr-act">' + acts + '</div>' : "") + '</div>';
+      h += '<div class="mem-row">' + avatar(r.id, 32) + '<div style="flex:1;min-width:0"><div class="mr-name">' + esc(r.name) + " " + roleTag(r.id) + (self ? ' <span class="rbadge crew">나</span>' : "") + '</div>' + (sub ? '<div class="mr-sub">' + esc(sub) + '</div>' : "") + '</div>' + (acts ? '<div class="mr-act">' + acts + '</div>' : "") + '</div>';
     });
     h += "</div>";
     h += '<div class="hint" style="margin-top:12px">멤버 ' + roster.length + '명 · 게이트의 "직접 추가"로 누구나 합류할 수 있어요.</div>';
@@ -1037,14 +1052,15 @@
     armRetry(function () { formRun(sid); });
     saveRecord({ ts: Date.now(), by: me, kind: "run", member: member, dist: dist, time: time, sessionId: sid });
   }
-  function matchCard(s) {
+  function matchCard(s, completed) {
     var m = s.match || {}, done = m.status === "done", p1 = m.p1 || {}, p2 = m.p2 || {};
-    return '<div class="card sess-card acc-' + esc(s.accent || "blue") + '" data-action="open-session" data-id="' + esc(s.id) + '">' +
+    var clickable = !completed || canManage(me);
+    return '<div class="card sess-card acc-' + esc(s.accent || "blue") + (completed ? " done" : "") + '"' + (clickable ? ' data-action="open-session" data-id="' + esc(s.id) + '"' : "") + '>' +
       '<div class="sc-top"><span class="sc-emoji">🎱</span><span class="sc-badge ' + (done ? "past" : "now") + '">' + (done ? "종료" : "진행 중") + "</span></div>" +
       '<div class="sc-title">' + esc(memberName(p1.id)) + " vs " + esc(memberName(p2.id)) + "</div>" +
       '<div class="sc-meta"><div>' + icon("ballot", 14) + " 3쿠션 대결 · 수지 " + (p1.target || "-") + ":" + (p2.target || "-") + "</div>" + (s.startDate ? "<div>" + icon("calendar", 14) + " " + esc(dateRangeKo(s.startDate, s.endDate)) + "</div>" : "") + "</div>" +
       (done ? '<div class="sc-summary">' + (m.p1score || 0) + " : " + (m.p2score || 0) + " · 🏆 " + esc(memberName(m.winner)) + "</div>" : "") +
-      '<div class="sc-foot"><span class="sc-tag cat">1:1 대결</span><span class="sc-go">' + (done ? "결과 보기" : "결과 입력") + " ›</span></div></div>";
+      '<div class="sc-foot"><span class="sc-tag cat">1:1 대결</span><span class="sc-go">' + (clickable ? ((done ? "결과 보기" : "결과 입력") + " ›") : "완료") + "</span></div></div>";
   }
   function formMatchSession() {
     var cid = state.clubId, roster = clubRoster(cid);
@@ -1087,10 +1103,11 @@
     if (s.by === me || canManage(me)) h += '<button class="link-danger" data-action="del-session" data-id="' + esc(s.id) + '" style="display:block;width:100%;text-align:center;margin-top:18px">대결 삭제</button>';
     return h + "</div></div>";
   }
-  function sessionCard(s) {
-    if (s.match) return matchCard(s);
-    var st = sessStatus(s), isApp = s.kind === "app", canDel = s._user && isMeAdmin();
-    return '<div class="card sess-card acc-' + esc(s.accent || "red") + " st-" + st + '" data-action="open-session" data-id="' + esc(s.id) + '">' +
+  function sessionCard(s, completed) {
+    if (s.match) return matchCard(s, completed);
+    var st = sessStatus(s), isApp = s.kind === "app";
+    var clickable = !completed || canManage(me);
+    return '<div class="card sess-card acc-' + esc(s.accent || "red") + " st-" + st + (completed ? " done" : "") + '"' + (clickable ? ' data-action="open-session" data-id="' + esc(s.id) + '"' : "") + '>' +
       '<div class="sc-top"><span class="sc-emoji">' + (s.emoji || "📌") + '</span><span class="sc-badge ' + st + '">' + esc(sessStatusLabel(s)) + "</span></div>" +
       '<div class="sc-title">' + esc(s.title) + "</div>" +
       (s.subtitle ? '<div class="sc-subtitle">' + esc(s.subtitle) + "</div>" : "") +
@@ -1100,7 +1117,7 @@
         (s.lodging ? "<div>" + icon("home", 14) + " " + esc(s.lodging) + "</div>" : "") +
       "</div>" +
       (s.summary ? '<div class="sc-summary">' + esc(s.summary) + "</div>" : "") +
-      '<div class="sc-foot"><span class="sc-tag cat">' + esc(s.category || "모임") + '</span><span class="sc-go">' + (isApp ? "입장" : "자세히") + " ›</span></div>" +
+      '<div class="sc-foot"><span class="sc-tag cat">' + esc(s.category || "모임") + '</span><span class="sc-go">' + (clickable ? ((isApp ? "입장" : "자세히") + " ›") : "완료") + "</span></div>" +
       "" +
       "</div>";
   }
@@ -1133,6 +1150,15 @@
     return h + "</div>";
   }
 
+  function clubManageSheet() {
+    if (!canManage(me)) return;
+    var club = currentClub() || {};
+    openModal('<h2>동호회 관리</h2>' +
+      '<p class="hint" style="margin:-4px 0 14px">' + esc(club.name || "동호회") + ' 정보를 수정하거나, 동호회를 삭제할 수 있어요.</p>' +
+      '<button class="btn-line btn-block" data-action="edit-club" data-id="' + esc(club.id) + '">동호회 정보 수정</button>' +
+      (club._user ? '<button class="link-danger" data-action="del-club" data-id="' + esc(club.id) + '" style="display:block;width:100%;text-align:center;margin-top:14px">동호회 삭제</button>' : "") +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button></div>');
+  }
   /* 동호회 개설/수정 폼 (운영진) */
   function formAddClub(editId) {
     if (!isMeAdmin()) return;
@@ -1853,8 +1879,9 @@
     if (a === "open-club") { state.clubId = t.getAttribute("data-id"); state.screen = "hub"; state.hubTab = "schedule"; state.pollId = null; render(); return; }
     if (a === "go-clubs") { state.screen = "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "create-club") { formAddClub(); return; }
+    if (a === "open-club-manage") { clubManageSheet(); return; }
     if (a === "edit-club") { formAddClub(t.getAttribute("data-id")); return; }
-    if (a === "del-club") { if (!isMeAdmin()) return; var dcid = t.getAttribute("data-id"); if (!dcid || dcid.indexOf("dbc:") !== 0) return; if (sessionsOfClub(dcid).length) { alert("세션이 남아 있어요. 세션을 먼저 삭제한 뒤 동호회를 삭제할 수 있어요."); return; } if (confirm("이 동호회를 삭제할까요?")) { Store.remove("clubs/" + dcid.slice(4)); state.screen = "clubs"; state.clubId = null; render(); } return; }
+    if (a === "del-club") { if (!isMeAdmin()) return; var dcid = t.getAttribute("data-id"); if (!dcid || dcid.indexOf("dbc:") !== 0) return; if (sessionsOfClub(dcid).length) { alert("세션이 남아 있어요. 세션을 먼저 삭제한 뒤 동호회를 삭제할 수 있어요."); return; } if (confirm("이 동호회를 삭제할까요?")) { Store.remove("clubs/" + dcid.slice(4)); closeModal(); state.screen = "clubs"; state.clubId = null; render(); } return; }
     if (a === "pick-sport") { var spv = t.getAttribute("data-s"); var sw = $("#f-csport"); if (sw) sw.value = spv; Array.prototype.forEach.call(t.parentNode.querySelectorAll(".seg-b"), function (b) { b.classList.toggle("on", b.getAttribute("data-s") === spv); }); return; }
     if (a === "pick-cemoji") { var cem = t.getAttribute("data-e"); var cw = $("#f-cemoji"); if (cw) cw.value = cem; Array.prototype.forEach.call(document.querySelectorAll("#f-cemoji-wrap .emoji-b"), function (b) { b.classList.toggle("on", b.getAttribute("data-e") === cem); }); return; }
     if (a === "save-club") {
