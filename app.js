@@ -499,10 +499,20 @@
 
   function renderHeader(sess) {
     sess = sess || currentSession() || {};
-    var unread = unreadNotifs().length, dd = ddayLabelOf(sess.startDate);
     $("#app-header").innerHTML =
       '<button class="hd-back" data-action="go-hub" aria-label="세션 목록으로">' + icon("back", 22) + "</button>" +
-      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
+      '<div class="hd-actions">' +
+      ((canManage(me) && sess._user) ? '<button class="hd-gear" data-action="open-session-manage" aria-label="세션 관리">' + icon("gear", 22) + "</button>" : "") +
+      "</div>";
+  }
+  function sessionManageSheet() {
+    var s = currentSession() || {};
+    if (!(canManage(me) && s._user)) return;
+    var isMatch = s.kind === "match";
+    openModal('<h2>' + (isMatch ? "대결 관리" : "세션 관리") + '</h2>' +
+      (isMatch ? "" : '<button class="btn-line btn-block" data-action="edit-session" data-id="' + esc(s.id) + '">세션 정보 수정</button>') +
+      '<button class="link-danger" data-action="del-session" data-id="' + esc(s.id) + '" style="display:block;width:100%;text-align:center;margin-top:' + (isMatch ? "4px" : "14px") + '">' + (isMatch ? "대결 삭제" : "세션 삭제") + '</button>' +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button></div>');
   }
   function renderTopHeader() {
     var unread = unreadNotifs().length;
@@ -1149,7 +1159,6 @@
     } else {
       h += '<div class="empty-msg" style="margin-top:16px">진행 중인 대결이에요. 멤버가 결과를 입력하면 순위에 반영돼요.</div>';
     }
-    if (s.by === me || canManage(me)) h += '<button class="link-danger" data-action="del-session" data-id="' + esc(s.id) + '" style="display:block;width:100%;text-align:center;margin-top:18px">대결 삭제</button>';
     return h + "</div></div>";
   }
   function sessionCard(s, completed) {
@@ -1445,8 +1454,6 @@
     h += '<button class="btn-line btn-block" data-action="go-settle">지출 내역 전체 보기 ›</button>';
 
     h += myCarSection();
-
-    if (isMeAdmin() && currentSession() && currentSession()._user) { var csm = currentSession(); h += '<div class="card"><h2 class="sec" style="margin:0 0 12px">\uC138\uC158 \uAD00\uB9AC</h2><button class="btn-line btn-block" data-action="edit-session" data-id="' + esc(csm.id) + '">\uC138\uC158 \uC815\uBCF4 \uC218\uC815</button><button class="link-danger" data-action="del-session" data-id="' + esc(csm.id) + '" style="display:block;width:100%;text-align:center;margin-top:12px">\uC138\uC158 \uC0AD\uC81C</button></div>'; }
     h += '<div style="height:6px"></div>' + prepPacking();
     return h;
   }
@@ -1928,6 +1935,7 @@
     if (a === "go-clubs") { state.screen = "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "create-club") { formAddClub(); return; }
     if (a === "open-club-manage") { clubManageSheet(); return; }
+    if (a === "open-session-manage") { sessionManageSheet(); return; }
     if (a === "edit-club") { formAddClub(t.getAttribute("data-id")); return; }
     if (a === "del-club") { if (!isMeAdmin()) return; var dcid = t.getAttribute("data-id"); if (!dcid || dcid.indexOf("dbc:") !== 0) return; if (sessionsOfClub(dcid).length) { alert("세션이 남아 있어요. 세션을 먼저 삭제한 뒤 동호회를 삭제할 수 있어요."); return; } if (confirm("이 동호회를 삭제할까요?")) { Store.remove("clubs/" + dcid.slice(4)); closeModal(); state.screen = "clubs"; state.clubId = null; render(); } return; }
     if (a === "pick-sport") { var spv = t.getAttribute("data-s"); var sw = $("#f-csport"); if (sw) sw.value = spv; Array.prototype.forEach.call(t.parentNode.querySelectorAll(".seg-b"), function (b) { b.classList.toggle("on", b.getAttribute("data-s") === spv); }); return; }
@@ -1978,7 +1986,7 @@
       if (!isMeAdmin()) return;
       var dsid = t.getAttribute("data-id"); if (!dsid || dsid.indexOf("db:") !== 0) return;
       var dso = sessionById(dsid), dsTitle = (dso && dso.title) || "이 세션";
-      if (confirm("\u2018" + dsTitle + "\u2019을(를) 삭제하면 이 세션의 공지·일정·투표·지출/정산·앨범이 모두 사라지고 되돌릴 수 없어요. 정말 삭제할까요?")) { Store.remove("sessions/" + dsid.slice(3)); RawStore.remove("s/" + dsid); state.screen = "hub"; state.pollId = null; render(); }
+      if (confirm("\u2018" + dsTitle + "\u2019을(를) 삭제하면 이 세션의 공지·일정·투표·지출/정산·앨범이 모두 사라지고 되돌릴 수 없어요. 정말 삭제할까요?")) { Store.remove("sessions/" + dsid.slice(3)); RawStore.remove("s/" + dsid); closeModal(); state.screen = "hub"; state.pollId = null; render(); }
       return;
     }
 
