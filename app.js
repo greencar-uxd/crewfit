@@ -637,7 +637,7 @@
   }
   function sessHas(f) { var sx = currentSession() || {}; return !sx.features || sx.features.indexOf(f) >= 0; }
   function renderNav() {
-    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"]];
+    var tabs = [["home", "home", "홈"], ["alert", "calendar", "일정"]];
     if (sessHas("carpool")) tabs.push(["carpool", "car", "카풀"]);
     tabs.push(["photo", "camera", "앨범"]);
     if (sessHas("settle")) tabs.push(["my", "wallet", "정산·준비"]);
@@ -1367,7 +1367,7 @@
       (t.note ? '<div class="hero-note">' + esc(t.note) + "</div>" : "") + "</div></div>";
 
     h += '<div class="stat-row">' +
-      '<button class="stat" data-action="go-vote"><div class="stat-n">' + openPolls.length + '</div><div class="stat-l">진행 중 투표</div></button>' +
+      '<button class="stat" data-action="tab" data-tab="alert"><div class="stat-n">' + entries(DB.schedule).length + '</div><div class="stat-l">일정</div></button>' +
       (sessHas("settle")
         ? '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
           '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button>'
@@ -1386,22 +1386,6 @@
       '<div class="ms-row"><span>' + avatar(me, 26) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + shH.text + "</span></div>" +
       '<div class="ms-sub">낸 돈 ' + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div></div>"; }
 
-    if (openPolls.length) {
-      h += '<h2 class="sec">진행 중 투표</h2><div class="list-grid">';
-      bySort(openPolls, function (kv) { return -(kv[1].ts || 0); }).slice(0, 2).forEach(function (kv) { h += pollMiniCard(kv[0], kv[1]); });
-      h += "</div>";
-    }
-    var notices = bySort(entries(DB.notices), function (kv) { return -((kv[1].pinned ? 1e15 : 0) + (kv[1].ts || 0)); });
-    if (notices.length) {
-      h += '<h2 class="sec">공지</h2><div class="list-grid">';
-      notices.slice(0, 3).forEach(function (kv) {
-        var n = kv[1];
-        h += '<div class="card notice' + (n.pinned ? " pin" : "") + '">' + (n.pinned ? '<span class="pin-tag">📌 고정</span>' : "") +
-          '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" + (n.link ? '<a class="tl-link" href="' + esc(n.link) + '" target="_blank" rel="noopener">' + icon("link", 13) + " 링크 바로가기</a>" : "") +
-          "<div class=\"notice-by\">" + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span></div></div>";
-      });
-      h += "</div>";
-    }
     return h;
   }
   function myRideLabel() {
@@ -1649,15 +1633,8 @@
 
   /* ---------- 알림 (공지·일정·투표·정산 통합) ---------- */
   function viewAlert() {
-    if (state.alert === "vote" && state.pollId) return viewPollDetail(state.pollId); // 투표 상세는 단독 화면
-    var seg = [["notice", "공지"], ["schedule", "일정"], ["vote", "투표"]];
-    var h = '<div class="seg">' + seg.map(function (s) { return '<button class="seg-b' + (state.alert === s[0] ? " on" : "") + '" data-action="alert-seg" data-seg="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</div>";
-    if (state.alert === "notice" || state.alert === "vote") { var cc = currentClub() || {}; h += '<p class="hint" style="margin:-2px 0 12px">이 일정 전용이에요. 동호회 전체 공지·투표는 <button class="link" data-action="go-club-tab" data-id="' + esc(cc.id) + '" data-tab="board" data-bt="' + (state.alert === "vote" ? "poll" : "notice") + '">게시판</button>에서 봐요.</p>'; }
-    if (state.alert === "notice") h += prepNotice();
-    else if (state.alert === "schedule") h += prepSchedule();
-    else if (state.alert === "vote") h += viewVote();
-    else h += prepSchedule();
-    return h;
+    // 공지·투표는 동호회 게시판으로 단일화. 세션의 이 탭은 일정(타임라인) 전용.
+    return prepSchedule();
   }
   function prepSchedule() {
     var items = entries(DB.schedule).slice().sort(function (a, b) { var ka = (a[1].day || "") + (a[1].time || ""), kb = (b[1].day || "") + (b[1].time || ""); return ka < kb ? -1 : ka > kb ? 1 : 0; });
