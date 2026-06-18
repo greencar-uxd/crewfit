@@ -110,7 +110,7 @@ h1, h2 { margin: 0; }
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 60px; min-height: 60px; box-sizing: border-box;   /* 모든 화면에서 헤더 높이 고정 */
-  padding: 0 16px; background: var(--surface); border-bottom: 0px solid var(--line);
+  padding: 0 16px; background: var(--bg); border-bottom: 0px solid var(--line);
 }
 .hd-left { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .hd-title { font-weight: 800; font-size: 16px; letter-spacing: -.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -563,13 +563,10 @@
   }
   function renderHubHeader(club) {
     club = club || {};
-    var loggedIn = !!(me && (obj(DB.members)[me] || {}).claimed);
-    var nb = unreadNotifs().length;
     $("#app-header").innerHTML =
       '<button class="hd-back" data-action="go-clubs" aria-label="동호회 목록으로">' + icon("back", 22) + "</button>" +
       '<div class="hd-actions">' +
       (canManage(me) ? '<button class="hd-gear" data-action="open-club-manage" aria-label="동호회 관리">' + icon("gear", 22) + "</button>" : "") +
-      '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (nb ? '<span class="bell-badge">' + (nb > 9 ? "9+" : nb) + "</span>" : "") + "</button>" +
       "</div>";
   }
   function renderNav() {
