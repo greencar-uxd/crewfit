@@ -620,8 +620,8 @@ h1, h2 { margin: 0; }
    ============================================================ */
 @media (min-width: 880px) {
   #app {
-    max-width: 1200px; margin-inline: auto; display: grid; gap: 0 32px;
-    grid-template-columns: 220px minmax(0, 1fr);
+    max-width: 980px; margin-inline: auto; display: grid; gap: 0 28px;
+    grid-template-columns: 190px minmax(0, 1fr);
     grid-template-areas: "header header" "nav main";
     padding: 0 32px;
   }
@@ -629,7 +629,7 @@ h1, h2 { margin: 0; }
   #app-header .hd-left { display: none; }      /* PC: 제목·뱃지 숨김 */
   #app-header .hd-back { display: inline-flex; } /* PC: 뒤로가기 버튼만 */
   /* 허브·정보 화면: 사이드바 없이 전체폭 */
-  #app.nonav { grid-template-columns: minmax(0, 1fr); grid-template-areas: "header" "main"; }
+  #app.nonav { max-width: 1200px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "header" "main"; }
   #app.nonav #app-main { display: block; padding: 24px 0 60px; }
   #app.nonav #app-header .hd-brand { display: flex; }
   .sess-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
@@ -652,6 +652,7 @@ h1, h2 { margin: 0; }
   #app-main > .col { margin-bottom: 0; }
   .tl-body { max-width: 760px; }                          /* 일정 타임라인 본문이 과하게 늘어나지 않게 */
   .page-head h1 { font-size: 24px; }
+  .seg { max-width: 560px; }
 
   /* 풀폭에서 카드 그리드는 화면 너비에 맞춰 열 수 자동 증가 */
   .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
