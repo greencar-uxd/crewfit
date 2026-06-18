@@ -6,6 +6,14 @@
 
 **마지막 갱신:** 2026-06-17 / 갱신한 세션: cloud (claude/work-status-queue-qmsv6l)
 
+## 🤖 최근 배포 (자동 기록)
+
+> 아래 블록은 `deploy.sh`가 배포할 때마다 자동으로 갱신합니다. **직접 수정하지 마세요.**
+
+<!-- DEPLOY-STAMP:BEGIN -->
+_아직 자동 배포 기록 없음 — deploy.sh를 한 번 실행하면 채워집니다._
+<!-- DEPLOY-STAMP:END -->
+
 ---
 
 ## 🔧 현재 작업 중 (In Progress)

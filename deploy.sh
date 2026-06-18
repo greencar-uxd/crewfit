@@ -37,6 +37,27 @@ sed -i '' -E "s#(styles\.css|app\.js|config\.js|favicon\.svg|favicon\.png|favico
   || sed -i -E "s#(styles\.css|app\.js|config\.js|favicon\.svg|favicon\.png|favicon\.ico|og-cover\.png)\?v=[0-9]+#\1?v=$VER#g" index.html
 echo "→ 캐시버스팅 버전: $VER"
 
+# 공유 상태판(STATUS.md) 자동 스탬프 — 어느 기기에서 배포했는지/뭘 바꿨는지 기록
+if [ -f STATUS.md ]; then
+  HOST="$(hostname 2>/dev/null | sed 's/\.local$//')"
+  [ -z "$HOST" ] && HOST="unknown-host"
+  STAMP_WHEN="$(date '+%Y-%m-%d %H:%M')"
+  # 이번에 바뀐 파일 (STATUS.md 자신·index.html 버전노이즈 제외, 최대 8개)
+  CHANGED="$(git status --porcelain 2>/dev/null | awk '{print $2}' | grep -vE '^(STATUS\.md|index\.html)$' | head -8 | tr '\n' ' ')"
+  [ -z "$CHANGED" ] && CHANGED="(코드 변경 없음 — 재배포)"
+  NEWBLOCK="$(printf '<!-- DEPLOY-STAMP:BEGIN -->\n**최근 배포(자동):** %s · 기기 `%s` · 버전 `%s`\n\n- 바뀐 파일: %s\n<!-- DEPLOY-STAMP:END -->' "$STAMP_WHEN" "$HOST" "$VER" "$CHANGED")"
+  # 마커 사이를 새 블록으로 교체 (awk = BSD/GNU 공통)
+  awk -v repl="$NEWBLOCK" '
+    /<!-- DEPLOY-STAMP:BEGIN -->/ { print repl; skip=1; next }
+    /<!-- DEPLOY-STAMP:END -->/   { skip=0; next }
+    skip!=1 { print }
+  ' STATUS.md > STATUS.md.tmp && mv STATUS.md.tmp STATUS.md
+  # 맨 위 '마지막 갱신' 줄도 함께 갱신
+  sed -i '' -E "s#^\*\*마지막 갱신:\*\*.*#**마지막 갱신:** $STAMP_WHEN / 자동 (deploy.sh @ $HOST)#" STATUS.md 2>/dev/null \
+    || sed -i -E "s#^\*\*마지막 갱신:\*\*.*#**마지막 갱신:** $STAMP_WHEN / 자동 (deploy.sh @ $HOST)#" STATUS.md
+  echo "→ STATUS.md 자동 스탬프 갱신 ($HOST)"
+fi
+
 # 커밋 (변경이 있을 때만)
 git add -A
 if ! git rev-parse HEAD >/dev/null 2>&1; then
