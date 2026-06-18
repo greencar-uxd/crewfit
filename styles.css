@@ -909,3 +909,5 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .fi-new { flex: none; font-size: 9px; font-weight: 800; letter-spacing: .3px; color: #fff; background: var(--pos); border-radius: 999px; padding: 1px 6px; margin-left: 6px; }
 .feed-item.is-new { border-color: color-mix(in srgb, var(--pri) 38%, var(--line)); }
 .feed-newcnt { color: var(--pos); font-weight: 800; }
+/* 동호회 아바타: 종목 라인 아이콘 칩 */
+.club-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 11px; background: color-mix(in srgb, var(--acc) 13%, transparent); color: var(--acc); }

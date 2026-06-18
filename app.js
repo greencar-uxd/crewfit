@@ -105,6 +105,8 @@
       expand: '<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>',
       compass: '<circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2 5.2-2z"/>',
       users: '<circle cx="9" cy="8" r="3.1"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3.1 3.1 0 0 1 0 5.4"/><path d="M17.5 13.6a5.5 5.5 0 0 1 3 5.4"/>',
+      ball: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6"/>',
+      activity: '<path d="M3 12h3.6l2.4-6 4 13 2.4-7H21"/>',
       gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
     };
     return '<svg class="ic" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (P[name] || "") + "</svg>";
@@ -159,6 +161,8 @@
   }
   function currentSession() { return sessionById(state.sessionId) || (CFG.sessions || [])[0] || null; }
   function sportLabel(sp) { return ({ climbing: "클라이밍", billiards: "당구", running: "러닝", general: "일반" })[sp] || "동호회"; }
+  function sportIcon(sp) { return ({ climbing: "mountain", billiards: "ball", running: "activity", general: "users" })[sp] || "users"; }
+  function clubAvatar(c, size) { c = c || {}; size = size || 38; return '<span class="club-ic acc-' + esc(c.accent || "red") + '" style="width:' + size + 'px;height:' + size + 'px">' + icon(sportIcon(c.sport), Math.round(size * 0.52)) + '</span>'; }
   function allClubs() { var built = (CFG.clubs || []).map(function (x) { return Object.assign({}, x, obj((obj(DB.clubmeta) || {})[x.id])); }); var user = entries(obj(DB.clubs)).map(function (kv) { var c = Object.assign({}, kv[1]); c.id = "dbc:" + kv[0]; c._user = true; c._key = kv[0]; return c; }); return built.concat(user); }
   function clubById(id) { if (id && id.indexOf("dbc:") === 0) { var k = id.slice(4), v = obj(DB.clubs)[k]; if (!v) return null; var c = Object.assign({}, v); c.id = id; c._user = true; c._key = k; return c; } var f = null; (CFG.clubs || []).forEach(function (x) { if (x.id === id) f = x; }); if (f) { var ov = obj((obj(DB.clubmeta) || {})[id]); return Object.assign({}, f, ov); } return f; }
   function currentClub() { return clubById(state.clubId) || (CFG.clubs || [])[0] || null; }
@@ -565,7 +569,7 @@
       h += '<div class="card me-row" data-action="open-session" data-id="' + esc(s.id) + '">' +
         '<span class="me-em">' + (s.emoji || (s.match ? "🎱" : "📌")) + '</span>' +
         '<div class="me-mid"><div class="me-tt">' + esc(title) + '</div>' +
-        '<div class="me-ss">' + (c.emoji ? c.emoji + " " : "") + esc(c.name) + ' · ' + esc(dateRangeKo(s.startDate, s.endDate)) + '</div></div>' +
+        '<div class="me-ss">' + icon(sportIcon(c.sport), 13) + " " + esc(c.name) + ' · ' + esc(dateRangeKo(s.startDate, s.endDate)) + '</div></div>' +
         '<span class="me-dday">' + esc(dd || "예정") + '</span></div>';
     });
     return h + "</div>";
@@ -583,7 +587,7 @@
       var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
       var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
       h += '<div class="card me-row" data-action="open-club" data-id="' + esc(c.id) + '">' +
-        '<span class="me-em">' + (c.emoji || "•") + '</span>' +
+        clubAvatar(c, 30) +
         '<div class="me-mid"><div class="me-tt">' + esc(c.name) + '</div>' +
         '<div class="me-ss">' + esc(sportLabel(c.sport)) + (unpaid.length ? ' · <span class="me-due">미납 회비 ' + won(owe) + '</span>' : "") + '</div></div>' +
         '<span class="me-tr"><span class="rbadge ' + cls + '">' + label + '</span><span class="me-go">›</span></span></div>';
@@ -807,7 +811,7 @@
     else if (it.kind === "match") { var m = it.m; ic = "ballot"; lab = "대전 결과"; body = memberName(m.p1.id) + " " + (+m.p1.score || 0) + " : " + (+m.p2.score || 0) + " " + memberName(m.p2.id) + (m.winner ? " · 🏆 " + memberName(m.winner) : ""); tab = "ranking"; bt = "notice"; }
     else if (it.kind === "session") { ic = "calendar"; lab = "새 일정"; body = it.s.title + (it.s.startDate ? " · " + dateRangeKo(it.s.startDate, it.s.endDate) : ""); tab = "schedule"; bt = "notice"; }
     return '<div class="card feed-item' + (isNew ? " is-new" : "") + ' acc-' + esc(c.accent || "red") + '" data-action="go-club-tab" data-id="' + esc(c.id) + '" data-tab="' + tab + '" data-bt="' + bt + '">' +
-      '<div class="fi-head"><span class="fi-club">' + (c.emoji ? c.emoji + " " : "") + esc(c.name) + '</span>' + (isNew ? '<span class="fi-new">NEW</span>' : "") + '<span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
+      '<div class="fi-head"><span class="fi-club">' + icon(sportIcon(c.sport), 13) + " " + esc(c.name) + '</span>' + (isNew ? '<span class="fi-new">NEW</span>' : "") + '<span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
       '<div class="fi-body"><span class="fi-ic">' + icon(ic, 18) + '</span><div class="fi-main"><div class="fi-lab">' + lab + '</div><div class="fi-text">' + esc(body) + '</div></div></div>' +
       '</div>';
   }
@@ -839,7 +843,7 @@
     var label = mine ? (role === "manager" ? "관리자" : role === "staff" ? "운영진" : "멤버") : "미가입";
     var cls = mine ? (role === "manager" ? "mgr" : role === "staff" ? "admin" : "crew") : "guest";
     return '<div class="card sess-card acc-' + esc(c.accent || "red") + '" data-action="open-club" data-id="' + esc(c.id) + '">' +
-      '<div class="sc-top"><span class="sc-emoji">' + (c.emoji || "🏅") + '</span><span class="sc-badge now">' + esc(sportLabel(c.sport)) + "</span></div>" +
+      '<div class="sc-top">' + clubAvatar(c, 40) + '<span class="sc-badge now">' + esc(sportLabel(c.sport)) + "</span></div>" +
       '<div class="sc-title">' + esc(c.name) + "</div>" +
       (c.desc ? '<div class="sc-subtitle">' + esc(c.desc) + "</div>" : "") +
       '<div class="sc-foot"><span class="sc-tag role-' + cls + '">' + label + '</span><span class="sc-go">' + (n > 0 ? "일정 " + n + "개" : "둘러보기") + " ›</span></div>" +
@@ -861,7 +865,7 @@
     var mine = clubRoster(c.id).some(function (r) { return r.id === me; });
     var memCount = clubRoster(c.id).length;
     return '<div class="card sess-card acc-' + esc(c.accent || "red") + '"' + (mine ? ' data-action="open-club" data-id="' + esc(c.id) + '"' : "") + '>' +
-      '<div class="sc-top"><span class="sc-emoji">' + (c.emoji || "🏅") + '</span><span class="sc-badge now">' + esc(sportLabel(c.sport)) + "</span></div>" +
+      '<div class="sc-top">' + clubAvatar(c, 40) + '<span class="sc-badge now">' + esc(sportLabel(c.sport)) + "</span></div>" +
       '<div class="sc-title">' + esc(c.name) + "</div>" +
       (c.desc ? '<div class="sc-subtitle">' + esc(c.desc) + "</div>" : "") +
       '<div class="sc-foot"><span class="sc-tag cat">' + icon("user", 12) + " " + memCount + '명</span>' +
