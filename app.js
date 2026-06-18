@@ -633,7 +633,7 @@
       "</div>";
   }
   function renderNav() {
-    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "user", "마이"]];
+    var tabs = [["home", "home", "홈"], ["alert", "megaphone", "소식"], ["carpool", "car", "카풀"], ["photo", "camera", "앨범"], ["my", "wallet", "정산·준비"]];
     $("#app-nav").innerHTML = tabs.map(function (t) {
       return '<button class="navbtn' + (state.tab === t[0] ? " on" : "") + '" data-action="tab" data-tab="' + t[0] + '"><span class="nav-ic">' + icon(t[1], 22) + "</span><span>" + t[2] + "</span></button>";
     }).join("");
@@ -1503,13 +1503,7 @@
 
   /* ---------- 마이 (프로필·내 차량·정산·준비물) ---------- */
   function viewMy() {
-    var m = obj(DB.members)[me] || {};
-    var h = '<div class="page-head"><h1>마이</h1><button class="btn-line sm" data-action="open-profile">프로필·설정</button></div>';
-    h += '<div class="card my-profile col" data-action="open-profile"><div class="mp-top">' + avatar(me, 52) +
-      '<div class="mp-info"><div class="mp-name">' + esc(memberName(me)) + " " + roleBadge(me) + "</div>" +
-      '<div class="mp-sub">' + (normStation(m.station) ? esc(normStation(m.station)) + "역" : "출발지 미정") + " · " + (m.hasCar ? "자차 있음" : (rideOf(me) && isValidDriver(rideOf(me)) ? "탑승 (" + esc(memberName(rideOf(me))) + "님 차)" : "차 미정")) + (m.pin ? "" : ' · <span class="warn">인증번호 미설정</span>') + "</div></div>" +
-      '<span class="mp-go">' + icon("edit", 18) + "</span></div></div>";
-
+    var h = '<div class="page-head"><h1>정산·준비</h1></div>';
     h += mySettleCard();
     h += '<button class="btn-line btn-block" data-action="go-settle">지출 내역 전체 보기 ›</button>';
 
