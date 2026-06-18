@@ -1,11 +1,11 @@
 # 크루핏(CREWFIT) — 작업 재개 체크포인트
 
-> 마지막 갱신: 2026-06-17 (사무실 → 집 이어작업용). 집에서는 `git pull` 후 이 파일부터 읽기.
+> 마지막 갱신: 2026-06-18 (사무실 → 집 이어작업용). 집에서는 `git pull` 후 이 파일부터 읽기.
 
 ## 지금 상태 (한 줄)
 다중 동호회 스포츠 커뮤니티 앱. **라이브 정상 배포 + 모든 변경 푸시 완료.** 사용성 평가(아래 §7) 결과 반영만 남음.
 
-- 라이브: https://greencar-uxd.github.io/srk-mt/  (저장소 `Greencar-UXD/srk-mt`, public)
+- 라이브: **https://greencar-uxd.github.io/crewfit/**  (저장소 `Greencar-UXD/crewfit`, public — 2026-06-18 srk-mt→crewfit 리네임, 구 `/srk-mt/` 404. **로컬 폴더는 `~/Downloads/srk-mt` 그대로**, git remote는 crewfit.git)
 - 동호회 3개: 슈퍼리치키드(클라이밍·SRK), 지리아드(당구), 그린 포인트(일반·종목 미확정)
 - 데이터: Firebase Realtime DB(클라우드) ↔ 미설정 시 localStorage 데모 폴백
 
