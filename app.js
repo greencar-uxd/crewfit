@@ -494,9 +494,7 @@
     sess = sess || currentSession() || {};
     var unread = unreadNotifs().length, dd = ddayLabelOf(sess.startDate);
     $("#app-header").innerHTML =
-      '<button class="hd-back" data-action="go-hub" aria-label="세션 목록으로">' + icon("back", 22) + "<span>세션</span></button>" +
-      '<div class="hd-left"><div class="hd-title">' + esc(sess.title || "MT") + "</div>" +
-      '<div class="hd-sub">' + (Store.mode === "demo" ? '<span class="badge-demo">데모</span> ' : "") + (dd ? '<span class="badge-dday">' + dd + "</span>" : "") + (sess.subtitle ? " " + esc(sess.subtitle) : "") + "</div></div>" +
+      '<button class="hd-back" data-action="go-hub" aria-label="세션 목록으로">' + icon("back", 22) + "</button>" +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unread ? '<span class="bell-badge">' + (unread > 9 ? "9+" : unread) + "</span>" : "") + "</button>";
   }
   function renderTopHeader() {
@@ -538,9 +536,7 @@
     club = club || {};
     var loggedIn = !!(me && (obj(DB.members)[me] || {}).claimed);
     $("#app-header").innerHTML =
-      '<button class="hd-back" data-action="go-clubs" aria-label="동호회 목록으로">' + icon("back", 22) + "<span>동호회</span></button>" +
-      '<div class="hd-brand" style="flex:1;min-width:0"><span class="hd-brand-emoji">' + (club.emoji || "🤙") + '</span>' +
-      '<div style="min-width:0"><div class="hd-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(club.name || "세션") + '</div><div class="hd-sub">' + esc(sportLabel(club.sport)) + '</div></div></div>' +
+      '<button class="hd-back" data-action="go-clubs" aria-label="동호회 목록으로">' + icon("back", 22) + "</button>" +
       '<button class="bell-btn" data-action="open-notifs" aria-label="알림">' + icon("bell", 22) + (unreadNotifs().length ? '<span class="bell-badge">' + (unreadNotifs().length > 9 ? "9+" : unreadNotifs().length) + "</span>" : "") + "</button>";
   }
   function renderNav() {
@@ -989,7 +985,7 @@
     var curEmoji = ed && ed.emoji ? ed.emoji : emojis[0], curAcc = ed && ed.accent ? ed.accent : "red";
     if (emojis.indexOf(curEmoji) < 0) emojis.unshift(curEmoji);
     var sparts = ed ? obj(DB.participants) : null;
-    var spOn = function (mid) { return ed ? (sparts && Object.keys(sparts).length ? !!sparts[mid] : true) : true; };
+    var spOn = function (mid) { return (ed && sparts && Object.keys(sparts).length) ? !!sparts[mid] : false; };
     openModal("<h2>" + (ed ? "\uC138\uC158 \uC218\uC815" : "\uC138\uC158 \uCD94\uAC00\uD558\uAE30") + "</h2>" +
       '<p class="pf-note" style="margin:0 0 12px">' + (ed ? "\uC138\uC158 \uC815\uBCF4\uB97C \uC218\uC815\uD574\uC694." : "\uC0C8 \uC138\uC158\uC744 \uCD94\uAC00\uD574\uC694. \uCD94\uAC00\uD558\uBA74 \uD648\u00B7\uC815\uC0B0\u00B7\uCE74\uD480\u00B7\uC568\uBC94\u00B7\uC900\uBE44\uBB3C\uC774 \uC788\uB294 \uC2E4\uC2DC\uAC04 \uC138\uC158\uC73C\uB85C \uC5F4\uB824\uC694.") + '</p>' +
       '<label>\uC774\uBAA8\uC9C0</label><div class="emoji-pick" id="f-emoji-wrap">' +
@@ -1000,7 +996,6 @@
       '<div class="row2"><div><label>\uC2DC\uC791\uC77C</label><input id="f-sstart" type="date" value="' + (ed ? esc(ed.startDate || "") : "") + '"></div>' +
       '<div><label>\uC885\uB8CC\uC77C</label><input id="f-send" type="date" value="' + (ed ? esc(ed.endDate || "") : "") + '"></div></div>' +
       '<label>\uC7A5\uC18C (\uC120\uD0DD)</label><input id="f-sloc" placeholder="\uC608: \uBE44\uBC1C\uB514\uD30C\uD06C" value="' + (ed ? esc(ed.location || "") : "") + '">' +
-      '<label>\uC219\uC18C (\uC120\uD0DD)</label><input id="f-slodge" placeholder="\uC608: \uC18C\uB178\uBCA8 \uBE44\uBC1C\uB514\uD30C\uD06C" value="' + (ed ? esc(ed.lodging || "") : "") + '">' +
       '<label>\uC0C9\uC0C1</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + esc(curAcc) + '"></div>' +
       '<label>분류</label><select id="f-scat">' + ["정기 모임", "외부 활동", "MT·여행", "대회·시합", "번개", "기타"].map(function (cc) { var curC = (ed && ed.category) || "정기 모임"; return '<option' + (cc === curC ? " selected" : "") + ">" + cc + "</option>"; }).join("") + '</select>' +
       '<label>\uCC38\uAC00 \uD06C\uB8E8\uC6D0 <button class="mini" data-action="sess-part-all">\uC804\uCCB4</button><button class="mini" data-action="sess-part-none">\uD574\uC81C</button></label>' +
