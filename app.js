@@ -474,7 +474,8 @@
     if (mode === "info") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewSessionInfo(sess); window.scrollTo(0, 0); return; }
     if (mode === "match") { $("#gate").classList.add("hidden"); renderHeader(sess); $("#app-nav").innerHTML = ""; setChrome(true); main.innerHTML = viewMatchSession(sess); window.scrollTo(0, 0); return; }
     $("#gate").classList.add("hidden");  // 앱 로그인만 하면 세션 자유 진입(추가 인증 없음)
-    if (state.tab === "vote" || state.tab === "settle") { state.alert = state.tab === "settle" ? "settle" : "vote"; state.tab = "alert"; }
+    if (state.tab === "vote") { state.alert = "vote"; state.tab = "alert"; }
+    if (state.tab === "settle") state.tab = "my";
     if (state.tab === "prep") state.tab = "my";
     setChrome(false);
     renderHeader(sess); renderNav();
@@ -1356,7 +1357,7 @@
 
     h += '<div class="stat-row">' +
       '<button class="stat" data-action="go-vote"><div class="stat-n">' + openPolls.length + '</div><div class="stat-l">진행 중 투표</div></button>' +
-      '<button class="stat" data-action="tab" data-tab="settle"><div class="stat-n">' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
+      '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
       '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button></div>';
     var club0 = currentClub() || {};
     if (clubHasRanking(club0)) h += sessionSkillCard(club0);
@@ -1366,7 +1367,7 @@
 
     // 내 정산
     var shH = mySettleHead();
-    h += '<div class="card my-settle col ' + shH.cls + '" data-action="tab" data-tab="settle">' +
+    h += '<div class="card my-settle col ' + shH.cls + '" data-action="tab" data-tab="my">' +
       '<div class="ms-row"><span>' + avatar(me, 26) + " <b>" + esc(memberName(me)) + "</b>님 정산</span><span class=\"ms-amt\">" + shH.text + "</span></div>" +
       '<div class="ms-sub">낸 돈 ' + won(myPaid(me)) + " · 내 몫 " + won(myShare(me)) + "</div></div>";
 
@@ -1494,7 +1495,7 @@
     return h;
   }
   function viewSettle() {
-    var h = '<div class="page-head"><h1>정산</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
+    var h = '<div class="page-head"><h1>정산·준비</h1><button class="btn-pri" data-action="new-expense">+ 지출 추가</button></div>';
     h += mySettleCard(true);
     if (tripMeta().poolFee) h += '<div class="hint">정산 완료를 누르면 받을 분에게 알림이 가요. 현장 별도 결제(' + won(tripMeta().poolFee) + "/인)는 위 정산 금액에 안 들어가 있어요 — 각자 현장에서 내요.</div>";
     h += expenseCards();
@@ -1503,10 +1504,7 @@
 
   /* ---------- 마이 (프로필·내 차량·정산·준비물) ---------- */
   function viewMy() {
-    var h = '<div class="page-head"><h1>정산·준비</h1></div>';
-    h += mySettleCard();
-    h += '<button class="btn-line btn-block" data-action="go-settle">지출 내역 전체 보기 ›</button>';
-
+    var h = viewSettle();
     h += myCarSection();
     h += '<div style="height:6px"></div>' + prepPacking();
     return h;
@@ -1637,12 +1635,13 @@
   /* ---------- 알림 (공지·일정·투표·정산 통합) ---------- */
   function viewAlert() {
     if (state.alert === "vote" && state.pollId) return viewPollDetail(state.pollId); // 투표 상세는 단독 화면
-    var seg = [["notice", "공지"], ["schedule", "일정"], ["vote", "투표"], ["settle", "정산"]];
+    var seg = [["notice", "공지"], ["schedule", "일정"], ["vote", "투표"]];
     var h = '<div class="seg">' + seg.map(function (s) { return '<button class="seg-b' + (state.alert === s[0] ? " on" : "") + '" data-action="alert-seg" data-seg="' + s[0] + '">' + s[1] + "</button>"; }).join("") + "</div>";
+    if (state.alert === "notice" || state.alert === "vote") { var cc = currentClub() || {}; h += '<p class="hint" style="margin:-2px 0 12px">이 일정 전용이에요. 동호회 전체 공지·투표는 <button class="link" data-action="go-club-tab" data-id="' + esc(cc.id) + '" data-tab="board" data-bt="' + (state.alert === "vote" ? "poll" : "notice") + '">게시판</button>에서 봐요.</p>'; }
     if (state.alert === "notice") h += prepNotice();
     else if (state.alert === "schedule") h += prepSchedule();
     else if (state.alert === "vote") h += viewVote();
-    else h += viewSettle();
+    else h += prepSchedule();
     return h;
   }
   function prepSchedule() {
@@ -2052,7 +2051,7 @@
     if (a === "tab") { var nt = t.getAttribute("data-tab"); if (nt !== "photo") photoSel = {}; state.tab = nt; state.pollId = null; render(); return; }
     if (a === "alert-seg") { state.alert = t.getAttribute("data-seg"); state.pollId = null; render(); return; }
     if (a === "go-vote") { state.tab = "alert"; state.alert = "vote"; state.pollId = null; render(); return; }
-    if (a === "go-settle") { state.tab = "alert"; state.alert = "settle"; state.pollId = null; render(); return; }
+    if (a === "go-settle") { state.tab = "my"; state.pollId = null; render(); return; }
     if (a === "close-modal") { closeModal(); return; }
 
     /* 알림 */
@@ -2064,7 +2063,7 @@
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
-    if (a === "open-notif") { var onT = t.getAttribute("data-ntype") || ""; closeModal(); state.pollId = null; if (onT === "ride") { state.tab = "carpool"; } else { state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : onT === "settle" ? "settle" : "notice"; } render(); return; }
+    if (a === "open-notif") { var onT = t.getAttribute("data-ntype") || ""; closeModal(); state.pollId = null; if (onT === "ride") { state.tab = "carpool"; } else if (onT === "settle") { state.tab = "my"; } else { state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : "notice"; } render(); return; }
 
     /* 홈 히어로 배경 */
     if (a === "pick-hero") {
