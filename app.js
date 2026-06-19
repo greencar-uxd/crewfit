@@ -165,7 +165,7 @@
   function sportLabel(sp) { return ({ climbing: "클라이밍", billiards: "당구", running: "러닝", general: "일반" })[sp] || "크루"; }
   function sportIcon(sp) { return ({ climbing: "mountain", billiards: "ball", running: "activity", general: "users" })[sp] || "users"; }
   function sessionIcon(s) { if (s && s.match) return "ball"; var cat = { "정기 모임": "users", "외부 활동": "compass", "MT·여행": "bag", "대회·시합": "ballot", "번개": "activity" }; if (s && cat[s.category]) return cat[s.category]; var c = clubById(s && s.clubId) || {}; return sportIcon(c.sport); }
-  function clubAvatar(c, size) { c = c || {}; size = size || 38; return '<span class="club-ic acc-' + esc(c.accent || "red") + '" style="width:' + size + 'px;height:' + size + 'px">' + icon(sportIcon(c.sport), Math.round(size * 0.52)) + '</span>'; }
+  function clubAvatar(c, size) { c = c || {}; size = size || 38; return '<span class="club-ic" style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.5) + 'px">' + (c.emoji || "🏅") + '</span>'; }
   function allClubs() { var built = (CFG.clubs || []).map(function (x) { return Object.assign({}, x, obj((obj(DB.clubmeta) || {})[x.id])); }); var user = entries(obj(DB.clubs)).map(function (kv) { var c = Object.assign({}, kv[1]); c.id = "dbc:" + kv[0]; c._user = true; c._key = kv[0]; return c; }); return built.concat(user); }
   function clubById(id) { if (id && id.indexOf("dbc:") === 0) { var k = id.slice(4), v = obj(DB.clubs)[k]; if (!v) return null; var c = Object.assign({}, v); c.id = id; c._user = true; c._key = k; return c; } var f = null; (CFG.clubs || []).forEach(function (x) { if (x.id === id) f = x; }); if (f) { var ov = obj((obj(DB.clubmeta) || {})[id]); return Object.assign({}, f, ov); } return f; }
   function currentClub() { return clubById(state.clubId) || (CFG.clubs || [])[0] || null; }
@@ -575,9 +575,9 @@
       var s = u.s, c = u.club, dd = ddayLabelOf(s.startDate);
       var title = s.match ? (memberName((s.match.p1 || {}).id) + " vs " + memberName((s.match.p2 || {}).id)) : s.title;
       h += '<div class="card me-row" data-action="open-session" data-id="' + esc(s.id) + '">' +
-        '<span class="me-em acc-' + esc((u.club || {}).accent || "red") + '">' + icon(sessionIcon(s), 16) + '</span>' +
+        '<span class="me-em">' + (s.emoji || (s.match ? "🎱" : "📌")) + '</span>' +
         '<div class="me-mid"><div class="me-tt">' + esc(title) + '</div>' +
-        '<div class="me-ss">' + icon(sportIcon(c.sport), 13) + " " + esc(c.name) + ' · ' + esc(dateRangeKo(s.startDate, s.endDate)) + '</div></div>' +
+        '<div class="me-ss">' + (c.emoji ? esc(c.emoji) + " " : "") + esc(c.name) + ' · ' + esc(dateRangeKo(s.startDate, s.endDate)) + '</div></div>' +
         '<span class="me-dday">' + esc(dd || "예정") + '</span></div>';
     });
     return h + "</div>";
@@ -607,7 +607,7 @@
     if (c.sport === "billiards") {
       var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0];
       if (!stb || !stb.games) return "";
-      var h = '<div class="card"><div class="mystat-head">' + icon(sportIcon(c.sport), 16) + " " + esc(c.name) + '</div><div class="md-mystat">' +
+      var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
         msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + msStat(stb.highRun, "하이런") + "</div>";
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
@@ -623,13 +623,13 @@
     if (c.sport === "climbing") {
       var stc = climbStats(c.id).filter(function (a) { return a.id === me; })[0];
       if (!stc || !stc.sends) return "";
-      return '<div class="card"><div class="mystat-head">' + icon(sportIcon(c.sport), 16) + " " + esc(c.name) + '</div><div class="md-mystat">' +
+      return '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
         msStat(fmtGrade(stc.maxGrade), "최고 난이도") + msStat(stc.sends, "완등") + "</div></div>";
     }
     if (c.sport === "running") {
       var str = runStats(c.id).filter(function (a) { return a.id === me; })[0];
       if (!str || !str.runs) return "";
-      return '<div class="card"><div class="mystat-head">' + icon(sportIcon(c.sport), 16) + " " + esc(c.name) + '</div><div class="md-mystat">' +
+      return '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
         msStat(fmtPace(str.bestPace), "베스트 페이스") + msStat(str.runs, "러닝") + msStat(Math.round(str.dist * 10) / 10, "총 km") + "</div></div>";
     }
     return "";
@@ -819,7 +819,7 @@
     else if (it.kind === "match") { var m = it.m; ic = "ballot"; lab = "대전 결과"; body = memberName(m.p1.id) + " " + (+m.p1.score || 0) + " : " + (+m.p2.score || 0) + " " + memberName(m.p2.id) + (m.winner ? " · " + icon("trophy", 13) + " " + memberName(m.winner) : ""); tab = "ranking"; bt = "notice"; }
     else if (it.kind === "session") { ic = "calendar"; lab = "새 일정"; body = it.s.title + (it.s.startDate ? " · " + dateRangeKo(it.s.startDate, it.s.endDate) : ""); tab = "schedule"; bt = "notice"; }
     return '<div class="card feed-item' + (isNew ? " is-new" : "") + ' acc-' + esc(c.accent || "red") + '" data-action="go-club-tab" data-id="' + esc(c.id) + '" data-tab="' + tab + '" data-bt="' + bt + '">' +
-      '<div class="fi-head"><span class="fi-club">' + icon(sportIcon(c.sport), 13) + " " + esc(c.name) + '</span>' + (isNew ? '<span class="fi-new">NEW</span>' : "") + '<span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
+      '<div class="fi-head"><span class="fi-club">' + (c.emoji ? esc(c.emoji) + " " : "") + esc(c.name) + '</span>' + (isNew ? '<span class="fi-new">NEW</span>' : "") + '<span class="fi-ago">' + timeago(it.ts) + '</span></div>' +
       '<div class="fi-body"><span class="fi-ic">' + icon(ic, 18) + '</span><div class="fi-main"><div class="fi-lab">' + lab + '</div><div class="fi-text">' + esc(body) + '</div></div></div>' +
       '</div>';
   }
@@ -1245,7 +1245,7 @@
     var st = sessStatus(s), isApp = s.kind === "app";
     var clickable = !completed || canManage(me);
     return '<div class="card sess-card acc-' + esc((clubById(s.clubId) || {}).accent || s.accent || "red") + " st-" + st + (completed ? " done" : "") + '"' + (clickable ? ' data-action="open-session" data-id="' + esc(s.id) + '"' : "") + '>' +
-      '<div class="sc-top"><span class="sc-emoji">' + icon(sessionIcon(s), 21) + '</span><span class="sc-badge ' + st + '">' + esc(sessStatusLabel(s)) + "</span></div>" +
+      '<div class="sc-top"><span class="sc-emoji">' + (s.emoji || "📌") + '</span><span class="sc-badge ' + st + '">' + esc(sessStatusLabel(s)) + "</span></div>" +
       '<div class="sc-title">' + esc(s.title) + "</div>" +
       (s.subtitle ? '<div class="sc-subtitle">' + esc(s.subtitle) + "</div>" : "") +
       '<div class="sc-meta">' +
@@ -1262,7 +1262,7 @@
   /* 읽기전용 일정 상세 (info 카드) */
   function viewSessionInfo(s) {
     var d = (s && s.detail) || {}, h = '<div class="sinfo acc-' + esc((clubById(s.clubId) || {}).accent || s.accent || "red") + '">';
-    h += '<div class="sinfo-hero"><span class="sih-emoji">' + icon(sessionIcon(s), 28) + "</span>" +
+    h += '<div class="sinfo-hero"><span class="sih-emoji">' + (s.emoji || "📌") + "</span>" +
       '<div class="sih-badge">' + esc(sessStatusLabel(s)) + "</div>" +
       '<div class="sih-title">' + esc(s.title) + "</div>" +
       (s.subtitle ? '<div class="sih-sub">' + esc(s.subtitle) + "</div>" : "") +
@@ -1308,7 +1308,7 @@
     if (emojis.indexOf(curEmoji) < 0) emojis.unshift(curEmoji);
     openModal("<h2>" + (ed ? "크루 수정" : "크루 개설") + "</h2>" +
       '<label>종목</label><div class="seg">' + sports.map(function (sp) { return '<button type="button" class="seg-b' + (sp[0] === curSport ? " on" : "") + '" data-action="pick-sport" data-s="' + sp[0] + '">' + sp[1] + "</button>"; }).join("") + '<input type="hidden" id="f-csport" value="' + curSport + '"></div>' +
-      '<input type="hidden" id="f-cemoji" value="' + esc(curEmoji) + '">' +
+      '<label>이모지</label><div class="emoji-pick" id="f-cemoji-wrap">' + emojis.map(function (e) { return '<button type="button" class="emoji-b' + (e === curEmoji ? " on" : "") + '" data-action="pick-cemoji" data-e="' + e + '">' + e + "</button>"; }).join("") + '<input type="hidden" id="f-cemoji" value="' + esc(curEmoji) + '"></div>' +
       '<label>크루 이름</label><input id="f-cname" placeholder="예: 강남 3구 당구 크루" value="' + (ed ? esc(ed.name || "") : "") + '">' +
       '<label>한 줄 소개 (선택)</label><input id="f-cdesc" placeholder="예: 매주 수요일 저녁 모임" value="' + (ed ? esc(ed.desc || "") : "") + '">' +
       '<label>색상</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + curAcc + '"></div>' +
@@ -1328,7 +1328,7 @@
     var spOn = function (mid) { return (ed && sparts && Object.keys(sparts).length) ? !!sparts[mid] : false; };
     openModal("<h2>" + (ed ? "\uC138\uC158 \uC218\uC815" : "\uC138\uC158 \uCD94\uAC00\uD558\uAE30") + "</h2>" +
       '<p class="pf-note" style="margin:0 0 12px">' + (ed ? "\uC138\uC158 \uC815\uBCF4\uB97C \uC218\uC815\uD574\uC694." : "\uC0C8 \uC138\uC158\uC744 \uCD94\uAC00\uD574\uC694. \uCD94\uAC00\uD558\uBA74 \uD648\u00B7\uC815\uC0B0\u00B7\uCE74\uD480\u00B7\uC568\uBC94\u00B7\uC900\uBE44\uBB3C\uC774 \uC788\uB294 \uC2E4\uC2DC\uAC04 \uC138\uC158\uC73C\uB85C \uC5F4\uB824\uC694.") + '</p>' +
-      '<input type="hidden" id="f-emoji" value="' + esc(curEmoji) + '">' +
+      '<label>이모지</label><div class="emoji-pick" id="f-emoji-wrap">' + emojis.map(function (e) { return '<button type="button" class="emoji-b' + (e === curEmoji ? " on" : "") + '" data-action="pick-emoji" data-e="' + e + '">' + e + "</button>"; }).join("") + '<input type="hidden" id="f-emoji" value="' + esc(curEmoji) + '"></div>' +
       '<label>\uC81C\uBAA9</label><input id="f-stitle" placeholder="\uC608: \uC288\uD37C\uB9AC\uCE58\uD0A4\uB4DC \uB3D9\uACC4 MT" value="' + (ed ? esc(ed.title || "") : "") + '">' +
       '<label>\uD55C \uC904 \uC124\uBA85 (\uC120\uD0DD)</label><input id="f-ssub" placeholder="\uC608: \uC2A4\uD0A4 + \uC628\uCC9C" value="' + (ed ? esc(ed.subtitle || "") : "") + '">' +
       '<div class="row2"><div><label>\uC2DC\uC791\uC77C</label><input id="f-sstart" type="date" value="' + (ed ? esc(ed.startDate || "") : "") + '"></div>' +

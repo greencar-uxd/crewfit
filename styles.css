@@ -288,7 +288,7 @@ h1, h2 { margin: 0; }
 .sess-card.st-past { opacity: .72; }
 .sess-card > * { padding-left: 16px; padding-right: 16px; }
 .sc-top { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; }
-.sc-emoji { width: 40px; height: 40px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; flex: none; background: color-mix(in srgb, var(--acc) 13%, transparent); color: var(--acc); }
+.sc-emoji { font-size: 32px; line-height: 1; }
 .sc-badge { font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px; letter-spacing: 0;
   color: var(--acc); background: color-mix(in srgb, var(--acc) 13%, transparent); }
 .sc-badge.past { background: color-mix(in srgb, var(--ink) 8%, transparent); color: var(--muted); }
@@ -320,7 +320,7 @@ h1, h2 { margin: 0; }
 .sinfo { max-width: 760px; margin: 0 auto; }
 .sinfo-hero { position: relative; overflow: hidden; border-radius: 20px; padding: 24px 20px; margin-bottom: 16px; color: #fff;
   background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 55%, var(--acc) 130%); }
-.sih-emoji { display: inline-flex; align-items: center; color: #fff; }
+.sih-emoji { font-size: 40px; line-height: 1; display: block; }
 .sih-badge { display: inline-block; margin-top: 12px; background: rgba(255,255,255,.24); font-weight: 800; font-size: 12px;
   padding: 4px 12px; border-radius: 999px; letter-spacing: .5px; }
 .sih-title { font-size: 24px; font-weight: 800; letter-spacing: -.5px; margin-top: 8px; }
@@ -876,7 +876,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .me-list .card { margin-bottom: 0; }
 .me-row { display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer; }
 .me-row:active { transform: scale(.99); }
-.me-em { flex: none; width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--acc) 13%, transparent); color: var(--acc); }
+.me-em { font-size: 22px; flex: none; width: 30px; text-align: center; line-height: 1; }
 .me-mid { flex: 1; min-width: 0; }
 .me-tt { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .me-ss { font-size: 13px; color: var(--muted); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -910,4 +910,4 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .feed-item.is-new { border-color: color-mix(in srgb, var(--pri) 38%, var(--line)); }
 .feed-newcnt { color: var(--pos); font-weight: 800; }
 /* 동호회 아바타: 종목 라인 아이콘 칩 */
-.club-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 11px; background: color-mix(in srgb, var(--acc) 13%, transparent); color: var(--acc); }
+.club-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; line-height: 1; }
