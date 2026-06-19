@@ -477,6 +477,7 @@
     // 뒤로가기 히스토리 기록 (화면·일정·탭 단위)
     var sig = state.screen + "|" + (state.clubId || "") + "|" + (state.sessionId || "") + "|" + state.tab + "|" + state.alert + "|" + (state.pollId || "");
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
+    var _sameView = (lastSig === sig);
     lastSig = sig;
     var main = $("#app-main");
     var appEl = $("#app");
@@ -500,7 +501,7 @@
     else if (state.tab === "photo") main.innerHTML = viewPhotos();
     else if (state.tab === "my") main.innerHTML = viewMy();
     else main.innerHTML = viewHome();
-    window.scrollTo(0, 0);
+    if (!_sameView) window.scrollTo(0, 0);
   }
   function scheduleRender() { if (booted) render(); }
   function goBack() {
@@ -1656,6 +1657,14 @@
     // 공지·투표는 크루 게시판으로 단일화. 일정의 이 탭은 일정(타임라인) 전용.
     return prepSchedule();
   }
+  function rsvpRow(id, s) {
+    var rv = s.rsvp || {}, ids = sessionMemberIds(), ci = 0, cm = 0, co = 0;
+    ids.forEach(function (mid) { var v = rv[mid]; if (v === "in") ci++; else if (v === "maybe") cm++; else if (v === "out") co++; });
+    var noResp = Math.max(0, ids.length - ci - cm - co), mine = rv[me] || "";
+    function c(st, lab) { return '<button class="rsvp-chip ' + st + (mine === st ? " on" : "") + '" data-action="rsvp" data-id="' + id + '" data-st="' + st + '">' + lab + "</button>"; }
+    var tally = "참석 " + ci + (cm ? " · 미정 " + cm : "") + (co ? " · 불참 " + co : "") + (noResp ? " · 미응답 " + noResp : "");
+    return '<div class="rsvp-row">' + c("in", "참석") + c("maybe", "미정") + c("out", "불참") + '<span class="rsvp-tally">' + tally + "</span></div>";
+  }
   function prepSchedule() {
     var items = entries(DB.schedule).slice().sort(function (a, b) { var ka = (a[1].day || "") + (a[1].time || ""), kb = (b[1].day || "") + (b[1].time || ""); return ka < kb ? -1 : ka > kb ? 1 : 0; });
     var h = '<div class="page-head"><h1>일정</h1>' + (isMeAdmin() ? '<button class="btn-pri" data-action="new-schedule">+ 추가</button>' : "") + "</div>";
@@ -1668,6 +1677,7 @@
         (s.place ? '<a class="tl-place" href="' + mapUrl + '" target="_blank" rel="noopener">' + icon("pin", 13) + " " + esc(s.place) + "</a>" : "") +
         (s.link ? '<a class="tl-link" href="' + esc(s.link) + '" target="_blank" rel="noopener">' + icon("link", 13) + " 링크 바로가기</a>" : "") +
         (s.desc ? '<div class="tl-desc">' + linkify(esc(s.desc)) + "</div>" : "") +
+        rsvpRow(kv[0], s) +
         "</div>" +
         (isMeAdmin() ? '<div class="tl-acts"><button class="tl-edit" data-action="edit-schedule" data-id="' + kv[0] + '">' + icon("edit", 16) + '</button><button class="tl-del" data-action="del-schedule" data-id="' + kv[0] + '">×</button></div>' : "") + "</div>";
     });
@@ -2147,6 +2157,7 @@
     if (a === "del-notice") { var nid = t.getAttribute("data-id"); var nn = obj(DB.notices)[nid]; if (!nn || !(isMeAdmin() || nn.by === me)) return; if (confirm("공지를 삭제할까요?")) { Store.remove("notices/" + nid); closeModal(); } return; }
     if (a === "new-schedule") { if (isMeAdmin()) formSchedule(null); return; }
     if (a === "edit-schedule") { if (isMeAdmin()) formSchedule(t.getAttribute("data-id")); return; }
+    if (a === "rsvp") { var rid = t.getAttribute("data-id"), rst = t.getAttribute("data-st"); var rs = (obj(DB.schedule)[rid] || {}).rsvp || {}; if (rs[me] === rst) Store.remove("schedule/" + rid + "/rsvp/" + me); else Store.set("schedule/" + rid + "/rsvp/" + me, rst); return; }
     if (a === "save-schedule") { saveSchedule(t.getAttribute("data-edit")); return; }
     if (a === "del-schedule") { if (isMeAdmin() && confirm("일정을 삭제할까요?")) { Store.remove("schedule/" + t.getAttribute("data-id")); closeModal(); } return; }
     if (a === "new-packing") { var pty = t.getAttribute("data-type") || "personal"; if (pty === "shared" && !canManage(me)) return; formNewPacking(pty); return; }
