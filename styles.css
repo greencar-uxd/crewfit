@@ -539,6 +539,7 @@ h1, h2 { margin: 0; }
 .cc-dot.white { background: #fff; } .cc-dot.yellow { background: #facc15; } .cc-dot.orange { background: #fb923c; }
 .cc-dot.green { background: #22c55e; } .cc-dot.blue { background: #3b82f6; } .cc-dot.red { background: #ef4444; }
 .cc-dot.purple { background: #a855f7; } .cc-dot.grey { background: #9ca3af; } .cc-dot.black { background: #111827; }
+.cc-dot.navy { background: #3730a3; } .cc-dot.pink { background: #ec4899; } .cc-dot.brown { background: #b45309; }
 .notice .notice-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
 .notice.pin { border: 1px solid color-mix(in srgb, var(--pri) 35%, transparent); }
 .pin-tag { display: inline-block; font-size: 10px; font-weight: 800; color: var(--pri); margin-bottom: 8px; }

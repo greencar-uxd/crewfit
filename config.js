@@ -52,11 +52,33 @@ window.SRK_CONFIG = {
       { key: "red",    label: "빨강", v: 3 }, { key: "purple", label: "보라", v: 4 },
       { key: "grey",   label: "회색", v: 5 }, { key: "black",  label: "검정", v: 6 }
     ] },
-    // ↓ 자주 가는 체인 — 우선 공용 기본 스케일. 각 암장 실제 색표로 보정하세요.
+    // ↓ 자주 가는 체인 — 색 순서는 리뷰/블로그 출처. 색→V 절댓값은 근사치(보정 가능).
+    // 피커스 — 무지개 순(빨강이 가장 쉬움!). 다른 암장과 정반대라 주의
+    { id: "peakers", name: "피커스", colors: [
+      { key: "red",    label: "빨강", v: 0 }, { key: "orange", label: "주황", v: 1 },
+      { key: "yellow", label: "노랑", v: 2 }, { key: "green",  label: "초록", v: 3 },
+      { key: "blue",   label: "파랑", v: 4 }, { key: "navy",   label: "남색", v: 5 },
+      { key: "purple", label: "보라", v: 6 }, { key: "grey",   label: "회색", v: 7 },
+      { key: "black",  label: "검정", v: 8 }
+    ] },
+    // 서울숲클라이밍 — 핑크가 가장 쉬움, 검정 최고난도(10단계). 상위 V는 근사치
+    { id: "seoulsup", name: "서울숲클라이밍", colors: [
+      { key: "pink",   label: "핑크", v: 0 }, { key: "red",    label: "빨강", v: 1 },
+      { key: "orange", label: "주황", v: 2 }, { key: "yellow", label: "노랑", v: 3 },
+      { key: "green",  label: "초록", v: 4 }, { key: "blue",   label: "파랑", v: 5 },
+      { key: "navy",   label: "남색", v: 6 }, { key: "purple", label: "보라", v: 7 },
+      { key: "brown",  label: "갈색", v: 8 }, { key: "black",  label: "검정", v: 9 }
+    ] },
+    // 손상원클라이밍 — 출처: 을지로점 리뷰. ⚠️ 검정이 중상위·핑크 최상위로 다소 이례적 — 현장 확인 권장
+    { id: "sonsangwon", name: "손상원클라이밍", colors: [
+      { key: "white",  label: "흰색", v: 0 }, { key: "yellow", label: "노랑", v: 1 },
+      { key: "green",  label: "초록", v: 2 }, { key: "blue",   label: "파랑", v: 3 },
+      { key: "red",    label: "빨강", v: 4 }, { key: "black",  label: "검정", v: 5 },
+      { key: "grey",   label: "회색", v: 6 }, { key: "brown",  label: "갈색", v: 7 },
+      { key: "pink",   label: "핑크", v: 8 }
+    ] },
+    // ↓ 색표 미확인 — 공용 기본 스케일. 현장 색표로 보정 필요
     { id: "climbingpark",  name: "클라이밍파크",   base: true },
-    { id: "sonsangwon",    name: "손상원클라이밍", base: true },
-    { id: "seoulsup",      name: "서울숲클라이밍", base: true },
-    { id: "peakers",       name: "피커스",         base: true },
     { id: "seoulboulders", name: "서울볼더스",     base: true },
     { id: "theplastic",    name: "더플라스틱",     base: true },
     { id: "etc",           name: "기타 (직접 입력)", manual: true }
