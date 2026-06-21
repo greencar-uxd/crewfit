@@ -85,10 +85,8 @@ window.SRK_CONFIG = {
       { key: "grey",   label: "회색", v: 6 }, { key: "black",  label: "검정", v: 7 },
       { key: "white",  label: "흰색", v: 8 }
     ] },
-    // ↓ 색표 미확인(spiri7 403·공식사이트 차단) — 공용 기본 스케일. 현장 색표로 보정 필요
-    { id: "seoulboulders", name: "서울볼더스",     base: true },
-    { id: "theplastic",    name: "더플라스틱",     base: true },
     { id: "etc",           name: "기타 (직접 입력)", manual: true }
+    // 서울볼더스·더플라스틱은 색표 미확인으로 제외 — '기타'로 입력. 색표 확보 시 추가
   ],
 
   /* ── 2) 여행 정보 ─────────────────────────────────────────── */
