@@ -185,11 +185,11 @@
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
   function billiardsStats(cid) {
     var agg = {};
-    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeWins: 0, lunchWins: 0 }; return agg[id]; }
+    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeBuy: 0, lunchBuy: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
       [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
-      if (m.winner) { var mw = ensure(m.winner); mw.wins++; if (m.bet) { if (m.bet.coffee) mw.coffeeWins++; if (m.bet.lunch) mw.lunchWins++; } }  // 내기 승: 이긴 사람이 커피/점심 획득
+      if (m.winner) { ensure(m.winner).wins++; if (m.bet) { var loserId = m.winner === m.p1.id ? m.p2.id : m.p1.id; var lb = ensure(loserId); if (m.bet.coffee) lb.coffeeBuy++; if (m.bet.lunch) lb.lunchBuy++; } }  // 진 사람이 커피/점심 삼
     });
     var ids = Object.keys(agg), TI = 0, TG = 0;
     ids.forEach(function (id) { TI += agg[id].innings; TG += agg[id].games; });
@@ -1038,15 +1038,15 @@
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
     var top1 = rows.length ? rows[0].id : null, ck = null, lk = null, ckN = 0, lkN = 0;
-    rows.forEach(function (a) { if (a.coffeeWins > ckN) { ckN = a.coffeeWins; ck = a.id; } if (a.lunchWins > lkN) { lkN = a.lunchWins; lk = a.id; } });
+    rows.forEach(function (a) { if (a.coffeeBuy > ckN) { ckN = a.coffeeBuy; ck = a.id; } if (a.lunchBuy > lkN) { lkN = a.lunchBuy; lk = a.id; } });
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
-    function betTally(a) { var s = ""; if (a.coffeeWins) s += " ☕" + a.coffeeWins; if (a.lunchWins) s += " 🍚" + a.lunchWins; return s; }
+    function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     if (ck || lk) {
       var kp = [];
-      if (ck) kp.push("☕ 커피왕 <b>" + esc(memberName(ck)) + "</b> " + ckN);
-      if (lk) kp.push("🍚 점심왕 <b>" + esc(memberName(lk)) + "</b> " + lkN);
+      if (ck) kp.push("☕ 커피왕 <b>" + esc(memberName(ck)) + "</b> " + ckN + "잔 삼");
+      if (lk) kp.push("🍚 점심왕 <b>" + esc(memberName(lk)) + "</b> " + lkN + "번 삼");
       h += '<div class="kings-bar">' + kp.join(" · ") + "</div>";
     }
     if (!rows.length) {
