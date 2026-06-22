@@ -844,18 +844,16 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .retry-warn { background: color-mix(in srgb, var(--accent, var(--pri)) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent, var(--pri)) 35%, transparent); color: var(--accent, var(--pri)); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
 /* 앱 로그인 페이지 */
 .login-card { text-align: center; }
-.login-logo { display: flex; justify-content: center; margin-bottom: 14px; }
-.login-brand { font-size: 26px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 4px; }
+.login-head { display: flex; align-items: center; justify-content: center; gap: 9px; margin-bottom: 22px; }
+.login-head svg { width: 38px; height: 38px; }
+.login-head span { font-size: 21px; font-weight: 800; letter-spacing: -.5px; }
+.login-title { font-size: 23px; font-weight: 800; letter-spacing: -.4px; margin: 0 0 6px; }
+.login-sub { font-size: 14px; color: var(--text-secondary, var(--muted)); margin: 0 0 18px; line-height: 1.5; min-height: 21px; }
 .login-card .fld { text-align: left; margin-top: 12px; }
 .login-card .fld label { display: block; font-size: 13px; font-weight: 700; color: var(--text-secondary, var(--muted)); margin-bottom: 6px; }
 .login-card .pin-wrap { margin-top: 2px; }
-.login-card .btn-pri { margin-top: 16px; }
-.login-hint { text-align: left; font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 8px 0 2px; }
-.login-hint:empty { display: none; }
-.login-hint .ic { vertical-align: -2px; margin-right: 3px; }
-.login-hint b { color: var(--ink); font-weight: 700; }
-.login-hint.new { color: var(--accent); }
-.login-hint.new b { color: var(--accent); }
+.login-card .btn-pri { margin-top: 18px; }
+.login-foot { font-size: 12.5px; color: var(--text-secondary, var(--muted)); margin-top: 16px; line-height: 1.5; }
 @media (min-width: 880px) {
   #app.lvl-top { max-width: 1240px; }
   #app.lvl-top #app-main { display: block; padding: 16px 0 60px; }

@@ -722,37 +722,39 @@
   }
   function loginCard() {
     return '<div class="gate-card login-card">' +
-      '<div class="login-logo">' + LOGO_C + '</div>' +
-      '<div class="login-brand">크루핏</div>' +
-      '<p class="gate-p">모이고, 즐기고, 함께하다<br>이름과 인증번호로 로그인하세요.</p>' +
+      '<header class="login-head">' + LOGO_C + "<span>CREWFIT</span></header>" +
+      '<h1 class="login-title" id="login-title">로그인</h1>' +
+      '<p class="login-sub" id="login-sub">이름과 인증번호를 입력하세요</p>' +
       '<div class="fld"><label>이름</label><input type="text" id="i-loginname" placeholder="이름을 입력하세요" autocomplete="off"></div>' +
       '<div class="fld"><label id="i-pin-label">인증번호 (4자리)</label>' + pinCellsHtml("i-pin", "pin-cells") + '</div>' +
-      '<div id="login-hint" class="login-hint"></div>' +
       '<div id="login-err" class="pin-err"></div>' +
       '<button class="btn-pri btn-block" id="login-btn" data-action="login-submit">로그인</button>' +
-      '<p class="gate-p" style="margin-top:14px;font-size:12px">처음이세요? 이름을 적고 <b>원하는 4자리 숫자</b>를 정하면 그게 인증번호가 되어 바로 가입돼요. 잊었다면 운영진에게 초기화를 요청하세요.</p>' +
+      '<p class="login-foot">인증번호를 잊었다면 운영진에게 초기화를 요청하세요</p>' +
       "</div>";
   }
-  // 이름 입력에 따라 '로그인(기존)' vs '가입(첫 입장)' 안내를 동적으로 전환
+  // 이름 입력에 따라 타이틀·서브타이틀·버튼을 '로그인(기존)' vs '가입(첫 입장)'으로 전환
   function updateLoginMode() {
     var nf = $("#i-loginname"); if (!nf) return;
     var nm = (nf.value || "").trim();
-    var hint = $("#login-hint"), btn = $("#login-btn"), lab = $("#i-pin-label");
+    var title = $("#login-title"), sub = $("#login-sub"), btn = $("#login-btn"), lab = $("#i-pin-label");
     var hit = nm ? resolveMemberByName(nm) : null;
     var dm = hit ? (obj(DB.members)[hit.id] || {}) : null;
-    if (hit && dm && dm.pin) {            // 기존 회원 — 인증번호 입력
+    if (hit && dm && dm.pin) {            // 기존 회원 — 로그인
       pinReveal = false;
-      if (hint) { hint.className = "login-hint"; hint.innerHTML = icon("key", 13) + " <b>" + esc(hit.name) + "</b>님, 인증번호 4자리를 입력하세요."; }
+      if (title) title.textContent = "로그인";
+      if (sub) sub.textContent = hit.name + "님, 인증번호 4자리를 입력하세요";
       if (lab) lab.textContent = "인증번호 (4자리)";
       if (btn) btn.textContent = "로그인";
-    } else if (hit && dm && !dm.pin) {    // 명단엔 있으나 첫 입장 — 인증번호 설정(가입)
-      pinReveal = true;                  // 새로 정하는 번호는 보여줘서 오타·잠김 방지
-      if (hint) { hint.className = "login-hint new"; hint.innerHTML = icon("plus", 13) + " 처음이시네요! <b>원하는 4자리 숫자</b>를 정하면 가입돼요. 입력한 번호가 보이니 <b>꼭 기억</b>하세요."; }
-      if (lab) lab.textContent = "새 인증번호 (4자리 · 직접 정하기)";
+    } else if (hit && dm && !dm.pin) {    // 첫 입장 — 인증번호 설정
+      pinReveal = true;
+      if (title) title.textContent = "최초 인증번호를 설정해주세요";
+      if (sub) sub.textContent = "원하는 4자리 숫자를 정하면 가입돼요 · 꼭 기억하세요";
+      if (lab) lab.textContent = "새 인증번호 (4자리)";
       if (btn) btn.textContent = "가입하기";
     } else {                              // 미입력 / 명단에 없는 이름
       pinReveal = false;
-      if (hint) { hint.className = "login-hint"; hint.innerHTML = ""; }
+      if (title) title.textContent = "로그인";
+      if (sub) sub.textContent = "이름과 인증번호를 입력하세요";
       if (lab) lab.textContent = "인증번호 (4자리)";
       if (btn) btn.textContent = "로그인";
     }
@@ -1191,7 +1193,7 @@
     var ed = editKey ? (obj(obj(DB.clubmatches)[cid])[editKey]) : null;
     var ep1 = ed ? (ed.p1 || {}) : {}, ep2 = ed ? (ed.p2 || {}) : {};
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
-    var p1def = ed ? ep1.id : me, p2def = ed ? ep2.id : ((roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "");
+    var p1def = ed ? ep1.id : me, p2def = ed ? ep2.id : "";
     var myRec = (billiardsStats(cid).filter(function (a) { return a.id === me; })[0] || {}).recSuji;
     var v = function (x) { return (x || x === 0) ? ' value="' + x + '"' : ""; };
     openModal("<h2>" + (ed ? "대전 수정" : "3쿠션 대전 기록") + "</h2>" +
@@ -1199,7 +1201,7 @@
       '<div class="mt-form">' +
       '<div class="mt-col"><label>선수 1</label><select id="m-p1">' + opt(p1def) + "</select>" +
         '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="' + (myRec ? "추천 " + myRec : "예 20") + '"' + v(ep1.target) + "></span><span><label>득점</label><input id=\"m-s1\" type=\"number\" inputmode=\"numeric\" min=\"0\"" + v(ep1.score) + "></span></div></div>" +
-      '<div class="mt-col"><label>선수 2</label><select id="m-p2">' + opt(p2def) + "</select>" +
+      '<div class="mt-col"><label>선수 2</label><select id="m-p2"><option value="">상대 선수 선택…</option>' + opt(p2def) + "</select>" +
         '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"' + v(ep2.target) + "></span><span><label>득점</label><input id=\"m-s2\" type=\"number\" inputmode=\"numeric\" min=\"0\"" + v(ep2.score) + "></span></div></div>" +
       '<label>이닝 수 (공통)</label><input id="m-inn" type="number" inputmode="numeric" min="1" placeholder="예: 25"' + v(ep1.innings) + ">" +
       betField("m-bet", ed ? ed.bet : null) +
@@ -1314,14 +1316,14 @@
   function formMatchSession() {
     var cid = state.clubId, roster = clubRoster(cid);
     if (!rankCanRec(cid)) { alert("크루원으로 입장한 뒤 만들 수 있어요."); return; }
-    var p2def = (roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "";
+    var p2def = "";
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
     openModal("<h2>1:1 대결 일정</h2>" +
       '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 3쿠션. 각자 수지를 미리 정해두고, 대결 후 결과를 입력하면 순위에 반영돼요.</p>' +
       '<div class="mt-form">' +
       '<div class="mt-col"><label>선수 1</label><select id="ms-p1">' + opt(me) + "</select>" +
         '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span></div></div>' +
-      '<div class="mt-col"><label>선수 2</label><select id="ms-p2">' + opt(p2def) + "</select>" +
+      '<div class="mt-col"><label>선수 2</label><select id="ms-p2"><option value="">상대 선수 선택…</option>' + opt(p2def) + "</select>" +
         '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span></div></div>' +
       '<label>날짜 (선택)</label><input id="ms-date" type="date">' +
       "</div>" +
