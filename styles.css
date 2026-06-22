@@ -810,6 +810,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .rk-name { flex: 1; min-width: 0; }
 .rk-name > div:first-child { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rk-sub { font-size: 12px; color: var(--text-secondary, var(--muted)); margin-top: 1px; }
+.suji-rec { font-weight: 700; }
+.suji-rec.down { color: #b54708; }
+.suji-rec.up { color: var(--accent); }
 .rk-avg { flex: none; text-align: right; }
 .rk-avg-n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
 .rk-avg-l { font-size: 10px; color: var(--text-secondary, var(--muted)); }
