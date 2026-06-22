@@ -623,6 +623,9 @@
       if (!stb || !stb.games) return "";
       var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
         msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "추천 수지") : "") + "</div>";
+      h += stb.recSuji
+        ? '<div class="hint" style="margin-top:8px">최근 평균 기준 <b>추천 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 경기가 쌓일수록 정확해져요</div>'
+        : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 추천 수지를 알려드려요</div>';
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
@@ -1029,18 +1032,8 @@
     }
     return h;
   }
-  // 추천 수지 nudge — 누적 평균 기준 적정 수지를 제안(현재 수지와 2 이상 차이날 때)
-  function sujiHint(a) {
-    var cur = a.lastTarget || 0;
-    if (a.recSuji && !cur) return "추천 수지 " + a.recSuji;
-    var txt = "수지 " + (cur || "-");
-    if (a.recSuji && cur) {
-      var d = a.recSuji - cur;
-      if (d <= -2) return txt + ' <span class="suji-rec down">→ 추천 ' + a.recSuji + "</span>";
-      if (d >= 2) return txt + ' <span class="suji-rec up">→ 추천 ' + a.recSuji + "</span>";
-    }
-    return txt;
-  }
+  // 순위표엔 현재 수지만 표시(추천 수지는 마이페이지에서)
+  function sujiHint(a) { return "수지 " + (a.lastTarget || "-"); }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
@@ -1048,7 +1041,7 @@
     rows.forEach(function (a) { if (a.coffeeWins > ckN) { ckN = a.coffeeWins; ck = a.id; } if (a.lunchWins > lkN) { lkN = a.lunchWins; lk = a.id; } });
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
     function betTally(a) { var s = ""; if (a.coffeeWins) s += " ☕" + a.coffeeWins; if (a.lunchWins) s += " 🍚" + a.lunchWins; return s; }
-    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준 · 경기 쌓이면 추천 수지 제안</div></div>' +
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     if (ck || lk) {
       var kp = [];
