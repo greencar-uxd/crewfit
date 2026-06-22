@@ -841,6 +841,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .login-card .fld label { display: block; font-size: 13px; font-weight: 700; color: var(--text-secondary, var(--muted)); margin-bottom: 6px; }
 .login-card .pin-wrap { margin-top: 2px; }
 .login-card .btn-pri { margin-top: 16px; }
+.login-hint { text-align: left; font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 8px 0 2px; }
+.login-hint:empty { display: none; }
+.login-hint .ic { vertical-align: -2px; margin-right: 3px; }
+.login-hint b { color: var(--ink); font-weight: 700; }
+.login-hint.new { color: var(--accent); }
+.login-hint.new b { color: var(--accent); }
 @media (min-width: 880px) {
   #app.lvl-top { max-width: 1240px; }
   #app.lvl-top #app-main { display: block; padding: 16px 0 60px; }

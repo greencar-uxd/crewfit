@@ -705,7 +705,8 @@
     $("#app-header").innerHTML = ""; $("#app-nav").innerHTML = ""; $("#app-main").innerHTML = ""; setChrome(true);
     var g = $("#gate"); g.classList.remove("hidden"); g.innerHTML = loginCard();
     bindPin($("#i-pin"), $("#pin-cells"), $("#pin-err"));
-    var nf = $("#i-loginname"); if (nf) try { nf.focus(); } catch (e) {}
+    var nf = $("#i-loginname"); if (nf) { nf.addEventListener("input", updateLoginMode); try { nf.focus(); } catch (e) {} }
+    updateLoginMode();
   }
   function loginCard() {
     return '<div class="gate-card login-card">' +
@@ -713,11 +714,33 @@
       '<div class="login-brand">크루핏</div>' +
       '<p class="gate-p">모이고, 즐기고, 함께하다<br>이름과 인증번호로 로그인하세요.</p>' +
       '<div class="fld"><label>이름</label><input type="text" id="i-loginname" placeholder="이름을 입력하세요" autocomplete="off"></div>' +
-      '<div class="fld"><label>인증번호 (4자리)</label>' + pinCellsHtml("i-pin", "pin-cells") + '</div>' +
+      '<div class="fld"><label id="i-pin-label">인증번호 (4자리)</label>' + pinCellsHtml("i-pin", "pin-cells") + '</div>' +
+      '<div id="login-hint" class="login-hint"></div>' +
       '<div id="login-err" class="pin-err"></div>' +
-      '<button class="btn-pri btn-block" data-action="login-submit">로그인</button>' +
-      '<p class="gate-p" style="margin-top:14px;font-size:12px">처음이세요? 이름 입력 후 원하는 인증번호를 정하면 가입돼요. 인증번호를 잊었다면 운영진에게 초기화를 요청하세요.</p>' +
+      '<button class="btn-pri btn-block" id="login-btn" data-action="login-submit">로그인</button>' +
+      '<p class="gate-p" style="margin-top:14px;font-size:12px">처음이세요? 이름을 적고 <b>원하는 4자리 숫자</b>를 정하면 그게 인증번호가 되어 바로 가입돼요. 잊었다면 운영진에게 초기화를 요청하세요.</p>' +
       "</div>";
+  }
+  // 이름 입력에 따라 '로그인(기존)' vs '가입(첫 입장)' 안내를 동적으로 전환
+  function updateLoginMode() {
+    var nf = $("#i-loginname"); if (!nf) return;
+    var nm = (nf.value || "").trim();
+    var hint = $("#login-hint"), btn = $("#login-btn"), lab = $("#i-pin-label");
+    var hit = nm ? resolveMemberByName(nm) : null;
+    var dm = hit ? (obj(DB.members)[hit.id] || {}) : null;
+    if (hit && dm && dm.pin) {            // 기존 회원 — 인증번호 입력
+      if (hint) { hint.className = "login-hint"; hint.innerHTML = icon("key", 13) + " <b>" + esc(hit.name) + "</b>님, 인증번호 4자리를 입력하세요."; }
+      if (lab) lab.textContent = "인증번호 (4자리)";
+      if (btn) btn.textContent = "로그인";
+    } else if (hit && dm && !dm.pin) {    // 명단엔 있으나 첫 입장 — 인증번호 설정(가입)
+      if (hint) { hint.className = "login-hint new"; hint.innerHTML = icon("plus", 13) + " 처음이시네요! <b>원하는 4자리 숫자</b>를 정하면 가입돼요. 다음부턴 이 번호로 로그인해요."; }
+      if (lab) lab.textContent = "새 인증번호 (4자리 · 직접 정하기)";
+      if (btn) btn.textContent = "가입하기";
+    } else {                              // 미입력 / 명단에 없는 이름
+      if (hint) { hint.className = "login-hint"; hint.innerHTML = ""; }
+      if (lab) lab.textContent = "인증번호 (4자리)";
+      if (btn) btn.textContent = "로그인";
+    }
   }
   function renderGate() {
     var g = $("#gate"); g.classList.remove("hidden");
