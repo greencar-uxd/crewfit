@@ -185,11 +185,11 @@
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
   function billiardsStats(cid) {
     var agg = {};
-    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0 }; return agg[id]; }
+    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeWins: 0, lunchWins: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
       [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
-      if (m.winner) ensure(m.winner).wins++;
+      if (m.winner) { var mw = ensure(m.winner); mw.wins++; if (m.bet) { if (m.bet.coffee) mw.coffeeWins++; if (m.bet.lunch) mw.lunchWins++; } }  // 내기 승: 이긴 사람이 커피/점심 획득
     });
     var ids = Object.keys(agg), TI = 0, TG = 0;
     ids.forEach(function (id) { TI += agg[id].innings; TG += agg[id].games; });
@@ -1044,8 +1044,18 @@
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
+    var top1 = rows.length ? rows[0].id : null, ck = null, lk = null, ckN = 0, lkN = 0;
+    rows.forEach(function (a) { if (a.coffeeWins > ckN) { ckN = a.coffeeWins; ck = a.id; } if (a.lunchWins > lkN) { lkN = a.lunchWins; lk = a.id; } });
+    function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
+    function betTally(a) { var s = ""; if (a.coffeeWins) s += " ☕" + a.coffeeWins; if (a.lunchWins) s += " 🍚" + a.lunchWins; return s; }
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준 · 경기 쌓이면 추천 수지 제안</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
+    if (ck || lk) {
+      var kp = [];
+      if (ck) kp.push("☕ 커피왕 <b>" + esc(memberName(ck)) + "</b> " + ckN);
+      if (lk) kp.push("🍚 점심왕 <b>" + esc(memberName(lk)) + "</b> " + lkN);
+      h += '<div class="kings-bar">' + kp.join(" · ") + "</div>";
+    }
     if (!rows.length) {
       h += '<div class="empty-msg">아직 기록된 대전이 없어요.' + (canRec ? ' 위 <b>대전 기록</b>으로 첫 경기를 남겨보세요.' : ' 크루원으로 입장하면 대전을 기록할 수 있어요.') + '</div>';
     } else {
@@ -1054,7 +1064,7 @@
         h += '<div class="rank-row">' +
           '<span class="rk-no rk-' + (i < 3 ? (i + 1) : "n") + '">' + (i + 1) + "</span>" +
           avatar(a.id, 30) +
-          '<div class="rk-name"><div>' + esc(a.name) + '</div><div class="rk-sub">' + a.games + '전 ' + a.wins + '승 · ' + sujiHint(a) + '</div></div>' +
+          '<div class="rk-name"><div>' + esc(a.name) + kb(a.id) + '</div><div class="rk-sub">' + a.games + '전 ' + a.wins + '승 · ' + sujiHint(a) + betTally(a) + '</div></div>' +
           '<div class="rk-avg"><div class="rk-avg-n">' + fmtAvg(a.avg) + '</div><div class="rk-avg-l">에버리지</div></div>' +
           "</div>";
       });
@@ -1068,9 +1078,9 @@
         var w = m.winner, canDel = (m.by === me || canManage(me));
         h += '<div class="match-row">' +
           '<span class="mt-p' + (w === m.p1.id ? " win" : "") + '">' + esc(memberName(m.p1.id)) + ' <b>' + (+m.p1.score || 0) + '</b></span>' +
-          '<span class="mt-vs">' + (+m.p1.innings || 0) + '이닝</span>' +
+          '<span class="mt-vs">' + (+m.p1.innings || 0) + '이닝' + (m.bet ? " " + (m.bet.coffee ? "☕" : "") + (m.bet.lunch ? "🍚" : "") : "") + '</span>' +
           '<span class="mt-p right' + (w === m.p2.id ? " win" : "") + '"><b>' + (+m.p2.score || 0) + '</b> ' + esc(memberName(m.p2.id)) + '</span>' +
-          (canDel ? '<button class="tl-del" data-action="del-match" data-id="' + m._key + '" aria-label="삭제">×</button>' : "") +
+          (canDel ? '<button class="mt-edit" data-action="edit-match" data-id="' + m._key + '" aria-label="수정">' + icon("edit", 14) + '</button><button class="tl-del" data-action="del-match" data-id="' + m._key + '" aria-label="삭제">×</button>' : "") +
           "</div>";
       });
       h += "</div>";
@@ -1170,24 +1180,41 @@
       '<label>메모 (선택)</label><input id="cd-note" placeholder="예: 6월 말까지" maxlength="100">' +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club-dues">등록</button></div>');
   }
-  function formMatch(sessionId) {
+  // 내기 입력 필드(커피/점심 체크 — 둘 다 = 둘다, 진 사람이 삼)
+  function betField(prefix, bet) {
+    bet = bet || {};
+    return '<label>내기 (선택 · 진 사람이 삼)</label><div class="bet-row">' +
+      '<label class="bet-chk"><input type="checkbox" id="' + prefix + '-coffee"' + (bet.coffee ? " checked" : "") + "> ☕ 커피</label>" +
+      '<label class="bet-chk"><input type="checkbox" id="' + prefix + '-lunch"' + (bet.lunch ? " checked" : "") + "> 🍚 점심</label></div>";
+  }
+  function readBet(prefix) {
+    var c = $("#" + prefix + "-coffee"), l = $("#" + prefix + "-lunch"), bet = {};
+    if (c && c.checked) bet.coffee = true; if (l && l.checked) bet.lunch = true;
+    return (bet.coffee || bet.lunch) ? bet : null;
+  }
+  function formMatch(sessionId, editKey) {
     var cid = state.clubId, roster = clubRoster(cid);
     if (!(me && (obj(DB.members)[me] || {}).claimed && roster.some(function (r) { return r.id === me; }))) { alert("크루원으로 입장한 뒤 기록할 수 있어요."); return; }
+    var ed = editKey ? (obj(obj(DB.clubmatches)[cid])[editKey]) : null;
+    var ep1 = ed ? (ed.p1 || {}) : {}, ep2 = ed ? (ed.p2 || {}) : {};
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
-    var p2def = (roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "";
+    var p1def = ed ? ep1.id : me, p2def = ed ? ep2.id : ((roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "");
     var myRec = (billiardsStats(cid).filter(function (a) { return a.id === me; })[0] || {}).recSuji;
-    openModal("<h2>3쿠션 대전 기록</h2>" +
+    var v = function (x) { return (x || x === 0) ? ' value="' + x + '"' : ""; };
+    openModal("<h2>" + (ed ? "대전 수정" : "3쿠션 대전 기록") + "</h2>" +
       '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 기준' + "</p>" +
       '<div class="mt-form">' +
-      '<div class="mt-col"><label>선수 1</label><select id="m-p1">' + opt(me) + "</select>" +
-        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="' + (myRec ? "추천 " + myRec : "예 20") + '"></span><span><label>득점</label><input id="m-s1" type="number" inputmode="numeric" min="0"></span></div></div>' +
+      '<div class="mt-col"><label>선수 1</label><select id="m-p1">' + opt(p1def) + "</select>" +
+        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="' + (myRec ? "추천 " + myRec : "예 20") + '"' + v(ep1.target) + "></span><span><label>득점</label><input id=\"m-s1\" type=\"number\" inputmode=\"numeric\" min=\"0\"" + v(ep1.score) + "></span></div></div>" +
       '<div class="mt-col"><label>선수 2</label><select id="m-p2">' + opt(p2def) + "</select>" +
-        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span><span><label>득점</label><input id="m-s2" type="number" inputmode="numeric" min="0"></span></div></div>' +
-      '<label>이닝 수 (공통)</label><input id="m-inn" type="number" inputmode="numeric" min="1" placeholder="예: 25">' +
-      '<input type="hidden" id="m-session" value="' + esc(sessionId || "") + '">' +
+        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"' + v(ep2.target) + "></span><span><label>득점</label><input id=\"m-s2\" type=\"number\" inputmode=\"numeric\" min=\"0\"" + v(ep2.score) + "></span></div></div>" +
+      '<label>이닝 수 (공통)</label><input id="m-inn" type="number" inputmode="numeric" min="1" placeholder="예: 25"' + v(ep1.innings) + ">" +
+      betField("m-bet", ed ? ed.bet : null) +
+      '<input type="hidden" id="m-session" value="' + esc(ed ? (ed.sessionId || "") : (sessionId || "")) + '">' +
+      '<input type="hidden" id="m-edit" value="' + esc(editKey || "") + '">' +
       "</div>" +
       '<div id="m-err" class="pin-err"></div>' +
-      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match">기록</button></div>');
+      '<div class="modal-foot">' + (ed ? '<button class="link-danger" data-action="del-match" data-id="' + esc(editKey) + '">삭제</button>' : "") + '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match">' + (ed ? "저장" : "기록") + "</button></div>");
   }
   function saveMatch() {
     var cid = state.clubId, roster = clubRoster(cid);
@@ -1202,9 +1229,13 @@
     if (s1 < 0 || s2 < 0) { if (err) err.textContent = "득점을 확인해주세요."; return; }
     var r1 = t1 > 0 && s1 >= t1, r2 = t2 > 0 && s2 >= t2, winner;
     if (r1 && !r2) winner = p1; else if (r2 && !r1) winner = p2; else winner = (s1 === s2) ? "" : (s1 > s2 ? p1 : p2);
-    var match = { ts: Date.now(), by: me, sessionId: (($("#m-session") || {}).value) || null, p1: { id: p1, target: t1, score: s1, innings: inn }, p2: { id: p2, target: t2, score: s2, innings: inn }, winner: winner };
-    var mk = key();
-    armRetry(function () { formMatch(match.sessionId || null); });
+    var editKey = (($("#m-edit") || {}).value) || "";
+    var prev = editKey ? (obj(obj(DB.clubmatches)[cid])[editKey]) : null;
+    var sid = (($("#m-session") || {}).value) || null;
+    var match = { ts: (prev ? prev.ts : Date.now()), by: (prev ? prev.by : me), sessionId: sid, p1: { id: p1, target: t1, score: s1, innings: inn }, p2: { id: p2, target: t2, score: s2, innings: inn }, winner: winner };
+    var bet = readBet("m-bet"); if (bet) match.bet = bet;
+    var mk = editKey || key();
+    armRetry(function () { formMatch(sid, editKey || null); });
     Store.set("clubmatches/" + cid + "/" + mk, match);
     DB.clubmatches = DB.clubmatches || {}; DB.clubmatches[cid] = DB.clubmatches[cid] || {}; DB.clubmatches[cid][mk] = match;
     closeModal(); render();
@@ -1320,6 +1351,7 @@
         '<input type="hidden" id="md-winner" value="p1">' +
         '<div class="mt-3"><span><label>' + esc(memberName(p1.id)) + ' 득점</label><input id="md-s1" type="number" inputmode="numeric" min="0"></span><span><label>' + esc(memberName(p2.id)) + ' 득점</label><input id="md-s2" type="number" inputmode="numeric" min="0"></span></div>' +
         '<label>이닝 수 (공통)</label><input id="md-inn" type="number" inputmode="numeric" min="1" placeholder="예 25">' +
+        betField("md-bet", null) +
         '<div id="md-err" class="pin-err"></div>' +
         '<button class="btn-pri btn-block" data-action="finish-match" data-sid="' + esc(s.id) + '" style="margin-top:14px">대결 종료 · 순위 반영</button>';
     } else {
@@ -2083,7 +2115,8 @@
     if (a === "go-club-ranking") { state.screen = "hub"; state.hubTab = "ranking"; state.pollId = null; render(); return; }
     if (a === "add-match") { formMatch(t.getAttribute("data-session") || null); return; }
     if (a === "save-match") { saveMatch(); return; }
-    if (a === "del-match") { var mk2 = t.getAttribute("data-id"), mc = obj((obj(DB.clubmatches) || {})[state.clubId])[mk2]; if (!mc) return; if (!(mc.by === me || canManage(me))) return; if (confirm("이 대전 기록을 삭제할까요?")) { Store.remove("clubmatches/" + state.clubId + "/" + mk2); if (DB.clubmatches && DB.clubmatches[state.clubId]) delete DB.clubmatches[state.clubId][mk2]; render(); } return; }
+    if (a === "edit-match") { var emk = t.getAttribute("data-id"), em = obj((obj(DB.clubmatches) || {})[state.clubId])[emk]; if (!em || !(em.by === me || canManage(me))) return; formMatch(em.sessionId || null, emk); return; }
+    if (a === "del-match") { var mk2 = t.getAttribute("data-id"), mc = obj((obj(DB.clubmatches) || {})[state.clubId])[mk2]; if (!mc) return; if (!(mc.by === me || canManage(me))) return; if (confirm("이 대전 기록을 삭제할까요?")) { Store.remove("clubmatches/" + state.clubId + "/" + mk2); if (DB.clubmatches && DB.clubmatches[state.clubId]) delete DB.clubmatches[state.clubId][mk2]; closeModal(); render(); } return; }
     if (a === "add-climb") { formClimb(t.getAttribute("data-session") || null); return; }
     if (a === "save-climb") { saveClimb(); return; }
     if (a === "add-run") { formRun(t.getAttribute("data-session") || null); return; }
@@ -2117,6 +2150,7 @@
       var fs1 = +(($("#md-s1") || {}).value) || 0, fs2 = +(($("#md-s2") || {}).value) || 0, fcid = fso.clubId;
       var fmk = key();
       var fcm = { ts: Date.now(), by: me, sessionId: fsid, p1: { id: fso.match.p1.id, target: fso.match.p1.target, score: fs1, innings: finn }, p2: { id: fso.match.p2.id, target: fso.match.p2.target, score: fs2, innings: finn }, winner: fwin };
+      var fbet = readBet("md-bet"); if (fbet) fcm.bet = fbet;
       Store.set("clubmatches/" + fcid + "/" + fmk, fcm);
       DB.clubmatches = DB.clubmatches || {}; DB.clubmatches[fcid] = DB.clubmatches[fcid] || {}; DB.clubmatches[fcid][fmk] = fcm;
       if (fsid.indexOf("db:") === 0) Store.update("sessions/" + fsid.slice(3), { match: Object.assign({}, fso.match, { status: "done", winner: fwin, p1score: fs1, p2score: fs2, matchKey: fmk }) });

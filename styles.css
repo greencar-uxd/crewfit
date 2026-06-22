@@ -830,6 +830,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .mt-3 span { flex: 1; }
 .mt-3 label { font-size: 12px; margin-bottom: 4px; }
 .mt-3 input { width: 100%; }
+.bet-row { display: flex; gap: 10px; margin-top: 6px; }
+.bet-chk { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.kings-bar { font-size: 12.5px; color: var(--muted); margin: 8px 0 4px; line-height: 1.6; }
+.kings-bar b { color: var(--ink); }
+.king-badge { font-size: 13px; margin-left: 2px; letter-spacing: 1px; }
+.mt-edit { background: transparent; border: 0; color: var(--muted); cursor: pointer; padding: 2px 4px; line-height: 1; }
 /* 동호회 카드: 내 자격 뱃지 */
 .sc-tag.role-mgr { color: var(--accent, var(--pri)); background: var(--accent-soft, rgba(45,91,255,.12)); }
 .sc-tag.role-admin { color: var(--text-primary, var(--ink)); background: var(--surface-sunken, rgba(0,0,0,.05)); }
