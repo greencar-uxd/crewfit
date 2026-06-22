@@ -185,13 +185,20 @@
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
   function billiardsStats(cid) {
     var agg = {};
-    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, highRun: 0, lastTarget: 0, ts: 0 }; return agg[id]; }
+    function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
-      [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((+p.highRun || 0) > a.highRun) a.highRun = +p.highRun; if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
+      [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
       if (m.winner) ensure(m.winner).wins++;
     });
-    return Object.keys(agg).map(function (id) { var a = agg[id]; a.avg = a.innings ? a.score / a.innings : 0; a.winRate = a.games ? a.wins / a.games : 0; a.name = memberName(id); return a; }).sort(function (x, y) { return y.avg - x.avg || y.winRate - x.winRate || y.games - x.games; });
+    var ids = Object.keys(agg), TI = 0, TG = 0;
+    ids.forEach(function (id) { TI += agg[id].innings; TG += agg[id].games; });
+    var groupAvgInn = TG ? (TI / TG) : 25;  // 그룹 평균 이닝/게임 — 추천 수지 환산 기준
+    return ids.map(function (id) {
+      var a = agg[id]; a.avg = a.innings ? a.score / a.innings : 0; a.winRate = a.games ? a.wins / a.games : 0; a.name = memberName(id);
+      a.recSuji = a.games >= 3 ? Math.max(1, Math.round(a.avg * groupAvgInn)) : null;  // 누적 평균 기준 추천 수지(3경기 이상부터)
+      return a;
+    }).sort(function (x, y) { return y.avg - x.avg || y.winRate - x.winRate || y.games - x.games; });
   }
   function fmtAvg(v) { return (Math.round((v || 0) * 1000) / 1000).toFixed(3); }
   function fmtGrade(g) { return "V" + (g || 0); }
@@ -615,7 +622,7 @@
       var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0];
       if (!stb || !stb.games) return "";
       var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
-        msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + msStat(stb.highRun, "하이런") + "</div>";
+        msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "추천 수지") : "") + "</div>";
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
@@ -1022,10 +1029,22 @@
     }
     return h;
   }
+  // 추천 수지 nudge — 누적 평균 기준 적정 수지를 제안(현재 수지와 2 이상 차이날 때)
+  function sujiHint(a) {
+    var cur = a.lastTarget || 0;
+    if (a.recSuji && !cur) return "추천 수지 " + a.recSuji;
+    var txt = "수지 " + (cur || "-");
+    if (a.recSuji && cur) {
+      var d = a.recSuji - cur;
+      if (d <= -2) return txt + ' <span class="suji-rec down">→ 추천 ' + a.recSuji + "</span>";
+      if (d >= 2) return txt + ' <span class="suji-rec up">→ 추천 ' + a.recSuji + "</span>";
+    }
+    return txt;
+  }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
-    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준 · 경기 쌓이면 추천 수지 제안</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     if (!rows.length) {
       h += '<div class="empty-msg">아직 기록된 대전이 없어요.' + (canRec ? ' 위 <b>대전 기록</b>으로 첫 경기를 남겨보세요.' : ' 크루원으로 입장하면 대전을 기록할 수 있어요.') + '</div>';
@@ -1035,7 +1054,7 @@
         h += '<div class="rank-row">' +
           '<span class="rk-no rk-' + (i < 3 ? (i + 1) : "n") + '">' + (i + 1) + "</span>" +
           avatar(a.id, 30) +
-          '<div class="rk-name"><div>' + esc(a.name) + '</div><div class="rk-sub">' + a.games + '전 ' + a.wins + '승 · 하이런 ' + a.highRun + '</div></div>' +
+          '<div class="rk-name"><div>' + esc(a.name) + '</div><div class="rk-sub">' + a.games + '전 ' + a.wins + '승 · ' + sujiHint(a) + '</div></div>' +
           '<div class="rk-avg"><div class="rk-avg-n">' + fmtAvg(a.avg) + '</div><div class="rk-avg-l">에버리지</div></div>' +
           "</div>";
       });
@@ -1156,13 +1175,14 @@
     if (!(me && (obj(DB.members)[me] || {}).claimed && roster.some(function (r) { return r.id === me; }))) { alert("크루원으로 입장한 뒤 기록할 수 있어요."); return; }
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
     var p2def = (roster.filter(function (r) { return r.id !== me; })[0] || {}).id || "";
+    var myRec = (billiardsStats(cid).filter(function (a) { return a.id === me; })[0] || {}).recSuji;
     openModal("<h2>3쿠션 대전 기록</h2>" +
       '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 기준' + "</p>" +
       '<div class="mt-form">' +
       '<div class="mt-col"><label>선수 1</label><select id="m-p1">' + opt(me) + "</select>" +
-        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span><span><label>득점</label><input id="m-s1" type="number" inputmode="numeric" min="0"></span><span><label>하이런</label><input id="m-h1" type="number" inputmode="numeric" min="0" placeholder="선택"></span></div></div>' +
+        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t1" type="number" inputmode="numeric" min="1" placeholder="' + (myRec ? "추천 " + myRec : "예 20") + '"></span><span><label>득점</label><input id="m-s1" type="number" inputmode="numeric" min="0"></span></div></div>' +
       '<div class="mt-col"><label>선수 2</label><select id="m-p2">' + opt(p2def) + "</select>" +
-        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span><span><label>득점</label><input id="m-s2" type="number" inputmode="numeric" min="0"></span><span><label>하이런</label><input id="m-h2" type="number" inputmode="numeric" min="0" placeholder="선택"></span></div></div>' +
+        '<div class="mt-3"><span><label>목표(수지)</label><input id="m-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span><span><label>득점</label><input id="m-s2" type="number" inputmode="numeric" min="0"></span></div></div>' +
       '<label>이닝 수 (공통)</label><input id="m-inn" type="number" inputmode="numeric" min="1" placeholder="예: 25">' +
       '<input type="hidden" id="m-session" value="' + esc(sessionId || "") + '">' +
       "</div>" +
@@ -1175,14 +1195,14 @@
     var err = $("#m-err");
     var p1 = ($("#m-p1") || {}).value, p2 = ($("#m-p2") || {}).value;
     if (!p1 || !p2 || p1 === p2) { if (err) err.textContent = "서로 다른 두 선수를 골라주세요."; return; }
-    var t1 = +(($("#m-t1") || {}).value) || 0, s1 = +(($("#m-s1") || {}).value) || 0, h1 = +(($("#m-h1") || {}).value) || 0;
-    var t2 = +(($("#m-t2") || {}).value) || 0, s2 = +(($("#m-s2") || {}).value) || 0, h2 = +(($("#m-h2") || {}).value) || 0;
+    var t1 = +(($("#m-t1") || {}).value) || 0, s1 = +(($("#m-s1") || {}).value) || 0;
+    var t2 = +(($("#m-t2") || {}).value) || 0, s2 = +(($("#m-s2") || {}).value) || 0;
     var inn = +(($("#m-inn") || {}).value) || 0;
     if (inn < 1) { if (err) err.textContent = "이닝 수를 입력해주세요."; return; }
     if (s1 < 0 || s2 < 0) { if (err) err.textContent = "득점을 확인해주세요."; return; }
     var r1 = t1 > 0 && s1 >= t1, r2 = t2 > 0 && s2 >= t2, winner;
     if (r1 && !r2) winner = p1; else if (r2 && !r1) winner = p2; else winner = (s1 === s2) ? "" : (s1 > s2 ? p1 : p2);
-    var match = { ts: Date.now(), by: me, sessionId: (($("#m-session") || {}).value) || null, p1: { id: p1, target: t1, score: s1, innings: inn, highRun: h1 }, p2: { id: p2, target: t2, score: s2, innings: inn, highRun: h2 }, winner: winner };
+    var match = { ts: Date.now(), by: me, sessionId: (($("#m-session") || {}).value) || null, p1: { id: p1, target: t1, score: s1, innings: inn }, p2: { id: p2, target: t2, score: s2, innings: inn }, winner: winner };
     var mk = key();
     armRetry(function () { formMatch(match.sessionId || null); });
     Store.set("clubmatches/" + cid + "/" + mk, match);
@@ -2096,7 +2116,7 @@
       var fwin = (($("#md-winner") || {}).value === "p2") ? fso.match.p2.id : fso.match.p1.id;
       var fs1 = +(($("#md-s1") || {}).value) || 0, fs2 = +(($("#md-s2") || {}).value) || 0, fcid = fso.clubId;
       var fmk = key();
-      var fcm = { ts: Date.now(), by: me, sessionId: fsid, p1: { id: fso.match.p1.id, target: fso.match.p1.target, score: fs1, innings: finn, highRun: 0 }, p2: { id: fso.match.p2.id, target: fso.match.p2.target, score: fs2, innings: finn, highRun: 0 }, winner: fwin };
+      var fcm = { ts: Date.now(), by: me, sessionId: fsid, p1: { id: fso.match.p1.id, target: fso.match.p1.target, score: fs1, innings: finn }, p2: { id: fso.match.p2.id, target: fso.match.p2.target, score: fs2, innings: finn }, winner: fwin };
       Store.set("clubmatches/" + fcid + "/" + fmk, fcm);
       DB.clubmatches = DB.clubmatches || {}; DB.clubmatches[fcid] = DB.clubmatches[fcid] || {}; DB.clubmatches[fcid][fmk] = fcm;
       if (fsid.indexOf("db:") === 0) Store.update("sessions/" + fsid.slice(3), { match: Object.assign({}, fso.match, { status: "done", winner: fwin, p1score: fs1, p2score: fs2, matchKey: fmk }) });
