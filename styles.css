@@ -667,6 +667,7 @@ input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px
     grid-template-columns: 190px minmax(0, 1fr);
     grid-template-areas: "header header" "nav main";
     padding: 0 32px;
+    align-content: start;   /* min-height:100vh가 행을 늘려 콘텐츠를 아래로 밀던 상단 빈공간 제거 */
   }
   #app-header { grid-area: header; }
   #app-header .hd-left { display: none; }      /* PC: 제목·뱃지 숨김 */
@@ -675,7 +676,7 @@ input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px
   #app.nonav { max-width: 1200px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "header" "main"; }
   #app.nonav #app-main { display: block; padding: 24px 0 60px; }
   #app.nonav #app-header .hd-brand { display: flex; }
-  .sess-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .sess-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); }
   #app-nav {
     grid-area: nav; position: sticky; top: 84px; align-self: start;
     height: max-content; max-width: none; margin: 0;
@@ -698,11 +699,11 @@ input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px
   .seg { max-width: 560px; }
 
   /* 풀폭에서 카드 그리드는 화면 너비에 맞춰 열 수 자동 증가 */
-  .list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+  .list-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); gap: 12px; align-items: start; }
   .list-grid > * { margin-bottom: 0; }
   .stat-row { gap: 12px; }
   .gate-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-  .cp-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; align-items: start; }
+  .cp-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 380px)); gap: 12px; align-items: start; }
   .cp-board > * { margin-bottom: 0; }
   .ph-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
   .ph-bar { top: 0; }
@@ -785,7 +786,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   /* 허브: 760px 좁은 칼럼 → 컨테이너 풀폭으로 (세션 카드가 3열 그리드로 채워짐) */
   .hub-wrap { max-width: none; }
   .hub-head { max-width: var(--container-max); }
-  .sess-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .sess-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); gap: 16px; }
   /* 읽기용 상세는 가독 폭 유지 */
   .sinfo { max-width: 760px; }
 }
@@ -862,7 +863,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   #app.lvl-top { max-width: 1240px; }
   #app.lvl-top #app-main { display: block; padding: 16px 0 60px; }
   #app.lvl-top .hub-wrap { max-width: none; }
-  #app.lvl-top .sess-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  #app.lvl-top .sess-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); gap: 16px; }
 }
 /* 프로필: 소속 동호회 + 권한 */
 .pf-clubs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
