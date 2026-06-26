@@ -503,6 +503,33 @@
      렌더
      ============================================================ */
   function setChrome(nonav) { var app = $("#app"); if (app) app.classList.toggle("nonav", !!nonav); }
+  // 스코어보드 카운트업: [data-countup] 요소의 첫 텍스트노드(숫자)를 0→최종값으로.
+  // animate=true(화면 진입=!_sameView)일 때만 1회 실행 — 데이터 새로고침 재렌더에선 정적.
+  function fmtCount(v, dec) { return dec ? v.toFixed(dec) : String(Math.round(v)); }
+  function runCountUps(animate) {
+    var els = document.querySelectorAll("#app-main [data-countup]");
+    if (!els.length) return;
+    var reduce = false;
+    try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    Array.prototype.forEach.call(els, function (el) {
+      var node = el.firstChild;
+      if (!node || node.nodeType !== 3) return;            // 첫 텍스트노드만 — <i>단위</i>는 보존
+      var raw = String(node.nodeValue).replace(/,/g, "");
+      var target = parseFloat(raw);
+      if (isNaN(target)) return;
+      if (!animate || reduce) return;                       // 정적: 이미 최종값이 렌더돼 있음
+      var dot = raw.indexOf("."), dec = dot < 0 ? 0 : (raw.length - dot - 1);
+      var dur = 620, t0 = null;
+      function tick(ts) {
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        node.nodeValue = fmtCount(target * e, dec);
+        if (p < 1) requestAnimationFrame(tick); else node.nodeValue = fmtCount(target, dec);
+      }
+      node.nodeValue = fmtCount(0, dec);
+      requestAnimationFrame(tick);
+    });
+  }
   function render() {
     rebuildDB();   // 현재 일정 기준으로 DB 뷰 재구성
     if (!(me && (obj(DB.members)[me] || {}).claimed)) { renderLogin(); return; }  // 앱 레벨 로그인 필요
@@ -535,6 +562,7 @@
     else if (state.tab === "photo") main.innerHTML = viewPhotos();
     else if (state.tab === "my") main.innerHTML = viewMy();
     else main.innerHTML = viewHome();
+    runCountUps(!_sameView);
     if (!_sameView) window.scrollTo(0, 0);
   }
   function scheduleRender() { if (booted) render(); }
@@ -1538,12 +1566,12 @@
     }
 
     h += '<div class="stat-row">' +
-      '<button class="stat" data-action="tab" data-tab="alert"><div class="stat-n">' + entries(DB.schedule).length + '</div><div class="stat-l">일정</div></button>' +
+      '<button class="stat" data-action="tab" data-tab="alert"><div class="stat-n" data-countup>' + entries(DB.schedule).length + '</div><div class="stat-l">일정</div></button>' +
       (sessHas("settle")
-        ? '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
+        ? '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n" data-countup>' + (totalSpent() / 10000).toFixed(totalSpent() % 10000 ? 1 : 0) + '<i>만원</i></div><div class="stat-l">총 지출</div></button>' +
           '<button class="stat" data-action="tab" data-tab="my"><div class="stat-n">' + packDone + "/" + packArr.length + '</div><div class="stat-l">준비물</div></button>'
-        : '<button class="stat" data-action="tab" data-tab="photo"><div class="stat-n">' + entries(DB.photos).length + '</div><div class="stat-l">사진</div></button>' +
-          '<button class="stat"><div class="stat-n">' + memberCount() + '</div><div class="stat-l">멤버</div></button>') +
+        : '<button class="stat" data-action="tab" data-tab="photo"><div class="stat-n" data-countup>' + entries(DB.photos).length + '</div><div class="stat-l">사진</div></button>' +
+          '<button class="stat"><div class="stat-n" data-countup>' + memberCount() + '</div><div class="stat-l">멤버</div></button>') +
       "</div>";
     var club0 = currentClub() || {};
     if (clubHasRanking(club0)) h += sessionSkillCard(club0);

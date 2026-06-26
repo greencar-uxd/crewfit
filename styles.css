@@ -1,6 +1,8 @@
 /* ============================================================
-   슈퍼리치키드 하계 MT — 스타일 v2
-   컬러: SUPER REACH KID 브랜드 (레드 · 블랙 · 크림 + 그린/옐로 포인트)
+   크루핏 (CREWFIT) — 스타일
+   컬러: Cobalt-Mono 디자인 시스템 (코발트 블루 액센트 + cool-gray 중립 램프)
+         + 동호회별 팀컬러(--acc: red/blue/green/purple/orange)
+   타이포: Pretendard(본문) + Geist Mono(수치=스코어보드)
    레이아웃: 모바일 퍼스트 + PC 반응형(사이드바)
    ============================================================ */
 :root {
@@ -110,7 +112,7 @@ h1, h2 { margin: 0; }
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 60px; min-height: 60px; box-sizing: border-box;   /* 모든 화면에서 헤더 높이 고정 */
-  padding: 0 16px; background: var(--bg); border-bottom: 0px solid var(--line);
+  padding: 0 16px; background: var(--bg);
 }
 .hd-left { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .hd-title { font-weight: 800; font-size: 16px; letter-spacing: -.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -144,7 +146,7 @@ h1, h2 { margin: 0; }
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
   max-width: var(--maxw); margin: 0 auto; height: var(--nav-h);
   display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  background: var(--surface); border-top: 0px solid var(--line);
+  background: var(--surface);
   padding-bottom: max(env(safe-area-inset-bottom), 8px);
 }
 .navbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--muted); transition: color .15s; }
@@ -234,7 +236,7 @@ h1, h2 { margin: 0; }
 .profile-box { text-align: left; max-width: 420px; margin: 0 auto; }
 .profile-who { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 16px; font-size: 16px; font-weight: 800; }
 .fld { margin-bottom: 16px; }
-.fld > label { display: block; font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
+.fld > label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
 .fld input[type=text] { width: 100%; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); outline: none; }
 .fld input[type=text]:focus { border-color: var(--pri); }
 .toggle2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -519,10 +521,10 @@ h1, h2 { margin: 0; }
 .rsvp-meta > span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; line-height: 1.3; border-radius: 999px; padding: 3px 9px; }
 .cap-badge.under { color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
 .cap-badge.ok { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.cap-badge.over { color: #b42318; background: #fef3f2; }
+.cap-badge.over { color: var(--danger-600); background: var(--danger-50); }
 .lock-badge { color: var(--muted); background: var(--surface); border: 1px solid var(--line); }
-.lock-badge.past { color: #b42318; background: #fef3f2; }
-.cancel-note { color: #92400e; background: #fffaeb; font-weight: 600 !important; }
+.lock-badge.past { color: var(--danger-600); background: var(--danger-50); }
+.cancel-note { color: var(--warning-600); background: var(--warning-50); font-weight: 600 !important; }
 .sched-resv { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 12px; background: var(--surface); }
 .sched-resv .sr-head { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
 .sched-resv label { margin-top: 8px; }
@@ -577,7 +579,7 @@ h1, h2 { margin: 0; }
 }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal h2 { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
-.modal label { display: block; font-size: 12px; font-weight: 800; color: var(--muted); margin: 16px 0 8px; }
+.modal label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 16px 0 8px; }
 .modal label.chk { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink); }
 .modal input:not([type=checkbox]), .modal textarea, .modal select { width: 100%; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); outline: none; }
 .modal input:focus, .modal textarea:focus, .modal select:focus { border-color: var(--pri); }
@@ -814,7 +816,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .suji-rec.down { color: #b54708; }
 .suji-rec.up { color: var(--accent); }
 .rk-avg { flex: none; text-align: right; }
-.rk-avg-n { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
+.rk-avg-n { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
 .rk-avg-l { font-size: 10px; color: var(--text-secondary, var(--muted)); }
 /* 최근 대전 */
 .match-list { display: flex; flex-direction: column; gap: 6px; }
@@ -874,11 +876,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .md-suji { font-size: 12px; color: var(--text-secondary, var(--muted)); }
 .md-mid { flex: none; padding: 0 6px; }
 .md-vs-txt { font-weight: 800; font-size: 18px; color: var(--text-secondary, var(--muted)); }
-.md-score { font-weight: 800; font-size: 26px; font-variant-numeric: tabular-nums; }
+.md-score { font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; }
 .md-result { text-align: center; font-size: 15px; margin-top: 16px; padding: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); border-radius: var(--radius-md); }
 .md-mystat { display: flex; gap: 8px; }
 .ms-stat { flex: 1; text-align: center; }
-.ms-stat-n { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
+.ms-stat-n { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; font-family: var(--font-mono, monospace); }
 .ms-stat-l { font-size: 11px; color: var(--text-secondary, var(--muted)); margin-top: 2px; }
 /* 동호회 게시판: 공지 / 투표 / 회비 */
 .board-seg { display: flex; gap: 6px; margin-bottom: 14px; }
@@ -960,3 +962,42 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .feed-newcnt { color: var(--pos); font-weight: 800; }
 /* 동호회 아바타: 종목 라인 아이콘 칩 */
 .club-ic { display: inline-flex; align-items: center; justify-content: center; flex: none; line-height: 1; }
+
+/* ============================================================
+   시그니처 — 스코어보드 수치 디스플레이
+   이 앱의 주인공은 숫자(D-day·랭킹·에버리지·점수·정산액). 수치는 Geist Mono로
+   크고 당당하게(tabular·타이트 트래킹), 본문 Pretendard는 조용히. 단위(만원 등)는
+   다시 본문체로 떨어뜨려 숫자만 도드라지게.
+   ============================================================ */
+.stat-n, .st-n, .rk-avg-n, .md-score, .ms-stat-n, .me-dday, .hero-dday {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -.5px;
+}
+.stat-n { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.st-n   { font-size: 24px; font-weight: 700; }
+.rk-avg-n { font-size: 20px; font-weight: 700; }   /* 800→700: Geist Mono 700 로드됨(가짜볼드 제거) */
+.md-score { font-size: 32px; font-weight: 700; }
+.ms-stat-n { font-weight: 700; }
+/* 단위·접미사는 본문체로 (숫자만 mono로 도드라지게) */
+.stat-n i, .st-n i { font-family: var(--font-text); letter-spacing: 0; }
+/* D-day = 스코어보드 라벨 톤 */
+.hero-dday { font-weight: 700; letter-spacing: .5px; }
+.me-dday { font-weight: 700; letter-spacing: 0; }
+
+/* 팀컬러 — 랭킹 1위 행을 동호회 색으로 살짝 (정체성 요소에만 절제 적용) */
+.rank-list .rank-row:first-child {
+  background: color-mix(in srgb, var(--acc, var(--accent)) 8%, transparent);
+  border-radius: 10px; border-bottom: none; padding-left: 8px; padding-right: 8px;
+}
+
+/* (다크모드 상태배지 hex→토큰 수리는 위 .cap-badge/.lock-badge/.cancel-note 원본에서 처리됨) */
+
+/* 카운트업이 끝나기 전(JS 적용 직후)에도 레이아웃이 안 튀도록 */
+.stat-n[data-countup] { min-width: 1ch; }
+
+/* 접근성 — 모션 최소화 선호 시 애니메이션/전환 비활성 (카운트업은 JS에서 별도 가드) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
