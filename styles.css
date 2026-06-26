@@ -725,7 +725,7 @@ input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px
 .btn-line { border-color: var(--border-strong); }
 .modal { box-shadow: var(--shadow-xl); }
 .me-chip { box-shadow: var(--shadow-xs); }
-/* 데이터 타이포: 카운트·D-day는 Geist Mono / 숫자는 tabular */
+/* 데이터 타이포: 카운트·D-day·숫자는 tabular-nums로 자릿수 정렬 (폰트는 Pretendard) */
 .stat-n { font-variant-numeric: tabular-nums; }
 .hero-dday { font-family: var(--font-mono); font-weight: 600; letter-spacing: 0; }
 .sc-badge, .sih-badge { font-variant-numeric: tabular-nums; }
@@ -974,7 +974,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 }
 .stat-n { font-size: 1.625rem; font-weight: 700; line-height: 1.1; }
 .st-n   { font-size: 1.5rem; font-weight: 700; }
-.rk-avg-n { font-size: 1.25rem; font-weight: 700; }   /* 800→700: Geist Mono 700 로드됨(가짜볼드 제거) */
+.rk-avg-n { font-size: 1.25rem; font-weight: 700; }   /* 랭킹 에버리지 수치 */
 .md-score { font-size: 2rem; font-weight: 700; }
 .ms-stat-n { font-weight: 700; }
 /* 단위·접미사는 본문체로 (숫자만 mono로 도드라지게) */
