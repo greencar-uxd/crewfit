@@ -2063,6 +2063,48 @@
   /* ============================================================
      액션
      ============================================================ */
+  // ── 접근성 후처리 (디자인 감사 a11y-1·2·4·5) ───────────────────────────────
+  // 마크업을 화면마다 고치는 대신, DOM이 바뀔 때마다 한 번 훑어 보강한다.
+  // 모두 '속성'만 변경 → childList만 관찰하는 옵저버와 무한루프 없음.
+  function isNativeCtl(el) { var t = el.tagName; return t === "BUTTON" || t === "A" || t === "INPUT" || t === "TEXTAREA" || t === "SELECT"; }
+  function enhanceA11y(root) {
+    if (!root) return;
+    // a11y-1: 클릭 가능한 비네이티브 [data-action]를 키보드 포커스 가능하게(중첩 인터랙티브·백드롭 제외)
+    Array.prototype.forEach.call(root.querySelectorAll("[data-action]"), function (el) {
+      if (isNativeCtl(el) || el.hasAttribute("tabindex") || el.classList.contains("modal-back")) return;
+      if (el.querySelector("button, a[href], input, select, textarea, [data-action]")) return;
+      el.setAttribute("tabindex", "0"); el.setAttribute("role", "button");
+    });
+    // a11y-2: 인접 배치만 된 <label>을 다음 폼컨트롤의 id와 for로 연결(감싼 라벨은 이미 연결됨)
+    Array.prototype.forEach.call(root.querySelectorAll("label:not([for])"), function (lb) {
+      if (lb.querySelector("input, select, textarea")) return;
+      var f = lb.nextElementSibling, hops = 0;
+      while (f && hops < 4 && !/^(INPUT|SELECT|TEXTAREA)$/.test(f.tagName)) { if (f.tagName === "LABEL") { f = null; break; } f = f.nextElementSibling; hops++; }
+      if (f && f.id) lb.setAttribute("for", f.id);
+    });
+    // a11y-5: 라벨 없는 placeholder 인풋에 접근 가능한 이름 부여
+    Array.prototype.forEach.call(root.querySelectorAll("input, textarea"), function (el) {
+      if (el.getAttribute("aria-label") || el.closest("label")) return;
+      if (el.id) { try { if (root.querySelector('label[for="' + el.id + '"]')) return; } catch (e) {} }
+      var ph = el.getAttribute("placeholder"); if (ph) el.setAttribute("aria-label", ph);
+    });
+    // a11y-4: 탭/세그먼트 선택 상태를 보조기술에 노출
+    Array.prototype.forEach.call(root.querySelectorAll(".navbtn"), function (b) { b.setAttribute("aria-current", b.classList.contains("on") ? "page" : "false"); });
+    Array.prototype.forEach.call(root.querySelectorAll(".seg-b, .bseg, .hsub, .toggle2 button, .board-seg button, .rsvp-chip, .react-btn, .climb-color, .emoji-b"), function (b) { b.setAttribute("aria-pressed", b.classList.contains("on") ? "true" : "false"); });
+  }
+  try {
+    var _a11yQueued = false, _a11yRun = function () { _a11yQueued = false; enhanceA11y(document.body); };
+    new MutationObserver(function () {   // 버스트를 프레임당 1회 스윕으로 합침(전체 바디 재스캔 디바운스)
+      if (_a11yQueued) return; _a11yQueued = true;
+      (window.requestAnimationFrame || window.setTimeout)(_a11yRun);
+    }).observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter" && ev.key !== " " && ev.key !== "Spacebar") return;
+    var t = ev.target;
+    if (!t || !t.getAttribute || !t.getAttribute("data-action") || isNativeCtl(t)) return;
+    ev.preventDefault(); t.click();   // 기존 click 디스패처로 위임
+  });
   document.addEventListener("click", function (ev) {
     var t = ev.target.closest("[data-action]"); if (!t) return;
     var a = t.getAttribute("data-action");
