@@ -249,11 +249,11 @@ h1, h2 { margin: 0; }
 
 /* ---------- 홈 히어로 ---------- */
 .hero {
-  background: linear-gradient(135deg, var(--pri-d) 0%, var(--pri) 62%, var(--pri-d) 120%);
+  background: var(--pri);   /* flat accent — canon bans gradients */
   color: #fff; border-radius: 20px; padding: 20px; margin-bottom: 16px;
   position: relative; overflow: hidden;
 }
-.hero::after { content: ""; position: absolute; right: -8px; bottom: -16px; width: 88px; height: 88px; opacity: .16; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M3 19h18L14 6l-4 7-2.5-3L3 19z'/%3E%3C/svg%3E") center/contain no-repeat; }
+/* hero decorative watermark removed — canon: flat surfaces, no decorative blobs */
 .hero-dday { display: inline-block; background: rgba(255,255,255,.24); font-weight: 800; font-size: 0.75rem; padding: 4px 12px; border-radius: 999px; letter-spacing: .5px; }
 .hero-title { font-size: 1.625rem; font-weight: 800; margin-top: 8px; letter-spacing: -.6px; line-height: 1.2; }
 .hero-sub { font-size: 0.75rem; opacity: .92; margin-bottom: 12px; }
@@ -322,7 +322,7 @@ h1, h2 { margin: 0; }
 /* 읽기전용 일정 상세 */
 .sinfo { max-width: 760px; margin: 0 auto; }
 .sinfo-hero { position: relative; overflow: hidden; border-radius: 20px; padding: 24px 20px; margin-bottom: 16px; color: #fff;
-  background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 55%, var(--acc) 130%); }
+  background: var(--acc); }   /* flat club color — canon bans gradients (club hue kept as scoped identity) */
 .sih-emoji { font-size: 2.5rem; line-height: 1; display: block; }
 .sih-badge { display: inline-block; margin-top: 12px; background: rgba(255,255,255,.24); font-weight: 800; font-size: 0.75rem;
   padding: 4px 12px; border-radius: 999px; letter-spacing: .5px; }
