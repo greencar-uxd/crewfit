@@ -1,6 +1,6 @@
 /* ============================================================
    크루핏 (CREWFIT) — 스타일
-   컬러: Daniel's Design System (코발트 블루 액센트 + cool-gray 중립 램프)
+   컬러: Daniel's Design System (단일 강조색 + cool-gray 중립 램프)
          + 동호회별 팀컬러(--acc: red/blue/green/purple/orange)
    타이포: Pretendard 단일 (수치는 tabular-nums로 자릿수 정렬)
    레이아웃: 모바일 퍼스트 + PC 반응형(사이드바)
@@ -8,8 +8,8 @@
 :root {
   /* ============================================================
      Daniel's Design System (Greencar-UXD/design-system) 적용
-     · 구조(중립 cool 램프 · 시맨틱 토큰 · 4px 스케일 · 그림자 · 타이포)는 코발트 그대로
-     · 단일 액센트만 SRK 브랜드 레드로 치환 (코발트 블루 → SRK 레드)
+     · 구조(중립 cool 램프 · 시맨틱 토큰 · 4px 스케일 · 그림자 · 타이포)는 디자인 시스템 그대로
+     · 단일 액센트만 SRK 브랜드 레드로 치환 (기본 강조색 → SRK 레드)
      ============================================================ */
   /* ---- Neutral ramp (cool gray) ---- */
   --gray-0:#ffffff; --gray-50:#f7f8f9; --gray-100:#eceef1; --gray-200:#dde0e5;
@@ -19,7 +19,7 @@
   --red-50:#fdecea; --red-100:#fbd9d6; --red-200:#f6ada6; --red-300:#f07d74;
   --red-400:#ec534a; --red-500:#e5302a; --red-600:#c5251f; --red-700:#a11d18;
   --red-800:#7d1813; --red-900:#5f120f;
-  /* ---- Cobalt ramp = 크루핏 시그니처 액센트 (디자인 시스템) ---- */
+  /* ---- 강조색 램프 = 크루핏 시그니처 액센트 (디자인 시스템) ---- */
   --cobalt-50:#eef2ff; --cobalt-100:#dde5ff; --cobalt-200:#bccbff; --cobalt-300:#93acff;
   --cobalt-400:#5e84ff; --cobalt-500:#2d5bff; --cobalt-600:#2447e0; --cobalt-700:#1f3bb8;
   --cobalt-800:#1c328f; --cobalt-900:#1a2d70;
@@ -56,7 +56,7 @@
   --font-mono: var(--font-text);     /* 전부 Pretendard로 통일 — 수치 정렬은 tabular-nums로 유지 */
   --font-display: var(--font-text);
 
-  /* ---- 레거시 별칭 (기존 컴포넌트 규칙이 그대로 동작하도록 코발트 토큰에 매핑) ---- */
+  /* ---- 레거시 별칭 (기존 컴포넌트 규칙이 그대로 동작하도록 강조색 토큰에 매핑) ---- */
   --bg:var(--surface-page); --surface:var(--surface-card);
   --ink:var(--text-primary); --muted:var(--text-secondary); --line:var(--border);
   --pri:var(--accent); --pri-d:var(--accent-hover);
@@ -71,7 +71,7 @@
   color-scheme: light dark;
   font-family: var(--font-text);
 }
-/* ===== Semantic — DARK (코발트 다크 매핑, 액센트=SRK 레드 라이트닝) ===== */
+/* ===== Semantic — DARK (강조색 다크 매핑, 액센트=SRK 레드 라이트닝) ===== */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --text-primary:#f3f4f6; --text-secondary:#9aa1ab; --text-tertiary:#6b727d; --text-inverse:var(--gray-900);
@@ -718,7 +718,7 @@ input:not(.pin-real):focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px
 
 /* ============================================================
    Daniel's Design System 컴포넌트 정합 (구조 차용 · 액센트=SRK 레드)
-   토큰 스왑 위에 코발트 컴포넌트 해부(elevation·radius·데이터 타이포)를 덧입힘.
+   토큰 스왑 위에 디자인 시스템 컴포넌트 해부(elevation·radius·데이터 타이포)를 덧입힘.
    ============================================================ */
 .card { box-shadow: var(--shadow-sm); border-radius: var(--radius-xl); }
 .stat { box-shadow: var(--shadow-xs); border-radius: var(--radius-lg); }
@@ -869,7 +869,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .pf-clubs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
 .pf-club-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); }
 .pf-club-name { font-weight: 700; font-size: 0.875rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 크루 안: 인터랙션 액센트는 코발트 유지. 크루 색(--acc)은 좌측 바·뱃지·아이콘 칩 등 '정체성' 요소에만 직접 적용(절제). 글로벌 토큰을 통째로 덮어쓰던 줄을 제거해 화면 전체가 단색으로 칠해지던 문제 해결. (.club-themed 클래스는 하위 선택자 훅으로 유지) */
+/* 크루 안: 인터랙션 액센트는 기본 강조색 유지. 크루 색(--acc)은 좌측 바·뱃지·아이콘 칩 등 '정체성' 요소에만 직접 적용(절제). 글로벌 토큰을 통째로 덮어쓰던 줄을 제거해 화면 전체가 단색으로 칠해지던 문제 해결. (.club-themed 클래스는 하위 선택자 훅으로 유지) */
 /* 1:1 대결 세션 */
 .match-detail { padding-top: 4px; }
 .md-vs { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 20px 8px; background: var(--surface-sunken); border-radius: var(--radius-lg); }
