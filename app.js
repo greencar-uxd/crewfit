@@ -1163,14 +1163,16 @@
         '<div class="notice-text">' + linkify(esc(n.text)) + "</div>" +
         '<div class="notice-by">' + (n.by ? chip(n.by) : "") + '<span class="ago">' + timeago(n.ts) + "</span>" +
         '<span class="notice-acts"><button class="react-btn' + (rxMine ? " on" : "") + '" data-action="react-notice" data-id="' + n._key + '">👍 ' + rxN + '</button>' +
-        (canDel ? '<button class="tl-del" data-action="del-club-notice" data-id="' + n._key + '" aria-label="삭제">×</button>' : "") + "</span></div></div>";
+        (canDel ? '<button class="tl-edit" data-action="edit-club-notice" data-id="' + n._key + '" aria-label="수정">' + icon("edit", 14) + '</button><button class="tl-del" data-action="del-club-notice" data-id="' + n._key + '" aria-label="삭제">×</button>' : "") + "</span></div></div>";
     });
     return h + "</div>";
   }
-  function formClubNotice() {
-    openModal('<h2>소식 쓰기</h2><label>내용</label><textarea id="cn-text" rows="6" placeholder="크루에 알릴 소식·읽을거리를 자유롭게 — 링크는 자동으로 걸려요."></textarea>' +
-      '<label class="chk"><input type="checkbox" id="cn-pin"> 상단 고정</label>' +
-      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club-notice">올리기</button></div>');
+  function formClubNotice(editId) {
+    var n = editId ? (obj(DB.clubnotices)[state.clubId] || {})[editId] : null;
+    openModal('<h2>' + (editId ? "소식 수정" : "소식 쓰기") + '</h2><label>내용</label><textarea id="cn-text" rows="6" placeholder="크루에 알릴 소식·읽을거리를 자유롭게 — 링크는 자동으로 걸려요.">' + (n ? esc(n.text) : "") + '</textarea>' +
+      '<label class="chk"><input type="checkbox" id="cn-pin"' + (n && n.pinned ? " checked" : "") + '> 상단 고정</label>' +
+      '<div class="modal-foot">' + (editId ? '<button class="link-danger" data-action="del-club-notice" data-id="' + editId + '">삭제</button>' : "") +
+      '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club-notice" data-edit="' + (editId || "") + '">' + (editId ? "수정" : "올리기") + "</button></div>");
   }
   function boardPolls(club) {
     var cid = club.id, list = clubPolls(cid), mng = canManage(me), h = "";
@@ -2196,8 +2198,21 @@
     if (a === "hub-tab") { state.hubTab = t.getAttribute("data-tab") || "schedule"; render(); return; }
     if (a === "board-tab") { state.boardTab = t.getAttribute("data-tab") || "notice"; render(); return; }
     if (a === "add-club-notice") { if (canManage(me)) formClubNotice(); return; }
-    if (a === "save-club-notice") { var cnT = clampStr(($("#cn-text") || {}).value, 4000); if (!cnT) return; Store.set("clubnotices/" + state.clubId + "/" + key(), { text: cnT, by: me, pinned: !!($("#cn-pin") || {}).checked, ts: Date.now() }); notifyClub(state.clubId, memberName(me) + "님이 소식을 올렸어요: " + clampStr(cnT, 40), "notice", { cid: state.clubId, bt: "notice" }); closeModal(); render(); return; }
-    if (a === "del-club-notice") { var cnk = t.getAttribute("data-id"), cno = (obj(DB.clubnotices)[state.clubId] || {})[cnk]; if (!cno || !(cno.by === me || canManage(me))) return; if (confirm("이 소식을 삭제할까요?")) { Store.remove("clubnotices/" + state.clubId + "/" + cnk); render(); } return; }
+    if (a === "edit-club-notice") { var ecnk = t.getAttribute("data-id"), ecno = (obj(DB.clubnotices)[state.clubId] || {})[ecnk]; if (ecno && (ecno.by === me || canManage(me))) formClubNotice(ecnk); return; }
+    if (a === "save-club-notice") {
+      var cnT = clampStr(($("#cn-text") || {}).value, 4000); if (!cnT) return;
+      var cnEdit = t.getAttribute("data-edit") || "";
+      if (cnEdit) {  // 수정: 작성자·시각·반응은 보존(update 머지), 알림 재발송 없음
+        var cnPrev = (obj(DB.clubnotices)[state.clubId] || {})[cnEdit]; if (!cnPrev || !(cnPrev.by === me || canManage(me))) return;
+        Store.update("clubnotices/" + state.clubId + "/" + cnEdit, { text: cnT, pinned: !!($("#cn-pin") || {}).checked });
+      } else {
+        if (!canManage(me)) return;
+        Store.set("clubnotices/" + state.clubId + "/" + key(), { text: cnT, by: me, pinned: !!($("#cn-pin") || {}).checked, ts: Date.now() });
+        notifyClub(state.clubId, memberName(me) + "님이 소식을 올렸어요: " + clampStr(cnT, 40), "notice", { cid: state.clubId, bt: "notice" });
+      }
+      closeModal(); render(); return;
+    }
+    if (a === "del-club-notice") { var cnk = t.getAttribute("data-id"), cno = (obj(DB.clubnotices)[state.clubId] || {})[cnk]; if (!cno || !(cno.by === me || canManage(me))) return; if (confirm("이 소식을 삭제할까요?")) { Store.remove("clubnotices/" + state.clubId + "/" + cnk); closeModal(); render(); } return; }
     if (a === "react-notice") { if (!rankCanRec(state.clubId)) return; var rnk = t.getAttribute("data-id"); var rno = (obj(DB.clubnotices)[state.clubId] || {})[rnk] || {}; var rnr = rno.reactions || {}; if (rnr[me]) Store.remove("clubnotices/" + state.clubId + "/" + rnk + "/reactions/" + me); else { Store.set("clubnotices/" + state.clubId + "/" + rnk + "/reactions/" + me, true); if (rno.by && rno.by !== me) notify(rno.by, memberName(me) + "님이 반응을 남겼습니다 👍", "notice", { cid: state.clubId, bt: "notice" }); } render(); return; }
     if (a === "add-club-poll") { if (canManage(me)) formClubPoll(); return; }
     if (a === "add-club-opt-field") { var cob = $("#cp-opts"); if (cob) cob.insertAdjacentHTML("beforeend", clubOptInput()); return; }
