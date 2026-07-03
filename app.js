@@ -2202,8 +2202,10 @@
     if (a === "save-club-notice") {
       var cnT = clampStr(($("#cn-text") || {}).value, 4000); if (!cnT) return;
       var cnEdit = t.getAttribute("data-edit") || "";
+      armRetry(function () { formClubNotice(cnEdit || undefined); });  // 클라우드 저장 실패 시 초안 보존 재오픈
       if (cnEdit) {  // 수정: 작성자·시각·반응은 보존(update 머지), 알림 재발송 없음
-        var cnPrev = (obj(DB.clubnotices)[state.clubId] || {})[cnEdit]; if (!cnPrev || !(cnPrev.by === me || canManage(me))) return;
+        var cnPrev = (obj(DB.clubnotices)[state.clubId] || {})[cnEdit];
+        if (!cnPrev || !(cnPrev.by === me || canManage(me))) { alert("이 소식이 삭제됐거나 수정 권한이 없어요."); closeModal(); render(); return; }
         Store.update("clubnotices/" + state.clubId + "/" + cnEdit, { text: cnT, pinned: !!($("#cn-pin") || {}).checked });
       } else {
         if (!canManage(me)) return;
