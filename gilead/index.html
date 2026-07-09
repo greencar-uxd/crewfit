@@ -152,7 +152,8 @@
       <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">지출 추가</h3>
         <div class="formgrid">
           <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="exDate" type="date" style="width:170px"></div>
-          <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="exMemo" placeholder="예: 당구장비 결제 / 비품"></div>
+          <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="exMemo" placeholder="예: 당구장비 결제 / 회식"></div>
+          <div class="ds-field"><label class="ds-field__label">재원</label><select class="ds-select" id="exFund" style="width:180px"><option value="toss">🟢 토스 모임통장</option><option value="card">🔵 법인카드(지출결의)</option></select></div>
           <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="exAmt" type="number" min="0" step="1000" style="width:140px"></div>
           <button class="ds-btn ds-btn--primary ds-btn--md" onclick="addExpense()">＋ 추가</button>
         </div></div>
@@ -247,13 +248,16 @@ function stats(mk){var m=M(mk);
   var photoDone=ALL.filter(function(n){return m.photos[n];}).length;
   var support=ALL.length*SUPPORT_PER,supportVat=Math.round(support*1.1);
   var expenseTotal=vals(m.expenses).reduce(function(s,e){return s+(+e.amount||0);},0);
+  var tossExpense=vals(m.expenses).reduce(function(s,e){return s+((e.fund||'toss')!=='card'?(+e.amount||0):0);},0);
+  var cardExpense=vals(m.expenses).reduce(function(s,e){return s+((e.fund||'toss')==='card'?(+e.amount||0):0);},0);
   var incomeTotal=vals(m.income).reduce(function(s,e){return s+(+e.amount||0);},0);
   return {duesPaid:duesPaid,duesTarget:ACTIVE.length,duesAmount:duesPaid*fee(),duesTargetAmount:ACTIVE.length*fee(),
     photoDone:photoDone,photoTotal:ALL.length,allPhoto:(photoDone===ALL.length),support:support,supportVat:supportVat,
-    expenseTotal:expenseTotal,incomeTotal:incomeTotal,unpaid:ACTIVE.filter(function(n){return !m.dues[n];}),unphoto:ALL.filter(function(n){return !m.photos[n];})};}
+    expenseTotal:expenseTotal,tossExpense:tossExpense,cardExpense:cardExpense,incomeTotal:incomeTotal,unpaid:ACTIVE.filter(function(n){return !m.dues[n];}),unphoto:ALL.filter(function(n){return !m.photos[n];})};}
 function deadline(mk){var p=mk.split('-'),due=new Date(+p[0],+p[1]-1,18),t=new Date();t.setHours(0,0,0,0);var diff=Math.round((due-t)/86400000);
   if(diff>0)return{txt:'🧾 지출결의 마감 D-'+diff,soon:diff<=5};if(diff===0)return{txt:'🧾 지출결의 마감 D-DAY',soon:true};return{txt:'🧾 지출결의 마감 '+(-diff)+'일 지남',over:true};}
 function monthsBack(n){var a=[],d=new Date();d.setDate(1);for(var i=n-1;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(x.toISOString().slice(0,7));}return a;}
+function tossBalance(){var bal=0;Object.keys(DB.months||{}).forEach(function(mk){var m=Mof(DB,mk);bal+=ACTIVE.filter(function(n){return m.dues[n];}).length*fee();vals(m.income).forEach(function(t){bal+=(+t.amount||0);});vals(m.expenses).forEach(function(t){if((t.fund||'toss')!=='card')bal-=(+t.amount||0);});});return bal;}
 
 /* ================= Firebase 실시간 ================= */
 var app,db,auth,subscribed=false,pending=0;
@@ -314,8 +318,8 @@ function renderDash(){var s=stats(current);
   document.getElementById('dashCards').innerHTML=[
     statCard({label:'회비 수납 · 활동 12명',value:s.duesPaid+' / '+s.duesTarget,prog:Math.round(s.duesPaid/s.duesTarget*100),badge:(s.duesPaid===s.duesTarget?badge('success','완납'):badge('neutral','미납 '+s.unpaid.length+'명')),sub:won(s.duesAmount)+' / 목표 '+won(s.duesTargetAmount)+' · 당구장비 재원'}),
     statCard({label:'사진 촬영 · 전원 17명',value:s.photoDone+' / '+s.photoTotal,prog:Math.round(s.photoDone/s.photoTotal*100),badge:(s.allPhoto?badge('success','전원 완료'):badge('warning','미촬영 '+s.unphoto.length+'명')),sub:s.allPhoto?'회사 지원 조건 충족':'전원 촬영 시 지원 조건 충족'}),
-    statCard({label:'회사 회식비 지원',value:won(s.support),badge:(s.allPhoto?badge('success','수령 조건 충족'):badge('warning','조건 미충족')),sub:'부가세 포함 청구 '+won(s.supportVat)+' · 17명 전원 사진'}),
-    statCard({label:'이번 달 지출',value:won(s.expenseTotal),sub:s.incomeTotal?('기타 수입 '+won(s.incomeTotal)):'당구장비 등'})
+    statCard({label:'🟢 토스 모임통장 잔액',value:won(tossBalance()),badge:badge('success','회비 재원'),sub:'이번 달 당구장비 등 지출 '+won(s.tossExpense)}),
+    statCard({label:'🔵 법인카드 · 지출결의',value:won(s.cardExpense),badge:(s.allPhoto?badge('success','지원조건 충족'):badge('warning','전원사진 필요')),sub:'회사 지원 한도 '+won(s.supportVat)+'(부가세 포함) 대비 잔여 '+won(Math.max(0,s.supportVat-s.cardExpense))})
   ].join('');
   var m=M(current);
   document.getElementById('checklist').innerHTML=[{key:'pay',label:'당구장비 결제 (매월 1일)'},{key:'photo',label:'전원 사진 촬영 완료 ('+s.photoDone+'/17)',auto:s.allPhoto},{key:'resolve',label:'지출결의 제출 (마감 18일)'}].map(function(it){
@@ -342,17 +346,17 @@ function buildCheckTable(names,withDues){var m=M(current);
 function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(ACTIVE,true);document.getElementById('ghostTable').innerHTML=buildCheckTable(GHOST,false);}
 function toggleDue(n){var m=M(current);mutate({t:'due',mk:current,name:n,v:!m.dues[n]});}
 function togglePhoto(n){var m=M(current);mutate({t:'photo',mk:current,name:n,v:!m.photos[n]});}
-function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';}
+function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();var fund=(document.getElementById('exFund')&&document.getElementById('exFund').value)||'toss';mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt,fund:fund}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';}
 function addIncome(){var amt=parseInt(document.getElementById('inAmt').value)||0;var memo=document.getElementById('inMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('inDate').value||todayISO();mutate({t:'add',kind:'income',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt}});document.getElementById('inMemo').value='';document.getElementById('inAmt').value='';}
 function delItem(kind,mk,id){mutate({t:'del',kind:kind,mk:mk,id:id});}
 function renderExpense(){var m=M(current);document.getElementById('exListTitle').textContent=current.replace('-','년 ')+'월 내역';var rows=[];
   vals(m.income).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+badge('success','수입')+'</td><td class="is-right tnum" style="color:var(--success-700)">+'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'income\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
-  vals(m.expenses).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+badge('danger','지출')+'</td><td class="is-right tnum" style="color:var(--danger-600)">−'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'expenses\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
-  var s=stats(current);var foot='<tr><td colspan="3" class="is-right"><b>합계</b></td><td class="is-right tnum"><b>수입 '+won(s.incomeTotal)+' / 지출 '+won(s.expenseTotal)+'</b></td><td></td></tr>';
+  vals(m.expenses).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+(t.fund==='card'?badge('accent','🔵 법인카드'):badge('neutral','🟢 토스'))+'</td><td class="is-right tnum" style="color:var(--danger-600)">−'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'expenses\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
+  var s=stats(current);var foot='<tr><td colspan="3" class="is-right"><b>합계</b></td><td class="is-right tnum"><b>수입 '+won(s.incomeTotal)+' · 🟢토스 '+won(s.tossExpense)+' · 🔵법인 '+won(s.cardExpense)+'</b></td><td></td></tr>';
   document.getElementById('exList').innerHTML='<div class="ds-table-wrap"><table class="ds-table"><thead><tr><th>날짜</th><th>내용</th><th>구분</th><th class="is-right">금액</th><th class="is-right">관리</th></tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="5">'+emptyState('내역 없음','이번 달 지출/수입 내역이 없습니다')+'</td></tr>')+foot+'</tbody></table></div>';}
 function renderReport(){var keys=Object.keys(DB.months);if(keys.indexOf(current)<0)keys.push(current);keys.sort();
-  var head='<thead><tr><th>월</th><th class="is-center">회비</th><th class="is-right">회비액</th><th class="is-center">사진</th><th class="is-center">지원조건</th><th class="is-right">지출</th><th class="is-center">결제</th><th class="is-center">지출결의</th></tr></thead>';
-  var body=keys.map(function(mk){var s=stats(mk),m=M(mk);return '<tr><td><b>'+mk.replace('-','.')+'</b></td><td class="is-center tnum">'+s.duesPaid+'/'+s.duesTarget+'</td><td class="is-right tnum">'+won(s.duesAmount)+'</td><td class="is-center tnum">'+s.photoDone+'/'+s.photoTotal+'</td><td class="is-center">'+(s.allPhoto?badge('success','충족'):badge('neutral','미충족'))+'</td><td class="is-right tnum">'+won(s.expenseTotal)+'</td><td class="is-center">'+(m.checklist.pay?badge('success','완료'):'—')+'</td><td class="is-center">'+(m.checklist.resolve?badge('success','완료'):'—')+'</td></tr>';}).join('');
+  var head='<thead><tr><th>월</th><th class="is-center">회비</th><th class="is-right">회비액</th><th class="is-center">사진</th><th class="is-center">지원조건</th><th class="is-right">토스지출</th><th class="is-right">법인지출</th><th class="is-center">결제</th><th class="is-center">지출결의</th></tr></thead>';
+  var body=keys.map(function(mk){var s=stats(mk),m=M(mk);return '<tr><td><b>'+mk.replace('-','.')+'</b></td><td class="is-center tnum">'+s.duesPaid+'/'+s.duesTarget+'</td><td class="is-right tnum">'+won(s.duesAmount)+'</td><td class="is-center tnum">'+s.photoDone+'/'+s.photoTotal+'</td><td class="is-center">'+(s.allPhoto?badge('success','충족'):badge('neutral','미충족'))+'</td><td class="is-right tnum">'+won(s.tossExpense)+'</td><td class="is-right tnum">'+won(s.cardExpense)+'</td><td class="is-center">'+(m.checklist.pay?badge('success','완료'):'—')+'</td><td class="is-center">'+(m.checklist.resolve?badge('success','완료'):'—')+'</td></tr>';}).join('');
   document.getElementById('repTable').innerHTML=head+'<tbody>'+body+'</tbody>';}
 function renderSettings(){document.getElementById('feeInput').value=fee();
   document.getElementById('listActive').innerHTML=ACTIVE.map(function(n){return '<span class="ds-tag">'+esc(n)+(ADMIN_ROLE[n]?' · '+ADMIN_ROLE[n]:'')+'</span>';}).join('');
