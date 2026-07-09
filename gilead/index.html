@@ -1,1 +1,469 @@
-placeholder — will be replaced by upload
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrewFit · G리아드 운영</title>
+<!-- Daniel's Design System (모노톤 + 단일 액센트, Pretendard). 토큰·컴포넌트 CSS·폰트 전부 포함 -->
+<link rel="stylesheet" href="https://greencar-uxd.github.io/design-system/styles.css">
+<style>
+  /* ===== 앱 레이아웃 : 디자인 시스템 토큰만 사용 ===== */
+  :root{color-scheme:light}
+  [data-theme="dark"]{color-scheme:dark}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--surface-page);color:var(--text-primary);font:var(--text-body);font-family:var(--font-text);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
+  @media(min-width:768px){.wrap{padding:0 var(--gutter-md)}}
+  @media(min-width:1024px){.wrap{padding:0 var(--gutter-lg)}}
+  .stack>*+*{margin-top:var(--space-4)}
+  .formgrid{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end}
+  .spacer{flex:1 1 auto}
+  .row{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
+  .muted{color:var(--text-secondary)}
+  .tiny{font:var(--text-caption);color:var(--text-tertiary)}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* 로그인 */
+  .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--space-5);background:var(--surface-page)}
+  .login .box{width:100%;max-width:404px}
+  .brandmark{width:44px;height:44px;border-radius:var(--radius-md);background:var(--accent);display:grid;place-items:center;margin:0 auto var(--space-3)}
+  .brandmark span{width:16px;height:16px;border-radius:var(--radius-xs);background:var(--on-accent)}
+  #setupBox{display:none;margin-top:var(--space-4)}
+
+  /* 헤더 */
+  .appheader{position:sticky;top:0;z-index:20;background:var(--surface-card);border-bottom:1px solid var(--border)}
+  .appheader__row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0}
+  .brand-sq{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--accent);flex:none;display:grid;place-items:center}
+  .brand-sq span{width:11px;height:11px;border-radius:3px;background:var(--on-accent)}
+  .brand-tt{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-lg);letter-spacing:var(--ls-snug);color:var(--text-primary);line-height:1.1}
+  .brand-sub{font:var(--text-caption);color:var(--text-tertiary)}
+  .subbar{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;padding-bottom:var(--space-3)}
+  .tabs-wrap{overflow-x:auto}
+  .app{display:none}
+  main{padding:var(--space-6) 0 var(--space-16)}
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:var(--space-4);margin-bottom:var(--space-5)}
+  .view{display:none}.view.active{display:block}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:0 0 var(--space-4)}
+  .panel-title{font:var(--text-h4);margin:0 0 var(--space-4)}
+  .names{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+  .checklist{display:flex;flex-direction:column;gap:var(--space-2)}
+  .checkrow{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-card)}
+  .cell-toggle{display:flex;justify-content:center}
+  #toast{position:fixed;left:50%;bottom:var(--space-6);transform:translateX(-50%);z-index:200;opacity:0;transition:opacity var(--dur-base) var(--ease-out);pointer-events:none}
+  #toast.show{opacity:1}
+  .ds-stat__value{word-break:keep-all}
+  details.ds-acc summary{list-style:none;cursor:pointer}
+  details.ds-acc summary::-webkit-details-marker{display:none}
+</style>
+</head>
+<body>
+
+<!-- ================= 로그인 ================= -->
+<div class="login" id="login">
+  <div class="box ds-card ds-card--pad">
+    <div class="brandmark"><span></span></div>
+    <h1 style="font:var(--text-h3);text-align:center;margin:0 0 var(--space-1)">CrewFit · G리아드</h1>
+    <p class="tiny" style="text-align:center;margin:0 0 var(--space-5)">운영진 전용 · (주)그린카</p>
+
+    <div class="ds-segmented" id="whoBtns" style="width:100%;margin-bottom:var(--space-4)"></div>
+
+    <div class="ds-field">
+      <label class="ds-field__label" for="pin">PIN</label>
+      <input class="ds-input" id="pin" type="password" inputmode="numeric" maxlength="12" placeholder="본인 PIN" autocomplete="off">
+    </div>
+    <button class="ds-btn ds-btn--primary ds-btn--md ds-btn--block" style="margin-top:var(--space-3)" onclick="doLogin()">접속</button>
+    <p id="loginMsg" class="ds-field__error" style="min-height:18px;margin:var(--space-2) 0 0"></p>
+
+    <div id="setupBox">
+      <div class="ds-alert ds-alert--info" style="margin-bottom:var(--space-3)">
+        <span class="ds-alert__icon" id="ic-info"></span>
+        <div class="ds-alert__body"><p class="ds-alert__desc">이 기기에서 <b>처음 접속</b>입니다. 저장하려면 GitHub 토큰을 1회 등록하세요. 위에 입력한 PIN이 이 기기의 접속 PIN이 됩니다.</p></div>
+      </div>
+      <div class="ds-field">
+        <label class="ds-field__label" for="tokenInput">GitHub 토큰</label>
+        <input class="ds-input" id="tokenInput" type="password" placeholder="ghp_... 또는 github_pat_...">
+      </div>
+      <button class="ds-btn ds-btn--accent ds-btn--md ds-btn--block" style="margin-top:var(--space-3)" onclick="doSetup()">토큰 등록하고 접속</button>
+      <button class="ds-btn ds-btn--ghost ds-btn--sm ds-btn--block" style="margin-top:var(--space-2)" onclick="enterReadOnly()">토큰 없이 읽기 전용으로 보기</button>
+    </div>
+
+    <div class="ds-alert ds-alert--warning" style="margin-top:var(--space-5)">
+      <span class="ds-alert__icon" id="ic-warn"></span>
+      <div class="ds-alert__body"><p class="ds-alert__desc" style="font:var(--text-caption)">공개 페이지입니다. 저장 권한은 <b>GitHub 토큰</b>이(운영진만) 결정하고, PIN은 이 기기에서 토큰을 잠그는 편의용입니다. 데이터는 공개 레포라 URL을 아는 사람은 열람 가능합니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 앱 ================= -->
+<div class="app" id="app">
+  <header class="appheader">
+    <div class="wrap">
+      <div class="appheader__row">
+        <div class="brand-sq"><span></span></div>
+        <div style="flex:1 1 auto;min-width:0">
+          <div class="brand-tt">CrewFit · G리아드</div>
+          <div class="brand-sub">당구 동호회 · (주)그린카 · 회장 강민관 / 총무 정종욱</div>
+        </div>
+        <span class="ds-badge ds-badge--neutral" id="syncBadge"><span class="ds-badge__dot"></span>연결 중</span>
+        <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="refreshBtn" title="최신 불러오기" onclick="manualRefresh()"></button>
+        <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="themeBtn" title="테마 전환" onclick="toggleTheme()"></button>
+        <span class="ds-badge ds-badge--outline" id="whoami"></span>
+        <button class="ds-btn ds-btn--ghost ds-btn--sm" onclick="logout()">로그아웃</button>
+      </div>
+      <div class="subbar">
+        <div class="ds-field" style="gap:var(--space-1)">
+          <input class="ds-input" type="month" id="monthPick" style="padding:8px 12px" onchange="switchMonth(this.value)">
+        </div>
+        <span class="ds-badge ds-badge--neutral">🎱 당구장 결제일 매월 1일</span>
+        <span class="ds-badge ds-badge--outline" id="dueBadge">🧾 지출결의 마감 18일</span>
+      </div>
+      <div class="tabs-wrap">
+        <div class="ds-tabs" id="tabs" role="tablist">
+          <button class="ds-tab ds-tab--active" data-tab="dash">대시보드</button>
+          <button class="ds-tab" data-tab="check">회비·사진 체크</button>
+          <button class="ds-tab" data-tab="expense">지출</button>
+          <button class="ds-tab" data-tab="report">월별 결산</button>
+          <button class="ds-tab" data-tab="settings">설정·연동</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 대시보드 -->
+    <section class="view active" id="view-dash">
+      <div class="sec-head"><p class="ds-kicker" id="dashKicker">이번 달 요약</p></div>
+      <div class="grid-cards" id="dashCards"></div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <p class="ds-kicker" style="margin-bottom:var(--space-4)">운영 체크리스트</p>
+        <div class="checklist" id="checklist"></div>
+      </div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <p class="ds-kicker" style="margin-bottom:var(--space-4)">최근 6개월 지출</p>
+        <div class="ds-barchart"><div class="ds-barchart__plot" id="dashChart"></div></div>
+      </div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <p class="ds-kicker" style="margin-bottom:var(--space-4)">회비 미납 · 활동회원</p>
+        <div id="unpaidBox"></div>
+      </div>
+      <div class="ds-card ds-card--pad">
+        <p class="ds-kicker" style="margin-bottom:var(--space-4)">사진 미촬영 · 전원 필요(지원금 조건)</p>
+        <div id="unphotoBox"></div>
+      </div>
+    </section>
+
+    <!-- 회비·사진 체크 -->
+    <section class="view" id="view-check">
+      <div class="ds-alert ds-alert--info" style="margin-bottom:var(--space-5)">
+        <span class="ds-alert__icon" id="ic-info2"></span>
+        <div class="ds-alert__body"><p class="ds-alert__desc">스위치를 켜면 <b>납부/촬영 완료</b>로 자동 저장·동기화됩니다. 활동회원은 회비+사진, <b>고스트회원</b>은 사진만 해당됩니다.</p></div>
+      </div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <h3 class="panel-title">활동회원 <span class="tiny">· 당구장 활동 · 회비 필수 · 12명</span></h3>
+        <div class="ds-table-wrap"><table class="ds-table" id="activeTable"></table></div>
+      </div>
+      <div class="ds-card ds-card--pad">
+        <h3 class="panel-title">고스트회원 <span class="ds-badge ds-badge--accent">GHOST</span> <span class="tiny">· 사진만 · 회식비 지원용 · 5명</span></h3>
+        <div class="ds-alert ds-alert--info" style="margin-bottom:var(--space-4)">
+          <span class="ds-alert__icon" id="ic-info3"></span>
+          <div class="ds-alert__body"><p class="ds-alert__desc">고스트회원은 당구장에 안 나와도 되지만, <b>회사 인당 3만원 회식비 지원</b>을 위해 17명 전원 사진에 반드시 포함돼야 합니다.</p></div>
+        </div>
+        <div class="ds-table-wrap"><table class="ds-table" id="ghostTable"></table></div>
+      </div>
+    </section>
+
+    <!-- 지출 -->
+    <section class="view" id="view-expense">
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <h3 class="panel-title">지출 추가</h3>
+        <div class="formgrid">
+          <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="exDate" type="date" style="width:170px"></div>
+          <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="exMemo" placeholder="예: 당구장비 결제 / 비품"></div>
+          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="exAmt" type="number" min="0" step="1000" style="width:140px"></div>
+          <button class="ds-btn ds-btn--primary ds-btn--md" onclick="addExpense()">＋ 추가</button>
+        </div>
+      </div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <h3 class="panel-title">기타 수입 <span class="tiny">· 회사 지원금 수령 등</span></h3>
+        <div class="formgrid">
+          <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="inDate" type="date" style="width:170px"></div>
+          <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="inMemo" placeholder="예: 회사 회식비 지원 수령"></div>
+          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="inAmt" type="number" min="0" step="1000" style="width:140px"></div>
+          <button class="ds-btn ds-btn--secondary ds-btn--md" onclick="addIncome()">＋ 추가</button>
+        </div>
+      </div>
+      <div class="ds-card ds-card--pad">
+        <h3 class="panel-title" id="exListTitle">이번 달 내역</h3>
+        <div id="exList"></div>
+      </div>
+    </section>
+
+    <!-- 결산 -->
+    <section class="view" id="view-report">
+      <div class="ds-card ds-card--pad">
+        <h3 class="panel-title">월별 결산</h3>
+        <div class="ds-table-wrap"><table class="ds-table" id="repTable"></table></div>
+      </div>
+    </section>
+
+    <!-- 설정 -->
+    <section class="view" id="view-settings">
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <h3 class="panel-title">기본 정보</h3>
+        <div class="ds-table-wrap"><table class="ds-table">
+          <tbody>
+          <tr><td style="width:200px;color:var(--text-tertiary)">동호회 / 소속</td><td>G리아드 (CrewFit) · (주)그린카</td></tr>
+          <tr><td style="color:var(--text-tertiary)">회장 / 총무</td><td>강민관 / 정종욱</td></tr>
+          <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td><input class="ds-input tnum" id="feeInput" type="number" step="1000" style="width:130px" onchange="setFee(this.value)"> 원</td></tr>
+          <tr><td style="color:var(--text-tertiary)">당구장 결제일 / 지출결의</td><td>매월 1일 / 매월 18일 마감</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)">
+        <h3 class="panel-title">GitHub 연동</h3>
+        <p class="tiny" id="syncInfo" style="margin:0 0 var(--space-4)"></p>
+        <div class="row">
+          <button class="ds-btn ds-btn--secondary ds-btn--sm" onclick="manualRefresh()">↻ 최신 불러오기</button>
+          <button class="ds-btn ds-btn--secondary ds-btn--sm" onclick="changeToken()">토큰 변경/등록</button>
+          <button class="ds-btn ds-btn--danger ds-btn--sm" onclick="forgetDevice()">이 기기에서 토큰 삭제</button>
+        </div>
+        <details class="ds-acc" style="margin-top:var(--space-4)">
+          <summary><span class="ds-badge ds-badge--neutral">토큰 만드는 법 · 각 운영진 1회</span></summary>
+          <ol style="font:var(--text-body-sm);color:var(--text-secondary);line-height:var(--lh-relaxed);margin:var(--space-3) 0 0;padding-left:var(--space-5)">
+            <li>github.com 로그인 → 우측 상단 프로필 → <b>Settings</b></li>
+            <li>왼쪽 맨 아래 <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b></li>
+            <li>Resource owner: <b>greencar-uxd</b> · Repository access: <b>Only select repositories → crewfit</b></li>
+            <li>Repository permissions → <b>Contents: Read and write</b></li>
+            <li>Generate → 토큰 복사 → 로그인 시 붙여넣기</li>
+            <li>조직 정책상 막히면 <b>Tokens (classic)</b> → scope <b>repo</b></li>
+          </ol>
+        </details>
+      </div>
+      <div class="ds-card ds-card--pad">
+        <h3 class="panel-title">명단 · 17명</h3>
+        <p class="tiny" style="margin:0 0 var(--space-2)">활동회원 12명</p>
+        <div class="names" id="listActive" style="margin-bottom:var(--space-4)"></div>
+        <p class="tiny" style="margin:0 0 var(--space-2)">고스트회원 5명</p>
+        <div class="names" id="listGhost"></div>
+        <div class="ds-alert ds-alert--info" style="margin-top:var(--space-4)">
+          <span class="ds-alert__icon" id="ic-info4"></span>
+          <div class="ds-alert__body"><p class="ds-alert__desc">명단·회비 금액은 파일 상단 설정값(ACTIVE / GHOST / FEE_DEFAULT)에서 바꿀 수 있습니다.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ================= 설정 ================= */
+var CLUB={name:'G리아드',org:'(주)그린카',president:'강민관',treasurer:'정종욱'};
+var ADMINS=['강민관','정종욱'];
+var ADMIN_ROLE={'강민관':'회장','정종욱':'총무'};
+var FEE_DEFAULT=30000;
+var ACTIVE=['문영건','강민관','이정걸','조민호','김규식','배지현','김경호','박수홍','정종욱','김성준','장정우','진익영'];
+var GHOST=['김유현','이순란','이진주','김보성','김정수'];
+var SUPPORT_PER=30000;
+var GH={owner:'greencar-uxd',repo:'crewfit',path:'gilead/data.json',branch:'main',api:'https://api.github.com'};
+
+/* ================= 아이콘 (Lucide, stroke 2) ================= */
+var IC={
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3L3 8"/><path d="M3 3v5h5"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
+};
+
+/* ================= 저장소/유틸 ================= */
+var ALL=ACTIVE.concat(GHOST);
+var CACHE='gilead_cache_v2', CRED='gilead_cred_', THEME='gilead_theme';
+var _mem={};
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return _mem[k]||null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){_mem[k]=v;}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){delete _mem[k];}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function curMonth(){return new Date().toISOString().slice(0,7);}
+function won(n){n=Math.round(n||0);return n.toLocaleString('ko-KR')+'원';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function b64e(str){var u=new TextEncoder().encode(str);var b='';for(var i=0;i<u.length;i++)b+=String.fromCharCode(u[i]);return btoa(b);}
+function b64d(b64){var bin=atob(String(b64).replace(/\s/g,''));var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder('utf-8').decode(u);}
+function xorStr(s,key){var o='';for(var i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^key.charCodeAt(i%key.length));return o;}
+function cyrb(str){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0,c;i<str.length;i++){c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(16);}
+function obfToken(tok,pin){return btoa(xorStr(tok,'p'+pin));}
+function deobfToken(ob,pin){try{return xorStr(atob(ob),'p'+pin);}catch(e){return '';}}
+
+/* ================= 상태 ================= */
+function emptyDB(){return {settings:{fee:FEE_DEFAULT},months:{}};}
+function norm(d){d=d||{};d.settings=d.settings||{};if(d.settings.fee==null)d.settings.fee=FEE_DEFAULT;d.months=d.months||{};return d;}
+var DB=emptyDB(),current=curMonth(),sessionUser=null,token=null,canWrite=false;
+var remoteSha=null,pendingOps=[],syncing=false,dirty=false,saveTimer=null;
+function Mof(db,mk){if(!db.months[mk])db.months[mk]={dues:{},photos:{},checklist:{pay:false,resolve:false},expenses:[],income:[]};var m=db.months[mk];m.dues=m.dues||{};m.photos=m.photos||{};m.checklist=m.checklist||{pay:false,resolve:false};m.expenses=m.expenses||[];m.income=m.income||[];return m;}
+function M(mk){return Mof(DB,mk);}
+function fee(){return DB.settings.fee||FEE_DEFAULT;}
+function cacheSave(){lsSet(CACHE,JSON.stringify(DB));}
+function cacheLoad(){var r=lsGet(CACHE);if(r){try{DB=norm(JSON.parse(r));}catch(e){}}}
+
+/* ================= 통계 ================= */
+function stats(mk){var m=M(mk);
+  var duesPaid=ACTIVE.filter(function(n){return m.dues[n];}).length;
+  var photoDone=ALL.filter(function(n){return m.photos[n];}).length;
+  var support=ALL.length*SUPPORT_PER,supportVat=Math.round(support*1.1);
+  var expenseTotal=m.expenses.reduce(function(s,e){return s+(+e.amount||0);},0);
+  var incomeTotal=m.income.reduce(function(s,e){return s+(+e.amount||0);},0);
+  return {duesPaid:duesPaid,duesTarget:ACTIVE.length,duesAmount:duesPaid*fee(),duesTargetAmount:ACTIVE.length*fee(),
+    photoDone:photoDone,photoTotal:ALL.length,allPhoto:(photoDone===ALL.length),support:support,supportVat:supportVat,
+    expenseTotal:expenseTotal,incomeTotal:incomeTotal,unpaid:ACTIVE.filter(function(n){return !m.dues[n];}),unphoto:ALL.filter(function(n){return !m.photos[n];})};}
+function deadline(mk){var p=mk.split('-'),due=new Date(+p[0],+p[1]-1,18),t=new Date();t.setHours(0,0,0,0);var diff=Math.round((due-t)/86400000);
+  if(diff>0)return{txt:'🧾 지출결의 마감 D-'+diff,soon:diff<=5};if(diff===0)return{txt:'🧾 지출결의 마감 D-DAY',soon:true};return{txt:'🧾 지출결의 마감 '+(-diff)+'일 지남',over:true};}
+function monthsBack(n){var a=[],d=new Date();d.setDate(1);for(var i=n-1;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(x.toISOString().slice(0,7));}return a;}
+
+/* ================= GitHub 동기화 ================= */
+function setSync(state,msg){var b=document.getElementById('syncBadge');if(!b)return;
+  var map={loading:['neutral','연결 중'],ok:['success','동기화됨'],saving:['warning','저장 중'],err:['danger','저장 실패'],ro:['neutral','읽기 전용']};
+  var e=map[state]||['neutral',''];b.className='ds-badge ds-badge--'+e[0];b.innerHTML='<span class="ds-badge__dot"></span>'+(msg||e[1]);updateSyncInfo(msg);}
+function updateSyncInfo(msg){var el=document.getElementById('syncInfo');if(!el)return;
+  var who=sessionUser?('접속 '+sessionUser+' ('+(ADMIN_ROLE[sessionUser]||'')+') · '):'';
+  el.innerHTML=esc(who)+(canWrite?'쓰기 가능(토큰 등록됨)':'읽기 전용(토큰 없음)')+' · 저장소 '+GH.owner+'/'+GH.repo+' · '+GH.path+' · 브랜치 '+GH.branch+(msg?(' · '+esc(msg)):'');}
+async function ghDetectBranch(){try{var r=await fetch(GH.api+'/repos/'+GH.owner+'/'+GH.repo,{headers:token?{Authorization:'Bearer '+token}:{}});if(r.ok){var j=await r.json();if(j&&j.default_branch)GH.branch=j.default_branch;}}catch(e){}}
+async function ghFetchRaw(){var url=GH.api+'/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.path+'?ref='+GH.branch+'&_='+Date.now();
+  var r=await fetch(url,{headers:token?{Authorization:'Bearer '+token,'Accept':'application/vnd.github+json'}:{'Accept':'application/vnd.github+json'}});
+  if(r.status===404)return {sha:null,db:emptyDB(),exists:false};
+  if(!r.ok)throw new Error('불러오기 실패 '+r.status);
+  var j=await r.json();return {sha:j.sha,db:norm(JSON.parse(b64d(j.content))),exists:true};}
+async function ghLoad(){setSync('loading');try{var res=await ghFetchRaw();remoteSha=res.sha;DB=res.db;cacheSave();renderAll();setSync(canWrite?'ok':'ro');return true;}
+  catch(e){cacheLoad();renderAll();setSync('err','읽기 실패 — 캐시 표시: '+e.message);return false;}}
+function apply(db,op){if(op.t==='fee'){db.settings.fee=op.v;return;}var m=Mof(db,op.mk);
+  if(op.t==='due')m.dues[op.name]=op.v;else if(op.t==='photo')m.photos[op.name]=op.v;else if(op.t==='check')m.checklist[op.key]=op.v;
+  else if(op.t==='add')m[op.kind].push(op.item);else if(op.t==='del')m[op.kind]=m[op.kind].filter(function(x){return x.id!==op.id;});}
+function replay(db,ops){ops.forEach(function(o){apply(db,o);});}
+function mutate(op){if(!canWrite){toast('저장 권한이 없습니다. 설정 → 토큰 변경/등록에서 GitHub 토큰을 넣어주세요.');return;}apply(DB,op);pendingOps.push(op);renderAll();scheduleSave();}
+function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);setSync('saving');saveTimer=setTimeout(ghSave,700);}
+async function ghSave(){if(!canWrite||!token)return;if(syncing){dirty=true;return;}if(!pendingOps.length)return;syncing=true;setSync('saving');
+  try{var latest=await ghFetchRaw();var base=latest.db;replay(base,pendingOps);
+    var body={message:'update gilead data ('+sessionUser+' '+new Date().toISOString().slice(0,16)+')',content:b64e(JSON.stringify(base,null,2)),branch:GH.branch};
+    if(latest.sha)body.sha=latest.sha;
+    var r=await fetch(GH.api+'/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.path,{method:'PUT',headers:{Authorization:'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok){var t=await r.text();throw new Error(r.status+' '+t.slice(0,140));}
+    var jj=await r.json();remoteSha=jj.content?jj.content.sha:remoteSha;DB=base;pendingOps=[];cacheSave();renderAll();setSync('ok');}
+  catch(e){setSync('err',e.message);toast('저장 실패: '+e.message);}
+  syncing=false;if(dirty){dirty=false;scheduleSave();}}
+async function manualRefresh(){if(pendingOps.length&&!confirm('저장 대기 중인 변경이 있습니다. 최신본을 불러오면 덮어써질 수 있어요. 계속할까요?'))return;await ghLoad();toast('최신본을 불러왔습니다');}
+
+/* ================= 렌더 ================= */
+function statCard(o){
+  return '<div class="ds-card ds-card--pad"><div class="ds-stat"><span class="ds-stat__label">'+o.label+'</span>'+
+    '<span class="ds-stat__value">'+o.value+'</span></div>'+
+    (o.prog!=null?'<div class="ds-progress" style="margin-top:var(--space-3)"><div class="ds-progress__bar" style="width:'+o.prog+'%"></div></div>':'')+
+    (o.badge?'<div style="margin-top:var(--space-3)">'+o.badge+'</div>':'')+
+    (o.sub?'<p class="tiny" style="margin:var(--space-2) 0 0">'+o.sub+'</p>':'')+'</div>';}
+function badge(variant,txt){return '<span class="ds-badge ds-badge--'+variant+'">'+txt+'</span>';}
+function renderDash(){var s=stats(current);
+  document.getElementById('dashKicker').textContent=current.replace('-','년 ')+'월 요약';
+  var cards=[
+    statCard({label:'회비 수납 · 활동 12명',value:s.duesPaid+' / '+s.duesTarget,prog:Math.round(s.duesPaid/s.duesTarget*100),badge:(s.duesPaid===s.duesTarget?badge('success','완납'):badge('neutral','미납 '+s.unpaid.length+'명')),sub:won(s.duesAmount)+' / 목표 '+won(s.duesTargetAmount)+' · 당구장비 재원'}),
+    statCard({label:'사진 촬영 · 전원 17명',value:s.photoDone+' / '+s.photoTotal,prog:Math.round(s.photoDone/s.photoTotal*100),badge:(s.allPhoto?badge('success','전원 완료'):badge('warning','미촬영 '+s.unphoto.length+'명')),sub:s.allPhoto?'회사 지원 조건 충족':'전원 촬영 시 지원 조건 충족'}),
+    statCard({label:'회사 회식비 지원',value:won(s.support),badge:(s.allPhoto?badge('success','수령 조건 충족'):badge('warning','조건 미충족')),sub:'부가세 포함 청구 '+won(s.supportVat)+' · 17명 전원 사진'}),
+    statCard({label:'이번 달 지출',value:won(s.expenseTotal),sub:s.incomeTotal?('기타 수입 '+won(s.incomeTotal)):'당구장비 등'})
+  ];
+  document.getElementById('dashCards').innerHTML=cards.join('');
+  var m=M(current);
+  var items=[{key:'pay',label:'당구장비 결제 (매월 1일)'},{key:'photo',label:'전원 사진 촬영 완료 ('+s.photoDone+'/17)',auto:s.allPhoto},{key:'resolve',label:'지출결의 제출 (마감 18일)'}];
+  document.getElementById('checklist').innerHTML=items.map(function(it){
+    var done=it.auto!=null?it.auto:!!m.checklist[it.key];
+    var oc=it.auto!=null?'':' onclick="toggleCheck(\''+it.key+'\')" style="cursor:pointer"';
+    var box='<span class="ds-check__box" style="'+(done?'background:var(--accent);border-color:var(--accent)':'')+'">'+(done?'<span style="width:13px;height:13px;color:#fff">'+IC.check+'</span>':'')+'</span>';
+    return '<div class="checkrow"'+oc+'>'+box+'<span style="'+(done?'color:var(--text-tertiary);text-decoration:line-through':'')+'">'+it.label+'</span></div>';
+  }).join('');
+  // 6개월 지출 바차트
+  var mos=monthsBack(6),vals=mos.map(function(mk){return stats(mk).expenseTotal;});
+  var mx=Math.max.apply(null,vals.concat([1]));
+  document.getElementById('dashChart').innerHTML=mos.map(function(mk,i){
+    var h=Math.max(2,Math.round(vals[i]/mx*120));var cur=(mk===current);
+    return '<div class="ds-barchart__col"><div class="ds-barchart__track"><div class="ds-barchart__val">'+(vals[i]?Math.round(vals[i]/10000)+'만':'0')+'</div>'+
+      '<div class="ds-barchart__bar'+(cur?' is-accent':'')+'" style="height:'+h+'px"></div></div><div class="ds-barchart__lbl">'+parseInt(mk.slice(5))+'월</div></div>';
+  }).join('');
+  document.getElementById('unpaidBox').innerHTML=s.unpaid.length?('<div class="names">'+s.unpaid.map(function(n){return '<span class="ds-tag">'+esc(n)+'</span>';}).join('')+'</div>'):emptyState('회비 완납','활동회원 전원 회비를 납부했습니다');
+  document.getElementById('unphotoBox').innerHTML=s.unphoto.length?('<div class="names">'+s.unphoto.map(function(n){var g=GHOST.indexOf(n)>=0;return '<span class="ds-tag"'+(g?' style="background:var(--surface-accent-subtle);color:var(--text-accent);border-color:transparent"':'')+'>'+esc(n)+(g?' · 고스트':'')+'</span>';}).join('')+'</div>'):emptyState('전원 촬영 완료','17명 전원 사진 완료 — 지원 조건 충족');}
+function emptyState(t,d){return '<div class="ds-empty"><div class="ds-empty__sig"><span></span><span></span><span></span><span></span><span class="is-point"></span><span></span><span></span><span></span><span></span></div><p class="ds-empty__title">'+esc(t)+'</p><p class="ds-empty__desc">'+esc(d)+'</p></div>';}
+function toggleCheck(k){var m=M(current);mutate({t:'check',mk:current,key:k,v:!m.checklist[k]});}
+function switchCell(on,handler,aria){
+  return '<div class="cell-toggle"><label class="ds-switch" aria-label="'+esc(aria)+'"><input type="checkbox" '+(on?'checked':'')+' onchange="'+handler+'"><span class="ds-switch__track"><span class="ds-switch__thumb"></span></span></label></div>';}
+function buildCheckTable(names,withDues){var m=M(current);
+  var head='<thead><tr><th>회원</th><th class="is-center">'+(withDues?('회비 '+won(fee())):'회비')+'</th><th class="is-center">사진</th></tr></thead>';
+  var body=names.map(function(n){
+    var role=ACTIVE.indexOf(n)>=0?badge('success','활동'):badge('accent','고스트');
+    var admin=ADMIN_ROLE[n]?(' <span class="tiny">('+ADMIN_ROLE[n]+')</span>'):'';
+    var dues=withDues?('<td class="is-center">'+switchCell(!!m.dues[n],"toggleDue('"+n+"')",'회비 납부 '+n)+'</td>'):'<td class="is-center">'+badge('neutral','해당없음')+'</td>';
+    var photo='<td class="is-center">'+switchCell(!!m.photos[n],"togglePhoto('"+n+"')",'사진 촬영 '+n)+'</td>';
+    return '<tr><td><span style="font-weight:var(--fw-medium)">'+esc(n)+'</span>'+admin+' '+role+'</td>'+dues+photo+'</tr>';}).join('');
+  return head+'<tbody>'+body+'</tbody>';}
+function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(ACTIVE,true);document.getElementById('ghostTable').innerHTML=buildCheckTable(GHOST,false);}
+function toggleDue(n){var m=M(current);mutate({t:'due',mk:current,name:n,v:!m.dues[n]});}
+function togglePhoto(n){var m=M(current);mutate({t:'photo',mk:current,name:n,v:!m.photos[n]});}
+function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';}
+function addIncome(){var amt=parseInt(document.getElementById('inAmt').value)||0;var memo=document.getElementById('inMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('inDate').value||todayISO();mutate({t:'add',kind:'income',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt}});document.getElementById('inMemo').value='';document.getElementById('inAmt').value='';}
+function delItem(kind,mk,id){mutate({t:'del',kind:kind,mk:mk,id:id});}
+function renderExpense(){var m=M(current);document.getElementById('exListTitle').textContent=current.replace('-','년 ')+'월 내역';var rows=[];
+  m.income.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+badge('success','수입')+'</td><td class="is-right tnum" style="color:var(--success-700)">+'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'income\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
+  m.expenses.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+badge('danger','지출')+'</td><td class="is-right tnum" style="color:var(--danger-600)">−'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'expenses\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
+  var s=stats(current);var foot='<tr><td colspan="3" class="is-right"><b>합계</b></td><td class="is-right tnum"><b>수입 '+won(s.incomeTotal)+' / 지출 '+won(s.expenseTotal)+'</b></td><td></td></tr>';
+  document.getElementById('exList').innerHTML=(rows.length||true)?('<div class="ds-table-wrap"><table class="ds-table"><thead><tr><th>날짜</th><th>내용</th><th>구분</th><th class="is-right">금액</th><th class="is-right">관리</th></tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="5">'+emptyState('내역 없음','이번 달 지출/수입 내역이 없습니다')+'</td></tr>')+foot+'</tbody></table></div>'):'';}
+function renderReport(){var keys=Object.keys(DB.months);if(keys.indexOf(current)<0)keys.push(current);keys.sort();
+  var head='<thead><tr><th>월</th><th class="is-center">회비</th><th class="is-right">회비액</th><th class="is-center">사진</th><th class="is-center">지원조건</th><th class="is-right">지출</th><th class="is-center">결제</th><th class="is-center">지출결의</th></tr></thead>';
+  var body=keys.map(function(mk){var s=stats(mk),m=M(mk);return '<tr><td><b>'+mk.replace('-','.')+'</b></td><td class="is-center tnum">'+s.duesPaid+'/'+s.duesTarget+'</td><td class="is-right tnum">'+won(s.duesAmount)+'</td><td class="is-center tnum">'+s.photoDone+'/'+s.photoTotal+'</td><td class="is-center">'+(s.allPhoto?badge('success','충족'):badge('neutral','미충족'))+'</td><td class="is-right tnum">'+won(s.expenseTotal)+'</td><td class="is-center">'+(m.checklist.pay?badge('success','완료'):'—')+'</td><td class="is-center">'+(m.checklist.resolve?badge('success','완료'):'—')+'</td></tr>';}).join('');
+  document.getElementById('repTable').innerHTML=head+'<tbody>'+body+'</tbody>';}
+function renderSettings(){document.getElementById('feeInput').value=fee();
+  document.getElementById('listActive').innerHTML=ACTIVE.map(function(n){return '<span class="ds-tag">'+esc(n)+(ADMIN_ROLE[n]?' · '+ADMIN_ROLE[n]:'')+'</span>';}).join('');
+  document.getElementById('listGhost').innerHTML=GHOST.map(function(n){return '<span class="ds-tag" style="background:var(--surface-accent-subtle);color:var(--text-accent);border-color:transparent">'+esc(n)+'</span>';}).join('');updateSyncInfo();}
+function setFee(v){mutate({t:'fee',v:Math.max(0,parseInt(v)||0)});}
+function renderAll(){renderDash();renderCheck();renderExpense();renderReport();renderSettings();}
+
+/* ================= 로그인 / 토큰 ================= */
+var pendingUser=null;
+function buildLogin(){document.getElementById('whoBtns').innerHTML=ADMINS.map(function(n){return '<button class="ds-segmented__btn" style="flex:1" data-u="'+n+'" onclick="pickUser(\''+n+'\')">'+esc(n)+' · '+(ADMIN_ROLE[n]||'운영진')+'</button>';}).join('');document.getElementById('setupBox').style.display='none';}
+function pickUser(n){pendingUser=n;var els=document.querySelectorAll('#whoBtns button');for(var i=0;i<els.length;i++)els[i].classList.toggle('ds-segmented__btn--active',els[i].dataset.u===n);document.getElementById('setupBox').style.display='none';document.getElementById('loginMsg').textContent='';document.getElementById('pin').focus();}
+function credKey(n){return CRED+n;}
+function doLogin(){var msg=document.getElementById('loginMsg');if(!pendingUser){msg.textContent='접속할 운영진을 선택하세요';return;}
+  var pin=document.getElementById('pin').value;if(!pin){msg.textContent='PIN을 입력하세요';return;}
+  var raw=lsGet(credKey(pendingUser));
+  if(raw){var c;try{c=JSON.parse(raw);}catch(e){c=null;}
+    if(c&&c.pinHash===cyrb(pin)){token=deobfToken(c.tok,pin);canWrite=!!token;enterApp();return;}
+    msg.textContent='PIN이 올바르지 않습니다';return;}
+  msg.textContent='';document.getElementById('setupBox').style.display='block';document.getElementById('tokenInput').focus();}
+function doSetup(){var pin=document.getElementById('pin').value;var tok=document.getElementById('tokenInput').value.trim();
+  if(!pin){document.getElementById('loginMsg').textContent='PIN을 먼저 입력하세요';return;}
+  if(!tok){document.getElementById('loginMsg').textContent='토큰을 입력하거나 "읽기 전용"을 누르세요';return;}
+  lsSet(credKey(pendingUser),JSON.stringify({pinHash:cyrb(pin),tok:obfToken(tok,pin)}));token=tok;canWrite=true;enterApp();}
+function enterReadOnly(){token=null;canWrite=false;enterApp();}
+async function enterApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';
+  sessionUser=pendingUser;document.getElementById('whoami').textContent='👤 '+sessionUser+' '+(ADMIN_ROLE[sessionUser]||'');
+  switchMonth(curMonth());cacheLoad();renderAll();setSync('loading');await ghDetectBranch();await ghLoad();}
+function logout(){sessionUser=null;pendingUser=null;token=null;canWrite=false;pendingOps=[];document.getElementById('pin').value='';document.getElementById('tokenInput').value='';document.getElementById('loginMsg').textContent='';document.getElementById('setupBox').style.display='none';var els=document.querySelectorAll('#whoBtns button');for(var i=0;i<els.length;i++)els[i].classList.remove('ds-segmented__btn--active');document.getElementById('app').style.display='none';document.getElementById('login').style.display='flex';}
+function changeToken(){if(!sessionUser){toast('먼저 로그인하세요');return;}var tok=prompt('새 GitHub 토큰을 입력하세요');if(tok===null)return;tok=tok.trim();if(!tok){toast('취소됨');return;}var pin=prompt('이 기기의 PIN을 다시 입력하세요');if(pin===null)return;lsSet(credKey(sessionUser),JSON.stringify({pinHash:cyrb(pin),tok:obfToken(tok,pin)}));token=tok;canWrite=true;renderAll();setSync('ok');toast('토큰이 저장되었습니다');ghLoad();}
+function forgetDevice(){if(!sessionUser)return;if(!confirm('이 기기에서 '+sessionUser+' 토큰을 삭제할까요?'))return;lsDel(credKey(sessionUser));token=null;canWrite=false;renderAll();setSync('ro');toast('토큰을 삭제했습니다');}
+
+/* ================= 월/탭/테마/토스트 ================= */
+function switchMonth(mk){current=mk||curMonth();document.getElementById('monthPick').value=current;var d=deadline(current);var b=document.getElementById('dueBadge');b.textContent=d.txt;b.className='ds-badge '+(d.over?'ds-badge--danger':d.soon?'ds-badge--warning':'ds-badge--outline');renderAll();}
+function show(tab){var vs=document.querySelectorAll('.view');for(var i=0;i<vs.length;i++)vs[i].classList.remove('active');var el=document.getElementById('view-'+tab);if(el)el.classList.add('active');var bs=document.querySelectorAll('#tabs button');for(var j=0;j<bs.length;j++)bs[j].classList.toggle('ds-tab--active',bs[j].dataset.tab===tab);}
+function applyTheme(t){var de=document.documentElement;if(de&&de.setAttribute){if(t==='dark')de.setAttribute('data-theme','dark');else de.removeAttribute('data-theme');}lsSet(THEME,t);var b=document.getElementById('themeBtn');if(b)b.innerHTML=(t==='dark'?IC.sun:IC.moon);}
+function toggleTheme(){applyTheme(lsGet(THEME)==='dark'?'light':'dark');}
+var toastTimer=null;function toast(m){var t=document.getElementById('toast');if(!t)return;t.innerHTML='<div class="ds-toast ds-toast--info"><span class="ds-toast__icon">'+IC.info+'</span><div class="ds-toast__body"><p class="ds-toast__title">'+esc(m)+'</p></div></div>';t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2600);}
+
+/* ================= 초기화 ================= */
+(function seedIcons(){var m={'ic-info':IC.info,'ic-info2':IC.info,'ic-info3':IC.info,'ic-info4':IC.info,'ic-warn':IC.warn,'refreshBtn':IC.refresh};for(var id in m){var el=document.getElementById(id);if(el)el.innerHTML=m[id];}})();
+applyTheme(lsGet(THEME)||'light');
+document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.tab);});
+document.getElementById('pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('tokenInput').addEventListener('keydown',function(e){if(e.key==='Enter')doSetup();});
+window.addEventListener('focus',function(){if(sessionUser&&!pendingOps.length&&!syncing)ghLoad();});
+buildLogin();
+document.getElementById('monthPick').value=current;
+renderAll();
+</script>
+</body>
+</html>
