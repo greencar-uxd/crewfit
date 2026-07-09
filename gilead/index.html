@@ -380,7 +380,7 @@ async function doLogin(){var msg=document.getElementById('loginMsg');
   try{
     var snap=await db.ref('members/'+id+'/pin').once('value');
     var stored=snap.val();
-    if(!stored){msg.textContent=pendingUser+'님은 크루핏에 인증번호가 아직 없어요. 크루핏 앱에서 먼저 설정하세요.';return;}
+    if(!stored){if(!/^[0-9]{4}$/.test(pin)){msg.textContent='처음 접속: 원하는 숫자 4자리를 입력하세요';return;}if(!confirm(pendingUser+'님 첫 접속이에요. 입력한 4자리를 인증번호로 등록할까요? 다음부터 이 번호로 접속합니다.')){msg.textContent='';return;}try{await db.ref('members/'+id).update({pin:hashPin(pin),claimed:true,name:pendingUser});}catch(e){msg.textContent='등록 실패: '+(e.code||e.message);return;}toast(pendingUser+'님 인증번호가 등록됐어요');sessionUser=pendingUser;canWrite=true;lsSet(SESSION,pendingUser);enterApp();return;}
     if(hashPin(pin)===stored){msg.textContent='';sessionUser=pendingUser;canWrite=true;lsSet(SESSION,pendingUser);enterApp();}
     else{msg.textContent='인증번호가 올바르지 않습니다';document.getElementById('pin').value='';}
   }catch(e){msg.textContent='확인 실패: '+(e.code||e.message);}
