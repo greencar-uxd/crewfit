@@ -38,6 +38,8 @@
   .ds-tab{flex:0 0 auto;white-space:nowrap}
   .guide-list{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:var(--space-2)}
   .guide-list li{line-height:1.55}
+  .guide-stack{display:flex;flex-direction:column;gap:var(--space-5)}
+  .guide-stack>.ds-card{margin:0!important}
   .app{display:none}
   main{padding:var(--space-6) 0 var(--space-16)}
   .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:var(--space-4);margin-bottom:var(--space-5)}
@@ -195,7 +197,8 @@
     <section class="view" id="view-guide">
       <div class="sec-head"><p class="ds-kicker">동호회 운영 인수인계 · 회사 지원금 신청 절차</p></div>
 
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">회장 업무</h3>
+      <div class="guide-stack">
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">회장 업무</h3>
         <div class="ds-table-wrap"><table class="ds-table"><tbody>
           <tr><td style="width:150px;color:var(--text-tertiary)">활동내역 작성</td><td>회원 사진 촬영 후 <b>e-HR</b>에서 동호회 활동내역 작성 <span class="tiny">(현재 권한 없어 메뉴 미표시)</span></td></tr>
           <tr><td style="color:var(--text-tertiary)">입력값</td><td>날짜: 보통 회식한 날(자유선택) · 구장: <b>J클럽</b> · 인원: 활동 인원 수</td></tr>
@@ -203,7 +206,7 @@
         </tbody></table></div>
       </div>
 
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">총무 업무 · 개요</h3>
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">총무 업무 · 개요</h3>
         <ul class="guide-list">
           <li>구장비 납부: <b>월초(1~3일 내)</b></li>
           <li>동호회 지원금: <b class="tnum">인당 30,000원</b> — 활동내역 인원수대로 청구</li>
@@ -214,7 +217,7 @@
         </ul>
       </div>
 
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">① 법인카드 사용건 <span class="ds-badge ds-badge--accent">법인</span></h3>
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">① 법인카드 사용건 <span class="ds-badge ds-badge--accent">법인</span></h3>
         <p class="ds-kicker" style="margin-bottom:var(--space-2)">E-HR</p>
         <ul class="guide-list">
           <li>복리후생 &gt; 동호회 &gt; 지원비 신청</li>
@@ -229,7 +232,7 @@
         </ul>
       </div>
 
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">② 계좌이체(현금)건 <span class="ds-badge ds-badge--neutral">현금</span></h3>
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">② 계좌이체(현금)건 <span class="ds-badge ds-badge--neutral">현금</span></h3>
         <p class="tiny" style="margin:0 0 var(--space-2)">E-Accounting 일반전표 입력값</p>
         <div class="ds-table-wrap"><table class="ds-table"><tbody>
           <tr><td style="width:130px;color:var(--text-tertiary)">계정유형</td><td>KBD2 복리후생비-동호회지원</td></tr>
@@ -252,6 +255,7 @@
           <li>과거: 회장·총무 모두 인프라파트 → 아무 계좌로 해도 무관</li>
           <li>현재: 회장 인프라파트 / 총무 backend파트 → <b>부서 분리로 문제 발생</b></li>
         </ul>
+      </div>
       </div>
 
       <p class="tiny" style="margin-top:var(--space-3);color:var(--text-tertiary)">출처: G리아드 인수인계 문서(2026-07). 회사 시스템 화면·절차는 바뀔 수 있으니 실제 e-HR/E-Accounting에서 확인 요망.</p>
