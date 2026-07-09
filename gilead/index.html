@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CrewFit · G리아드 운영</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%2250%22 y=%2254%22 font-size=%2278%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>🎱</text></svg>">
 <link rel="stylesheet" href="https://greencar-uxd.github.io/design-system/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -23,14 +24,12 @@
   .tnum{font-variant-numeric:tabular-nums}
   .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--space-5);background:var(--surface-page);overflow:auto}
   .login .box{width:100%;max-width:404px}
-  .brandmark{width:44px;height:44px;border-radius:var(--radius-md);background:var(--accent);display:grid;place-items:center;margin:0 auto var(--space-3)}
-  .brandmark span{width:16px;height:16px;border-radius:var(--radius-xs);background:var(--on-accent)}
+  .brandmark{width:48px;height:48px;display:grid;place-items:center;margin:0 auto var(--space-3);font-size:38px;line-height:1}
   .appheader{position:sticky;top:0;z-index:20;background:var(--surface-card);border-bottom:1px solid var(--border)}
   .appheader__row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0}
   .hdr-brand{flex:1 1 auto;min-width:0}
   .hdr-ctrls{display:flex;align-items:center;gap:var(--space-2);flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
-  .brand-sq{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--accent);flex:none;display:grid;place-items:center}
-  .brand-sq span{width:11px;height:11px;border-radius:3px;background:var(--on-accent)}
+  .brand-sq{width:32px;height:32px;flex:none;display:grid;place-items:center;font-size:26px;line-height:1}
   .brand-tt{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-lg);letter-spacing:var(--ls-snug);color:var(--text-primary);line-height:1.1}
   .brand-sub{font:var(--text-caption);color:var(--text-tertiary)}
   .subbar{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;padding-bottom:var(--space-3)}
@@ -82,7 +81,7 @@
     <div style="display:flex;justify-content:flex-end;margin-bottom:calc(-1 * var(--space-2))">
       <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="themeBtnLogin" title="다크모드 켜기/끄기" onclick="toggleTheme()"></button>
     </div>
-    <div class="brandmark"><span></span></div>
+    <div class="brandmark">🎱</div>
     <h1 style="font:var(--text-h3);text-align:center;margin:0 0 var(--space-1)">CrewFit · G리아드</h1>
     <p class="tiny" style="text-align:center;margin:0 0 var(--space-5)">운영진 전용 · (주)그린카</p>
     <div class="ds-segmented" id="whoBtns" style="width:100%;margin-bottom:var(--space-4)"></div>
@@ -100,7 +99,7 @@
   <header class="appheader">
     <div class="wrap">
       <div class="appheader__row">
-        <div class="brand-sq"><span></span></div>
+        <div class="brand-sq">🎱</div>
         <div class="hdr-brand">
           <div class="brand-tt">CrewFit · G리아드</div>
           <div class="brand-sub">당구 동호회 · (주)그린카 · 회장 강민관 / 총무 정종욱</div>
