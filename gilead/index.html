@@ -34,6 +34,8 @@
   .brand-sub{font:var(--text-caption);color:var(--text-tertiary)}
   .subbar{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;padding-bottom:var(--space-3)}
   .tabs-wrap{overflow-x:auto}
+  .guide-list{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:var(--space-2)}
+  .guide-list li{line-height:1.55}
   .app{display:none}
   main{padding:var(--space-6) 0 var(--space-16)}
   .grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(224px,1fr));gap:var(--space-4);margin-bottom:var(--space-5)}
@@ -126,6 +128,7 @@
           <button class="ds-tab" data-tab="expense">지출</button>
           <button class="ds-tab" data-tab="report">월별 결산</button>
           <button class="ds-tab" data-tab="settings">설정·연동</button>
+          <button class="ds-tab" data-tab="guide">운영 가이드</button>
         </div>
       </div>
     </div>
@@ -185,6 +188,71 @@
         <p class="tiny" style="margin:0 0 var(--space-2)">활동회원 12명</p><div class="names" id="listActive" style="margin-bottom:var(--space-4)"></div>
         <p class="tiny" style="margin:0 0 var(--space-2)">고스트회원 5명</p><div class="names" id="listGhost"></div>
       </div>
+    </section>
+
+    <section class="view" id="view-guide">
+      <div class="sec-head"><p class="ds-kicker">동호회 운영 인수인계 · 회사 지원금 신청 절차</p></div>
+
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">회장 업무</h3>
+        <div class="ds-table-wrap"><table class="ds-table"><tbody>
+          <tr><td style="width:150px;color:var(--text-tertiary)">활동내역 작성</td><td>회원 사진 촬영 후 <b>e-HR</b>에서 동호회 활동내역 작성 <span class="tiny">(현재 권한 없어 메뉴 미표시)</span></td></tr>
+          <tr><td style="color:var(--text-tertiary)">입력값</td><td>날짜: 보통 회식한 날(자유선택) · 구장: <b>J클럽</b> · 인원: 활동 인원 수</td></tr>
+          <tr><td style="color:var(--text-tertiary)">게시판</td><td>동일 내용 게시판에도 작성 — 제목 <b>&ldquo;2026-07 G리아드 동호회 활동 내역&rdquo;</b>, 내용은 e-HR과 동일</td></tr>
+        </tbody></table></div>
+      </div>
+
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">총무 업무 · 개요</h3>
+        <ul class="guide-list">
+          <li>구장비 납부: <b>월초(1~3일 내)</b></li>
+          <li>동호회 지원금: <b class="tnum">인당 30,000원</b> — 활동내역 인원수대로 청구</li>
+          <li>회장이 e-HR에 작성한 내역을 토대로 비용신청</li>
+          <li>순서: <b>E-HR 활동내역서 작성 · 동호회 비용신청 → 승인 시 예산 증액 → E-Accounting 전표처리</b></li>
+          <li>피플에서 동호회비 결재완료 후 <b>품의서</b> 작성·결재완료 → 경영기획파트가 가용예산 반영</li>
+          <li>물품 구비: 구매 전 리스트를 <b>동호회담당자(황선우M)</b>에게 확인받고 구매</li>
+        </ul>
+      </div>
+
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">① 법인카드 사용건 <span class="ds-badge ds-badge--accent">법인</span></h3>
+        <p class="ds-kicker" style="margin-bottom:var(--space-2)">E-HR</p>
+        <ul class="guide-list">
+          <li>복리후생 &gt; 동호회 &gt; 지원비 신청</li>
+          <li>지급계좌 선택 <span class="tiny">(예산이 부서로 반영되어 infra파트·backend파트 <b>따로따로</b> 신청)</span></li>
+          <li>신청금액: 경비산출내역 총금액 · 행사일: 게시판 작성일 · 행사장소: J당구장/회식장소 · 경비산출내역: 영수증 참고</li>
+        </ul>
+        <p class="ds-kicker" style="margin:var(--space-3) 0 var(--space-2)">E-Accounting</p>
+        <ul class="guide-list">
+          <li>가용예산이 0원으로 보여도 <b>계정유형 입력</b> 시 예산 확인 가능</li>
+          <li>사용목적: 동호회 회식비 / 동호회 물품 구입비</li>
+          <li>작성 후 전송 → 리더 → 실장 결재</li>
+        </ul>
+      </div>
+
+      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">② 계좌이체(현금)건 <span class="ds-badge ds-badge--neutral">현금</span></h3>
+        <p class="tiny" style="margin:0 0 var(--space-2)">E-Accounting 일반전표 입력값</p>
+        <div class="ds-table-wrap"><table class="ds-table"><tbody>
+          <tr><td style="width:130px;color:var(--text-tertiary)">계정유형</td><td>KBD2 복리후생비-동호회지원</td></tr>
+          <tr><td style="color:var(--text-tertiary)">전기일(증빙일)</td><td>동호회 활동월 말일</td></tr>
+          <tr><td style="color:var(--text-tertiary)">거래처코드</td><td>신청자 본인(회장 or 총무)</td></tr>
+          <tr><td style="color:var(--text-tertiary)">지급조건</td><td>0001 지급일 지정 지급</td></tr>
+          <tr><td style="color:var(--text-tertiary)">지급방법</td><td>펌뱅킹이체 · 지급계좌: 급여계좌</td></tr>
+          <tr><td style="color:var(--text-tertiary)">증빙 / 세금</td><td>기타증빙 · 부가세 제외</td></tr>
+          <tr><td style="color:var(--text-tertiary)">지급계정</td><td>미지급금-자금출금 · 지급예정일: 월별 개인경비 지급일</td></tr>
+          <tr><td style="color:var(--text-tertiary)">결의제목</td><td><b>&ldquo;24년 O월 동호회 지원금 신청(동호회명)&rdquo;</b></td></tr>
+          <tr><td style="color:var(--text-tertiary)">전자증빙</td><td>현금 결제 영수증(계좌이체 내역) · 증빙종류 [기타] 거래명세서</td></tr>
+          <tr><td style="color:var(--text-tertiary)">금액</td><td>동호회비 결제건 中 현금 사용 내역</td></tr>
+        </tbody></table></div>
+      </div>
+
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">주의 · 부서 분리 이슈</h3>
+        <ul class="guide-list">
+          <li>예산이 <b>부서로 반영</b>되어, 회장·총무 부서가 다르면 e-HR 동호회비 지원을 <b>부서별로 따로</b> 요청해야 함</li>
+          <li>한 명이 동호회지원비를 올리면 <b>예산변경 신청</b> 필요</li>
+          <li>과거: 회장·총무 모두 인프라파트 → 아무 계좌로 해도 무관</li>
+          <li>현재: 회장 인프라파트 / 총무 backend파트 → <b>부서 분리로 문제 발생</b></li>
+        </ul>
+      </div>
+
+      <p class="tiny" style="margin-top:var(--space-3);color:var(--text-tertiary)">출처: G리아드 인수인계 문서(2026-07). 회사 시스템 화면·절차는 바뀔 수 있으니 실제 e-HR/E-Accounting에서 확인 요망.</p>
     </section>
   </main>
 </div>
