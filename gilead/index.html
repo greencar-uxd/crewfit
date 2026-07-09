@@ -153,7 +153,7 @@
         <div class="formgrid">
           <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="exDate" type="date" style="width:170px"></div>
           <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="exMemo" placeholder="예: 당구장비 결제 / 회식"></div>
-          <div class="ds-field"><label class="ds-field__label">재원</label><select class="ds-select" id="exFund" style="width:180px"><option value="toss">🟢 토스 모임통장</option><option value="card">🔵 법인카드(지출결의)</option></select></div>
+          <div class="ds-field"><label class="ds-field__label">재원</label><select class="ds-select" id="exFund" style="width:180px"><option value="" disabled selected>재원 선택</option><option value="toss">🟢 토스 모임통장</option><option value="card">🔵 법인카드(지출결의)</option></select></div>
           <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="exAmt" type="number" min="0" step="1000" style="width:140px"></div>
           <button class="ds-btn ds-btn--primary ds-btn--md" onclick="addExpense()">＋ 추가</button>
         </div></div>
@@ -346,7 +346,7 @@ function buildCheckTable(names,withDues){var m=M(current);
 function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(ACTIVE,true);document.getElementById('ghostTable').innerHTML=buildCheckTable(GHOST,false);}
 function toggleDue(n){var m=M(current);mutate({t:'due',mk:current,name:n,v:!m.dues[n]});}
 function togglePhoto(n){var m=M(current);mutate({t:'photo',mk:current,name:n,v:!m.photos[n]});}
-function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();var fund=(document.getElementById('exFund')&&document.getElementById('exFund').value)||'toss';mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt,fund:fund}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';}
+function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();var fund=(document.getElementById('exFund')&&document.getElementById('exFund').value)||'';if(!fund){toast('재원을 선택하세요 (토스/법인카드)');return;}mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt,fund:fund}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';document.getElementById('exFund').value='';}
 function addIncome(){var amt=parseInt(document.getElementById('inAmt').value)||0;var memo=document.getElementById('inMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('inDate').value||todayISO();mutate({t:'add',kind:'income',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt}});document.getElementById('inMemo').value='';document.getElementById('inAmt').value='';}
 function delItem(kind,mk,id){mutate({t:'del',kind:kind,mk:mk,id:id});}
 function renderExpense(){var m=M(current);document.getElementById('exListTitle').textContent=current.replace('-','년 ')+'월 내역';var rows=[];
