@@ -91,7 +91,6 @@
       <input class="ds-input" id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" style="text-align:center;letter-spacing:8px;font-size:var(--fs-lg)">
     </div>
     <button class="ds-btn ds-btn--primary ds-btn--md ds-btn--block" style="margin-top:var(--space-3)" onclick="doLogin()">접속</button>
-    <button class="ds-btn ds-btn--ghost ds-btn--sm ds-btn--block" style="margin-top:var(--space-2)" onclick="enterReadOnly()">읽기 전용으로 보기</button>
     <p id="loginMsg" class="ds-field__error" style="min-height:18px;margin:var(--space-2) 0 0"></p>
     <div class="ds-alert ds-alert--info" style="margin-top:var(--space-4)">
       <span class="ds-alert__icon" id="ic-info"></span>
@@ -411,7 +410,7 @@ document.getElementById('monthPick').value=current;
 fbInit();
 renderAll();
 /* 로그인 유지 — 새로고침해도 세션 복원 */
-(function(){var sv=lsGet(SESSION);if(sv==='__ro__'){enterReadOnly();}else if(sv&&ADMIN_ROLE[sv]){sessionUser=sv;canWrite=true;enterApp();}})();
+(function(){var sv=lsGet(SESSION);if(sv&&ADMIN_ROLE[sv]){sessionUser=sv;canWrite=true;enterApp();}})();
 </script>
 </body>
 </html>
