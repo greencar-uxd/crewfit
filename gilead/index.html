@@ -43,6 +43,9 @@
   .names{display:flex;flex-wrap:wrap;gap:var(--space-2)}
   .checklist{display:flex;flex-direction:column;gap:var(--space-2)}
   .checkrow{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface-card)}
+  .ck-box{width:20px;height:20px;flex:none;border:1.5px solid var(--border-strong);border-radius:var(--radius-xs);display:inline-flex;align-items:center;justify-content:center;background:var(--surface-card)}
+  .ck-box.on{background:var(--accent);border-color:var(--accent)}
+  .ck-box svg{width:13px;height:13px;color:#fff;display:block}
   .cell-toggle{display:flex;justify-content:center}
   #toast{position:fixed;left:50%;bottom:var(--space-6);transform:translateX(-50%);z-index:200;opacity:0;transition:opacity var(--dur-base) var(--ease-out);pointer-events:none;max-width:92vw}
   #toast.show{opacity:1}
@@ -325,7 +328,7 @@ function renderDash(){var s=stats(current);
   document.getElementById('checklist').innerHTML=[{key:'pay',label:'당구장비 결제 (매월 1일)'},{key:'photo',label:'전원 사진 촬영 완료 ('+s.photoDone+'/17)',auto:s.allPhoto},{key:'resolve',label:'지출결의 제출 (마감 18일)'}].map(function(it){
     var done=it.auto!=null?it.auto:!!m.checklist[it.key];
     var oc=it.auto!=null?'':' onclick="toggleCheck(\''+it.key+'\')" style="cursor:pointer"';
-    var box='<span class="ds-check__box" style="'+(done?'background:var(--accent);border-color:var(--accent)':'')+'">'+(done?'<span style="width:13px;height:13px;color:#fff">'+IC.check+'</span>':'')+'</span>';
+    var box='<span class="ck-box'+(done?' on':'')+'">'+(done?IC.check:'')+'</span>';
     return '<div class="checkrow"'+oc+'>'+box+'<span style="'+(done?'color:var(--text-tertiary);text-decoration:line-through':'')+'">'+it.label+'</span></div>';}).join('');
   var mos=monthsBack(6),vs=mos.map(function(mk){return stats(mk).expenseTotal;}),mx=Math.max.apply(null,vs.concat([1]));
   document.getElementById('dashChart').innerHTML=mos.map(function(mk,i){var h=Math.max(2,Math.round(vs[i]/mx*120)),cur=(mk===current);
