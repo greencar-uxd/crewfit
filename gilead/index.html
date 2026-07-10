@@ -16,7 +16,7 @@
   html,body{margin:0;overflow-x:hidden;overscroll-behavior-x:none}  /* 페이지 자체는 절대 좌우로 안 움직임 */
   .ds-input,.ds-select,textarea{box-sizing:border-box;max-width:100%}  /* width:100%+패딩이 컨테이너를 넘지 않게 */
   /* iOS date/month 인풋: 네이티브 렌더가 고유 폭·높이·중앙정렬을 강제해 카드 밖으로 넘침 → 벗겨서 일반 인풋처럼 */
-  input.ds-input[type=date],input.ds-input[type=month]{-webkit-appearance:none;appearance:none;min-width:0;display:block;text-align:left}
+  input.ds-input[type=date],input.ds-input[type=month]{-webkit-appearance:none;appearance:none;min-width:0;display:block;text-align:left;height:44px;line-height:44px;padding-top:0!important;padding-bottom:0!important}  /* iOS 내부 컨테이너가 높이를 늘리는 것 방지 — 다른 인풋과 동일 높이 */
   input.ds-input[type=date]::-webkit-date-and-time-value,input.ds-input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
   body{background:var(--surface-page);color:var(--text-primary);font:var(--text-body);font-family:var(--font-text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
