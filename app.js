@@ -16,6 +16,9 @@
   var MYTOKEN = localStorage.getItem("srk_token") || ("t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
   localStorage.setItem("srk_token", MYTOKEN);
   var state = { screen: "clubs", clubId: null, sessionId: "summer-mt", tab: "home", pollId: null, alert: "notice", hubTab: "schedule", boardTab: "notice" };
+  // 새로고침 시 보던 화면 복원 (pollId 같은 일시 상태는 제외 · 유효성은 첫 부팅 때 검증)
+  try { var _sv = JSON.parse(localStorage.getItem("srk_view") || "0"); if (_sv && _sv.screen) { state.screen = _sv.screen; state.clubId = _sv.clubId || null; state.sessionId = _sv.sessionId || "summer-mt"; state.tab = _sv.tab || "home"; state.alert = _sv.alert || "notice"; state.hubTab = _sv.hubTab || "schedule"; state.boardTab = _sv.boardTab || "notice"; } } catch (e) {}
+  var navChecked = false;  // 복원한 화면이 여전히 유효한지(크루·일정 존재) 첫 데이터 수신 때 1회 검증
   var viewHist = [], lastSig = null, backing = false; // 뒤로가기용 화면 히스토리
   var intro = { step: "name", pick: null, car: false, newName: null };
   var booted = false;
@@ -562,6 +565,7 @@
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
     var _sameView = (lastSig === sig);
     lastSig = sig;
+    try { localStorage.setItem("srk_view", JSON.stringify({ screen: state.screen, clubId: state.clubId, sessionId: state.sessionId, tab: state.tab, alert: state.alert, hubTab: state.hubTab, boardTab: state.boardTab })); } catch (e) {}
     var main = $("#app-main");
     var appEl = $("#app");
     appEl.classList.remove("lvl-top", "club-themed", "acc-red", "acc-blue", "acc-green", "acc-purple", "acc-orange");
@@ -2719,6 +2723,11 @@
       var dmme = DB.members[me];
       // 이 기기는 localStorage(srk_me)로 기억됨 → 입장 유지. 이름이 사라졌거나 입장 해제(인증 초기화)됐으면 게이트로.
       if (!dmme || !dmme.claimed) { me = null; localStorage.removeItem("srk_me"); intro.step = "name"; intro.pick = null; }
+    }
+    if (!navChecked) {  // 복원 화면 유효성 1회 검증 (삭제된 크루·일정이면 안전한 화면으로)
+      navChecked = true;
+      if (state.screen === "session" && !currentSession()) { state.screen = (state.clubId && currentClub()) ? "hub" : "clubs"; state.pollId = null; }
+      if (state.screen === "hub" && state.clubId && !currentClub()) { state.screen = "clubs"; state.clubId = null; }
     }
     render();
   });
