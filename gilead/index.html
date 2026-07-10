@@ -72,6 +72,7 @@
     .formgrid{gap:var(--space-2)}
     .formgrid .ds-field{flex:1 1 100%}
     .formgrid .ds-field .ds-input,.formgrid .ds-field .ds-select{width:100%!important}
+    input.ds-input,select.ds-select,textarea{font-size:16px}  /* iOS 포커스 자동 확대 방지(16px 미만이면 줌됨) */
     .formgrid > .ds-btn{width:100%}
     .subbar{gap:var(--space-2)}
     .subbar .ds-field{flex:1 1 100%}
@@ -157,14 +158,14 @@
           <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="exDate" type="date" style="width:170px"></div>
           <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="exMemo" placeholder="예: 당구장비 결제 / 회식"></div>
           <div class="ds-field"><label class="ds-field__label">재원</label><select class="ds-select" id="exFund" style="width:180px"><option value="" disabled selected>재원 선택</option><option value="toss">토스 모임통장</option><option value="card">법인카드(지출결의)</option></select></div>
-          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="exAmt" type="number" min="0" step="1000" style="width:140px"></div>
+          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="exAmt" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1000" style="width:140px"></div>
           <button class="ds-btn ds-btn--primary ds-btn--md" onclick="addExpense()">＋ 추가</button>
         </div></div>
       <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">기타 수입 <span class="tiny">· 회사 지원금 수령 등</span></h3>
         <div class="formgrid">
           <div class="ds-field"><label class="ds-field__label">날짜</label><input class="ds-input" id="inDate" type="date" style="width:170px"></div>
           <div class="ds-field" style="flex:1 1 200px"><label class="ds-field__label">내용</label><input class="ds-input" id="inMemo" placeholder="예: 회사 회식비 지원 수령"></div>
-          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="inAmt" type="number" min="0" step="1000" style="width:140px"></div>
+          <div class="ds-field"><label class="ds-field__label">금액(원)</label><input class="ds-input tnum" id="inAmt" type="number" inputmode="numeric" pattern="[0-9]*" min="0" step="1000" style="width:140px"></div>
           <button class="ds-btn ds-btn--secondary ds-btn--md" onclick="addIncome()">＋ 추가</button>
         </div></div>
       <div class="ds-card ds-card--pad"><h3 class="panel-title" id="exListTitle">이번 달 내역</h3><div id="exList"></div></div>
@@ -179,7 +180,7 @@
         <div class="ds-table-wrap"><table class="ds-table"><tbody>
           <tr><td style="width:200px;color:var(--text-tertiary)">동호회 / 소속</td><td>G리아드 (CREWFIT) · (주)그린카</td></tr>
           <tr><td style="color:var(--text-tertiary)">회장 / 총무</td><td>강민관 / 정종욱</td></tr>
-          <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td><input class="ds-input tnum" id="feeInput" type="number" step="1000" style="width:130px" onchange="setFee(this.value)"> 원</td></tr>
+          <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td><input class="ds-input tnum" id="feeInput" type="number" inputmode="numeric" pattern="[0-9]*" step="1000" style="width:130px" onchange="setFee(this.value)"> 원</td></tr>
           <tr><td style="color:var(--text-tertiary)">당구장 결제일 / 지출결의</td><td>매월 1일 / 매월 18일 마감</td></tr>
         </tbody></table></div>
       </div>
