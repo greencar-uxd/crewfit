@@ -45,7 +45,7 @@
   .guide-list li{line-height:1.55}
   .ds-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;max-width:100%}  /* 넓은 표는 표 안에서만 스크롤 */
   .ds-table th,.ds-table td{white-space:nowrap}          /* 셀 내용 한 줄 고정(넘치면 가로 스크롤) */
-  #view-guide .ds-table th,#view-guide .ds-table td,#view-settings .ds-table th,#view-settings .ds-table td{white-space:normal}  /* 가이드·설정 표는 설명형 긴 텍스트라 예외(줄바꿈 허용, 스크롤 없음) */
+  #view-guide .ds-table th,#view-guide .ds-table td{white-space:normal}  /* 가이드 표만 긴 문장이라 예외 */
   .guide-stack{display:flex;flex-direction:column;gap:var(--space-5)}
   .guide-stack>.ds-card{margin:0!important}
   .app{display:none}
@@ -80,7 +80,6 @@
     .formgrid .ds-field{flex:1 1 100%}
     .formgrid .ds-field .ds-input,.formgrid .ds-field .ds-select{width:100%!important}
     input.ds-input,select.ds-select,textarea{font-size:16px}  /* iOS 포커스 자동 확대 방지(16px 미만이면 줌됨) */
-    #view-settings .ds-table td:first-child{width:110px!important}  /* 라벨 200px 고정이 좁은 화면서 값 칸을 짜부라뜨림 */
     .formgrid > .ds-btn{width:100%}
     .subbar{gap:var(--space-2)}
     .subbar .ds-field{flex:1 1 100%}
