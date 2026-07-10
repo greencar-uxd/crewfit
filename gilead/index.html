@@ -292,7 +292,7 @@ var IC={
 
 /* ================= 유틸 ================= */
 var ALL=ACTIVE.concat(GHOST);
-var CACHE='gilead_cache_v3', THEME='gilead_theme', SESSION='gilead_session_v1';
+var CACHE='gilead_cache_v3', THEME='gilead_theme', SESSION='gilead_session_v1', TABKEY='gilead_tab';
 var _mem={};
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return _mem[k]||null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){_mem[k]=v;}}
@@ -458,7 +458,7 @@ function logout(){lsDel(SESSION);sessionUser=null;pendingUser=null;canWrite=fals
 
 /* ================= 월/탭/테마/토스트 ================= */
 function switchMonth(mk){current=mk||curMonth();document.getElementById('monthPick').value=current;var d=deadline(current);var b=document.getElementById('dueBadge');b.textContent=d.txt;b.className='ds-badge '+(d.over?'ds-badge--danger':d.soon?'ds-badge--warning':'ds-badge--outline');renderAll();}
-function show(tab){var vws=document.querySelectorAll('.view');for(var i=0;i<vws.length;i++)vws[i].classList.remove('active');var el=document.getElementById('view-'+tab);if(el)el.classList.add('active');var bs=document.querySelectorAll('#tabs button');for(var j=0;j<bs.length;j++)bs[j].classList.toggle('ds-tab--active',bs[j].dataset.tab===tab);}
+function show(tab){var vws=document.querySelectorAll('.view');for(var i=0;i<vws.length;i++)vws[i].classList.remove('active');var el=document.getElementById('view-'+tab);if(el)el.classList.add('active');var bs=document.querySelectorAll('#tabs button');for(var j=0;j<bs.length;j++)bs[j].classList.toggle('ds-tab--active',bs[j].dataset.tab===tab);lsSet(TABKEY,tab);}
 function applyTheme(t){var de=document.documentElement;if(de&&de.setAttribute){if(t==='dark')de.setAttribute('data-theme','dark');else de.removeAttribute('data-theme');}lsSet(THEME,t);['themeBtn','themeBtnLogin'].forEach(function(id){var b=document.getElementById(id);if(b)b.innerHTML=(t==='dark'?IC.sun:IC.moon);});}
 function toggleTheme(){applyTheme(lsGet(THEME)==='dark'?'light':'dark');}
 var toastTimer=null;function toast(m){var t=document.getElementById('toast');if(!t)return;t.innerHTML='<div class="ds-toast ds-toast--info"><span class="ds-toast__icon">'+IC.info+'</span><div class="ds-toast__body"><p class="ds-toast__title">'+esc(m)+'</p></div></div>';t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},2600);}
@@ -466,6 +466,8 @@ var toastTimer=null;function toast(m){var t=document.getElementById('toast');if(
 /* ================= 초기화 ================= */
 (function(){var m={'ic-info':IC.info,'ic-info2':IC.info,'ic-info3':IC.info,'ic-info5':IC.info,'ic-warn':IC.warn};for(var id in m){var el=document.getElementById(id);if(el)el.innerHTML=m[id];}})();
 applyTheme(lsGet(THEME)||'light');
+/* 새로고침 시 보던 탭 복원 (마지막 탭을 localStorage에 저장) */
+(function(){var t=lsGet(TABKEY);if(t&&document.getElementById('view-'+t))show(t);})();
 /* 날짜 인풋 기본값=오늘 — appearance:none 상태의 iOS date는 빈 값이면 아무것도 안 보임 */
 (function(){var t=todayISO(),a=document.getElementById('exDate'),b=document.getElementById('inDate');if(a&&!a.value)a.value=t;if(b&&!b.value)b.value=t;})();
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.tab);});
