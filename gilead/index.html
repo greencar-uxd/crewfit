@@ -59,11 +59,14 @@
   details.ds-acc summary::-webkit-details-marker{display:none}
   /* ===== 모바일 반응형 ===== */
   @media(max-width:640px){
-    .appheader__row{flex-wrap:wrap;gap:var(--space-2);padding:var(--space-2) 0}
+    .appheader__row{flex-wrap:nowrap;gap:var(--space-2);padding:var(--space-2) 0}  /* 브랜드+컨트롤 한 줄 강제 */
+    .brand-sq{width:26px;height:26px;font-size:21px}
     .brand-sub{display:none}
-    .brand-tt{font-size:var(--fs-base)}
-    .hdr-ctrls{flex:0 1 auto;justify-content:flex-end;gap:var(--space-2);margin-left:auto}  /* 브랜드와 같은 줄 오른쪽 */
-    .hdr-ctrls .ds-badge{font-size:11px;padding:4px 8px}
+    .hdr-brand{min-width:0}
+    .brand-tt{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}  /* 공간 부족 시 브랜드만 말줄임 */
+    .hdr-ctrls{flex:0 0 auto;justify-content:flex-end;gap:var(--space-1);margin-left:auto}
+    .hdr-ctrls .ds-badge{font-size:10px;padding:3px 6px}
+    .hdr-ctrls .ds-btn{font-size:12px;padding:4px 8px}
     main.wrap{padding-top:var(--space-4);padding-bottom:var(--space-4)}
     .grid-cards{grid-template-columns:1fr;gap:var(--space-3)}
     .ds-card--pad{padding:var(--space-4)}
