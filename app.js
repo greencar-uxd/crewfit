@@ -222,6 +222,14 @@
   function clubNotices(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubnotices) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return ((b.pinned ? 1e15 : 0) + (b.ts || 0)) - ((a.pinned ? 1e15 : 0) + (a.ts || 0)); }); }
   function clubPolls(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubpolls) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return ((a.closed ? 1 : 0) - (b.closed ? 1 : 0)) || (b.ts || 0) - (a.ts || 0); }); }
   function clubDues(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubdues) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
+  // ── G리아드 운영관리(gilead 앱) 회비 연동 ──────────────────────────
+  // 같은 Firebase의 gilead/months/{YYYY-MM}/dues/{이름}=true 가 진실원본.
+  // 이름에 'G리아드'가 들어간 크루는 자체 회비(clubdues) 대신 이 데이터를 표시(읽기 전용).
+  function gileadData() { return (RAW && RAW.gilead) || null; }
+  function isGileadClub(c) { return !!(c && (c.name || "").indexOf("G리아드") >= 0 && gileadData()); }
+  function gileadMonth() { return new Date().toISOString().slice(0, 7); }   // gilead 앱과 동일 기준
+  function gileadFee() { var g = gileadData(); return (g && g.settings && +g.settings.fee) || 30000; }
+  function gileadPaidByName(name) { var g = gileadData(); var m = g && g.months && g.months[gileadMonth()]; return !!(m && m.dues && m.dues[name]); }
   function climbStats(cid) {
     var agg = {};
     clubRecords(cid, "climb").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, sends: 0, maxGrade: 0, ts: 0, grades: [] }); a.sends++; var g = +r.grade || 0; a.grades.push(g); if (g > a.maxGrade) a.maxGrade = g; if ((r.ts || 0) > a.ts) a.ts = r.ts || 0; });
@@ -666,12 +674,18 @@
       var role = (r && r.role) || roleOf(me) || "crew";
       var cls = role === "manager" ? "mgr" : role === "staff" ? "admin" : "crew";
       var label = role === "manager" ? "관리자" : role === "staff" ? "운영진" : "크루원";
-      var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
-      var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
+      var dueHtml = "";
+      if (isGileadClub(c)) {  // 운영관리(gilead) 연동: 이번 달 납부 체크 기준
+        if (!gileadPaidByName(memberName(me))) dueHtml = ' · <span class="me-due">미납 회비 ' + won(gileadFee()) + "</span>";
+      } else {
+        var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
+        var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
+        if (unpaid.length) dueHtml = ' · <span class="me-due">미납 회비 ' + won(owe) + "</span>";
+      }
       h += '<div class="card me-row" data-action="open-club" data-id="' + esc(c.id) + '">' +
         clubAvatar(c, 30) +
         '<div class="me-mid"><div class="me-tt">' + esc(c.name) + '</div>' +
-        '<div class="me-ss">' + esc(sportLabel(c.sport)) + (unpaid.length ? ' · <span class="me-due">미납 회비 ' + won(owe) + '</span>' : "") + '</div></div>' +
+        '<div class="me-ss">' + esc(sportLabel(c.sport)) + dueHtml + '</div></div>' +
         '<span class="me-tr"><span class="rbadge ' + cls + '">' + label + '</span><span class="me-go">›</span></span></div>';
     });
     return h + "</div>";
@@ -1222,6 +1236,7 @@
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club-poll">만들기</button></div>');
   }
   function boardDues(club) {
+    if (isGileadClub(club)) return gileadDuesCard(club);  // G리아드는 운영관리 앱 데이터로 표시
     var cid = club.id, list = clubDues(cid), mng = canManage(me), roster = clubRoster(cid), n = roster.length, h = "";
     if (mng) h += '<button class="btn-pri btn-block" data-action="add-club-dues" style="margin-bottom:12px">' + icon("plus", 16) + " 회비 항목 추가</button>";
     if (!list.length) return h + '<div class="empty-msg">아직 회비 항목이 없어요.' + (mng ? "" : " 운영진이 회비를 등록하면 여기 표시돼요.") + "</div>";
@@ -1245,6 +1260,25 @@
       }
       h += "</div>";
     });
+    return h + "</div>";
+  }
+  function gileadDuesCard(club) {
+    var mk = gileadMonth(), g = gileadData(), m = (g.months && g.months[mk]) || {}, dues = obj(m.dues);
+    var roster = clubRoster(club.id), n = roster.length, fee = gileadFee();
+    var paidCnt = roster.filter(function (r) { return dues[memberName(r.id) || r.name]; }).length;
+    var pct = n ? Math.round(paidCnt / n * 100) : 0, myPaid = gileadPaidByName(memberName(me));
+    var h = '<div class="card dues-card"><div class="dues-top"><div style="min-width:0"><div class="dues-title">' + mk.replace("-", "년 ") + '월 회비</div>' +
+      '<div class="dues-amt">1인 ' + won(fee) + ' · G리아드 운영관리와 실시간 연동</div></div>' +
+      (rankCanRec(club.id) ? '<span class="rbadge ' + (myPaid ? "mgr" : "crew") + '">' + (myPaid ? "납부완료" : "미납") + "</span>" : "") + "</div>" +
+      '<div class="dues-prog"><div class="dues-bar" style="width:' + pct + '%"></div></div>' +
+      '<div class="dues-stat">' + paidCnt + "/" + n + "명 납부 · " + won(paidCnt * fee) + " / " + won(n * fee) + "</div>";
+    h += '<div class="dues-members">';
+    roster.forEach(function (r) {
+      var nm = memberName(r.id) || r.name, on = !!dues[nm];
+      h += '<span class="dues-mem' + (on ? " on" : "") + '">' + avatar(r.id, 22) + "<span>" + esc(nm) + '</span><span class="dm-state">' + (on ? "납부" : "미납") + "</span></span>";
+    });
+    h += "</div>";
+    h += '<div class="hint" style="margin-top:8px">납부 체크는 <a href="gilead/" target="_blank" rel="noopener">G리아드 운영관리</a>에서 관리해요 (회장·총무)</div>';
     return h + "</div>";
   }
   function formClubDues() {
