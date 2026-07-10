@@ -15,6 +15,9 @@
   *{box-sizing:border-box}
   html,body{margin:0;overflow-x:hidden;overscroll-behavior-x:none}  /* 페이지 자체는 절대 좌우로 안 움직임 */
   .ds-input,.ds-select,textarea{box-sizing:border-box;max-width:100%}  /* width:100%+패딩이 컨테이너를 넘지 않게 */
+  /* iOS date/month 인풋: 네이티브 렌더가 고유 폭·높이·중앙정렬을 강제해 카드 밖으로 넘침 → 벗겨서 일반 인풋처럼 */
+  input.ds-input[type=date],input.ds-input[type=month]{-webkit-appearance:none;appearance:none;min-width:0;display:block;text-align:left}
+  input.ds-input[type=date]::-webkit-date-and-time-value,input.ds-input[type=month]::-webkit-date-and-time-value{text-align:left;margin:0}
   body{background:var(--surface-page);color:var(--text-primary);font:var(--text-body);font-family:var(--font-text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
   @media(min-width:768px){.wrap{padding:0 var(--gutter-md)}}
@@ -77,6 +80,7 @@
     .formgrid .ds-field{flex:1 1 100%}
     .formgrid .ds-field .ds-input,.formgrid .ds-field .ds-select{width:100%!important}
     input.ds-input,select.ds-select,textarea{font-size:16px}  /* iOS 포커스 자동 확대 방지(16px 미만이면 줌됨) */
+    #view-settings .ds-table td:first-child{width:110px!important}  /* 라벨 200px 고정이 좁은 화면서 값 칸을 짜부라뜨림 */
     .formgrid > .ds-btn{width:100%}
     .subbar{gap:var(--space-2)}
     .subbar .ds-field{flex:1 1 100%}
@@ -184,7 +188,7 @@
         <div class="ds-table-wrap"><table class="ds-table"><tbody>
           <tr><td style="width:200px;color:var(--text-tertiary)">동호회 / 소속</td><td>G리아드 (CREWFIT) · (주)그린카</td></tr>
           <tr><td style="color:var(--text-tertiary)">회장 / 총무</td><td>강민관 / 정종욱</td></tr>
-          <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td><input class="ds-input tnum" id="feeInput" type="number" inputmode="numeric" pattern="[0-9]*" step="1000" style="width:130px" onchange="setFee(this.value)"> 원</td></tr>
+          <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td style="white-space:nowrap"><input class="ds-input tnum" id="feeInput" type="number" inputmode="numeric" pattern="[0-9]*" step="1000" style="width:110px" onchange="setFee(this.value)"> 원</td></tr>
           <tr><td style="color:var(--text-tertiary)">당구장 결제일 / 지출결의</td><td>매월 1일 / 매월 18일 마감</td></tr>
         </tbody></table></div>
       </div>
