@@ -191,14 +191,24 @@
       [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
       if (m.winner) { ensure(m.winner).wins++; if (m.bet) { var loserId = m.winner === m.p1.id ? m.p2.id : m.p1.id; var lb = ensure(loserId); if (m.bet.coffee) lb.coffeeBuy++; if (m.bet.lunch) lb.lunchBuy++; } }  // 진 사람이 커피/점심 삼
     });
-    var ids = Object.keys(agg), TI = 0, TG = 0;
-    ids.forEach(function (id) { TI += agg[id].innings; TG += agg[id].games; });
-    var groupAvgInn = TG ? (TI / TG) : 25;  // 그룹 평균 이닝/게임 — 추천 수지 환산 기준
+    var ids = Object.keys(agg);
     return ids.map(function (id) {
       var a = agg[id]; a.avg = a.innings ? a.score / a.innings : 0; a.winRate = a.games ? a.wins / a.games : 0; a.name = memberName(id);
-      a.recSuji = a.games >= 3 ? Math.max(1, Math.round(a.avg * groupAvgInn)) : null;  // 누적 평균 기준 추천 수지(3경기 이상부터)
+      a.recSuji = a.games >= 3 ? avgToSuji(a.avg) : null;  // 누적 에버리지 → 공식 통계표 환산(3경기 이상부터)
       return a;
     }).sort(function (x, y) { return y.avg - x.avg || y.winRate - x.winRate || y.games - x.games; });
+  }
+  // 에버리지→수지 환산: 전자점수판(빌리보드) 전국 통계 기준 — 1,056개 클럽 · 동호인 19,117명 ·
+  // 약 129만 경기의 핸디별 실제 평균 애버리지(2020, 10경기 이상 · 핸디 10~40). 구간은 선형 보간,
+  // 표 밖은 인접 구간 기울기로 외삽하되 5~50으로 클램프.
+  var SUJI_AVG_TABLE = [[10, .184], [15, .270], [20, .398], [25, .589], [30, .829], [35, 1.078], [40, 1.360]];
+  function avgToSuji(avg) {
+    if (!avg || avg <= 0) return null;
+    var t = SUJI_AVG_TABLE, lo = t[0], hi = t[1];
+    if (avg >= t[t.length - 1][1]) { lo = t[t.length - 2]; hi = t[t.length - 1]; }
+    else for (var i = 0; i < t.length - 1; i++) { if (avg <= t[i + 1][1]) { lo = t[i]; hi = t[i + 1]; break; } }
+    var s = lo[0] + (hi[0] - lo[0]) * (avg - lo[1]) / (hi[1] - lo[1]);
+    return Math.max(5, Math.min(50, Math.round(s)));
   }
   function fmtAvg(v) { return (Math.round((v || 0) * 1000) / 1000).toFixed(3); }
   function fmtGrade(g) { return "V" + (g || 0); }
@@ -674,7 +684,7 @@
       var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
         msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "추천 수지") : "") + "</div>";
       h += stb.recSuji
-        ? '<div class="hint" style="margin-top:8px">최근 평균 기준 <b>추천 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 경기가 쌓일수록 정확해져요</div>'
+        ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>추천 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
         : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 추천 수지를 알려드려요</div>';
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
