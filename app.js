@@ -230,6 +230,10 @@
   function gileadMonth() { return new Date().toISOString().slice(0, 7); }   // gilead 앱과 동일 기준
   function gileadFee() { var g = gileadData(); return (g && g.settings && +g.settings.fee) || 30000; }
   function gileadPaidByName(name) { var g = gileadData(); var m = g && g.months && g.months[gileadMonth()]; return !!(m && m.dues && m.dues[name]); }
+  // 회원 연동: gilead 활동회원 명단(회비 대상)과 동일 유지 — 고스트(사진만·회비 없음) 제외
+  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "김성준", "장정우", "진익영"];
+  function gileadIsActive(name) { return GILEAD_ACTIVE.indexOf(name) >= 0; }
+  function memberIdByName(name) { var ms = obj(DB.members); for (var k in ms) if ((ms[k].name || "") === name) return k; return null; }
   function climbStats(cid) {
     var agg = {};
     clubRecords(cid, "climb").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, sends: 0, maxGrade: 0, ts: 0, grades: [] }); a.sends++; var g = +r.grade || 0; a.grades.push(g); if (g > a.maxGrade) a.maxGrade = g; if ((r.ts || 0) > a.ts) a.ts = r.ts || 0; });
@@ -675,8 +679,9 @@
       var cls = role === "manager" ? "mgr" : role === "staff" ? "admin" : "crew";
       var label = role === "manager" ? "관리자" : role === "staff" ? "운영진" : "크루원";
       var dueHtml = "";
-      if (isGileadClub(c)) {  // 운영관리(gilead) 연동: 이번 달 납부 체크 기준
-        if (!gileadPaidByName(memberName(me))) dueHtml = ' · <span class="me-due">미납 회비 ' + won(gileadFee()) + "</span>";
+      if (isGileadClub(c)) {  // 운영관리(gilead) 연동: 이번 달 납부 체크 기준 (활동회원만 — 고스트는 회비 없음)
+        var myNm0 = memberName(me);
+        if (gileadIsActive(myNm0) && !gileadPaidByName(myNm0)) dueHtml = ' · <span class="me-due">미납 회비 ' + won(gileadFee()) + "</span>";
       } else {
         var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
         var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
@@ -1264,18 +1269,20 @@
   }
   function gileadDuesCard(club) {
     var mk = gileadMonth(), g = gileadData(), m = (g.months && g.months[mk]) || {}, dues = obj(m.dues);
-    var roster = clubRoster(club.id), n = roster.length, fee = gileadFee();
-    var paidCnt = roster.filter(function (r) { return dues[memberName(r.id) || r.name]; }).length;
-    var pct = n ? Math.round(paidCnt / n * 100) : 0, myPaid = gileadPaidByName(memberName(me));
+    var names = GILEAD_ACTIVE, n = names.length, fee = gileadFee();  // 회원도 gilead 활동회원 기준(고스트 제외)
+    var paidCnt = names.filter(function (nm) { return !!dues[nm]; }).length;
+    var pct = n ? Math.round(paidCnt / n * 100) : 0;
+    var myNm = memberName(me), myPaid = gileadPaidByName(myNm);
     var h = '<div class="card dues-card"><div class="dues-top"><div style="min-width:0"><div class="dues-title">' + mk.replace("-", "년 ") + '월 회비</div>' +
-      '<div class="dues-amt">1인 ' + won(fee) + ' · G리아드 운영관리와 실시간 연동</div></div>' +
-      (rankCanRec(club.id) ? '<span class="rbadge ' + (myPaid ? "mgr" : "crew") + '">' + (myPaid ? "납부완료" : "미납") + "</span>" : "") + "</div>" +
+      '<div class="dues-amt">1인 ' + won(fee) + ' · 활동회원 ' + n + '명(고스트 제외) · G리아드 운영관리와 실시간 연동</div></div>' +
+      (rankCanRec(club.id) && gileadIsActive(myNm) ? '<span class="rbadge ' + (myPaid ? "mgr" : "crew") + '">' + (myPaid ? "납부완료" : "미납") + "</span>" : "") + "</div>" +
       '<div class="dues-prog"><div class="dues-bar" style="width:' + pct + '%"></div></div>' +
       '<div class="dues-stat">' + paidCnt + "/" + n + "명 납부 · " + won(paidCnt * fee) + " / " + won(n * fee) + "</div>";
     h += '<div class="dues-members">';
-    roster.forEach(function (r) {
-      var nm = memberName(r.id) || r.name, on = !!dues[nm];
-      h += '<span class="dues-mem' + (on ? " on" : "") + '">' + avatar(r.id, 22) + "<span>" + esc(nm) + '</span><span class="dm-state">' + (on ? "납부" : "미납") + "</span></span>";
+    names.forEach(function (nm) {
+      var id = memberIdByName(nm), on = !!dues[nm];
+      var av = id ? avatar(id, 22) : '<span class="av" style="width:22px;height:22px;font-size:10px">' + esc(nm.slice(0, 1)) + "</span>";
+      h += '<span class="dues-mem' + (on ? " on" : "") + '">' + av + "<span>" + esc(nm) + '</span><span class="dm-state">' + (on ? "납부" : "미납") + "</span></span>";
     });
     h += "</div>";
     h += '<div class="hint" style="margin-top:8px">납부 체크는 <a href="gilead/" target="_blank" rel="noopener">G리아드 운영관리</a>에서 관리해요 (회장·총무)</div>';
