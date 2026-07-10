@@ -1104,8 +1104,14 @@
     }
     return h;
   }
-  // 순위표엔 현재 수지만 표시(추천 수지는 마이페이지에서)
-  function sujiHint(a) { return "수지 " + (a.lastTarget || "-"); }
+  function sujiHint(a) { return "수지 " + (a.lastTarget || "-") + (a.recSuji ? " · 추천 " + a.recSuji : ""); }  // 순위판: 현재 수지 + 통계 환산 추천
+  // 선수의 자동 입력용 수지: 통계 환산 추천 우선, 없으면(3경기 미만) 최근 사용 수지
+  function sujiOf(cid, pid) { if (!pid) return 0; var a = billiardsStats(cid).filter(function (x) { return x.id === pid; })[0]; return a ? (a.recSuji || a.lastTarget || 0) : 0; }
+  function bindSujiAutofill(cid, selId, inpId) {
+    var s = $("#" + selId), t = $("#" + inpId); if (!s || !t) return;
+    s.addEventListener("change", function () { var v = sujiOf(cid, this.value); if (v) t.value = v; });
+    if (!t.value && s.value) { var v0 = sujiOf(cid, s.value); if (v0) t.value = v0; }  // 열릴 때 기본 선택(본인)도 채움
+  }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
@@ -1282,6 +1288,7 @@
       "</div>" +
       '<div id="m-err" class="pin-err"></div>' +
       '<div class="modal-foot">' + (ed ? '<button class="link-danger" data-action="del-match" data-id="' + esc(editKey) + '">삭제</button>' : "") + '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match">' + (ed ? "저장" : "기록") + "</button></div>");
+    bindSujiAutofill(cid, "m-p1", "m-t1"); bindSujiAutofill(cid, "m-p2", "m-t2");  // 선수 선택 시 수지 자동 입력
   }
   function saveMatch() {
     var cid = state.clubId, roster = clubRoster(cid);
@@ -1401,6 +1408,7 @@
       "</div>" +
       '<div id="ms-err" class="pin-err"></div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match-session">대결 만들기</button></div>');
+    bindSujiAutofill(cid, "ms-p1", "ms-t1"); bindSujiAutofill(cid, "ms-p2", "ms-t2");  // 선수 선택 시 수지 자동 입력
   }
   function viewMatchSession(s) {
     var m = s.match || {}, cid = s.clubId, done = m.status === "done", p1 = m.p1 || {}, p2 = m.p2 || {}, canFin = rankCanRec(cid);
