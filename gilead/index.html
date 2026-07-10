@@ -41,7 +41,7 @@
   .guide-list li{line-height:1.55}
   .ds-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .ds-table th,.ds-table td{white-space:nowrap}          /* 셀 내용 한 줄 고정(넘치면 가로 스크롤) */
-  #view-guide .ds-table th,#view-guide .ds-table td{white-space:normal}  /* 가이드 표는 긴 문장이라 예외 */
+  #view-guide .ds-table th,#view-guide .ds-table td,#view-settings .ds-table th,#view-settings .ds-table td{white-space:normal}  /* 가이드·설정 표는 설명형 긴 텍스트라 예외(줄바꿈 허용, 스크롤 없음) */
   .guide-stack{display:flex;flex-direction:column;gap:var(--space-5)}
   .guide-stack>.ds-card{margin:0!important}
   .app{display:none}
