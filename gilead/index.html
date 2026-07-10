@@ -466,6 +466,8 @@ var toastTimer=null;function toast(m){var t=document.getElementById('toast');if(
 /* ================= 초기화 ================= */
 (function(){var m={'ic-info':IC.info,'ic-info2':IC.info,'ic-info3':IC.info,'ic-info5':IC.info,'ic-warn':IC.warn};for(var id in m){var el=document.getElementById(id);if(el)el.innerHTML=m[id];}})();
 applyTheme(lsGet(THEME)||'light');
+/* 날짜 인풋 기본값=오늘 — appearance:none 상태의 iOS date는 빈 값이면 아무것도 안 보임 */
+(function(){var t=todayISO(),a=document.getElementById('exDate'),b=document.getElementById('inDate');if(a&&!a.value)a.value=t;if(b&&!b.value)b.value=t;})();
 document.getElementById('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.tab);});
 document.getElementById('pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 buildLogin();
