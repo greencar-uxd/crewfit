@@ -1127,7 +1127,7 @@
     }
     return h;
   }
-  function sujiHint(a) { return "수지 " + (a.lastTarget || "-") + (a.recSuji ? " · 추천 " + a.recSuji : ""); }  // 순위판: 현재 수지 + 통계 환산 추천
+  function sujiHint(a) { return "수지 " + (a.recSuji || a.lastTarget || "-"); }  // 순위판: 통계 환산 추천 기준 단일 표기(3경기 미만은 최근 사용 수지)
   // 선수의 자동 입력용 수지: 통계 환산 추천 우선, 없으면(3경기 미만) 최근 사용 수지
   function sujiOf(cid, pid) { if (!pid) return 0; var a = billiardsStats(cid).filter(function (x) { return x.id === pid; })[0]; return a ? (a.recSuji || a.lastTarget || 0) : 0; }
   function bindSujiAutofill(cid, selId, inpId) {
