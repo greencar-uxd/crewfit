@@ -29,6 +29,11 @@
   .appheader__row{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) 0}
   .hdr-brand{flex:1 1 auto;min-width:0}
   .hdr-ctrls{display:flex;align-items:center;gap:var(--space-2);flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
+  /* 컨트롤 정렬: 상태(연결·사용자) 먼저, 동작(테마·로그아웃) 나중 — 성격별 묶음 */
+  .hdr-ctrls #syncBadge{order:1}
+  .hdr-ctrls #whoami{order:2}
+  .hdr-ctrls #themeBtn{order:3}
+  .hdr-ctrls .ds-btn{order:4}
   .brand-sq{width:32px;height:32px;flex:none;display:grid;place-items:center;font-size:26px;line-height:1}
   .brand-tt{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-lg);letter-spacing:var(--ls-snug);color:var(--text-primary);line-height:1.1}
   .brand-sub{font:var(--text-caption);color:var(--text-tertiary)}
@@ -67,7 +72,8 @@
     .appheader__row{flex-wrap:wrap;gap:var(--space-2);padding:var(--space-2) 0}
     .brand-sub{display:none}
     .brand-tt{font-size:var(--fs-base)}
-    .hdr-ctrls{flex:1 1 100%;justify-content:space-between;gap:var(--space-1)}
+    .hdr-ctrls{flex:1 1 100%;justify-content:flex-start;gap:var(--space-2)}
+    .hdr-ctrls #themeBtn{margin-left:auto}  /* 상태는 왼쪽 묶음, 테마·로그아웃은 오른쪽 묶음 */
     .hdr-ctrls .ds-badge{font-size:11px;padding:4px 8px}
     main.wrap{padding-top:var(--space-4);padding-bottom:var(--space-4)}
     .grid-cards{grid-template-columns:1fr;gap:var(--space-3)}
