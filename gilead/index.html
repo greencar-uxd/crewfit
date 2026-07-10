@@ -14,6 +14,7 @@
   [data-theme="dark"]{color-scheme:dark}
   *{box-sizing:border-box}
   html,body{margin:0;overflow-x:hidden;overscroll-behavior-x:none}  /* 페이지 자체는 절대 좌우로 안 움직임 */
+  .ds-input,.ds-select,textarea{box-sizing:border-box;max-width:100%}  /* width:100%+패딩이 컨테이너를 넘지 않게 */
   body{background:var(--surface-page);color:var(--text-primary);font:var(--text-body);font-family:var(--font-text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
   @media(min-width:768px){.wrap{padding:0 var(--gutter-md)}}
