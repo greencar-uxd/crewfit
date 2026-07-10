@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CrewFit · G리아드 운영</title>
+<title>CREWFIT · G리아드 운영</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%2250%22 y=%2254%22 font-size=%2278%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>🎱</text></svg>">
 <link rel="stylesheet" href="https://greencar-uxd.github.io/design-system/styles.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -62,8 +62,7 @@
     .appheader__row{flex-wrap:wrap;gap:var(--space-2);padding:var(--space-2) 0}
     .brand-sub{display:none}
     .brand-tt{font-size:var(--fs-base)}
-    .hdr-ctrls{flex:1 1 100%;justify-content:flex-start;gap:var(--space-2)}
-    .hdr-ctrls #themeBtn{margin-left:auto}  /* 상태는 왼쪽 묶음, 테마·로그아웃은 오른쪽 묶음 */
+    .hdr-ctrls{flex:0 1 auto;justify-content:flex-end;gap:var(--space-2);margin-left:auto}  /* 브랜드와 같은 줄 오른쪽 */
     .hdr-ctrls .ds-badge{font-size:11px;padding:4px 8px}
     main.wrap{padding-top:var(--space-4);padding-bottom:var(--space-4)}
     .grid-cards{grid-template-columns:1fr;gap:var(--space-3)}
@@ -91,7 +90,7 @@
       <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="themeBtnLogin" title="다크모드 켜기/끄기" onclick="toggleTheme()"></button>
     </div>
     <div class="brandmark">🎱</div>
-    <h1 style="font:var(--text-h3);text-align:center;margin:0 0 var(--space-1)">CrewFit · G리아드</h1>
+    <h1 style="font:var(--text-h3);text-align:center;margin:0 0 var(--space-1)">CREWFIT · G리아드</h1>
     <p class="tiny" style="text-align:center;margin:0 0 var(--space-5)">운영진 전용 · (주)그린카</p>
     <div class="ds-segmented" id="whoBtns" style="width:100%;margin-bottom:var(--space-4)"></div>
     <div class="ds-field">
@@ -110,18 +109,17 @@
       <div class="appheader__row">
         <div class="brand-sq">🎱</div>
         <div class="hdr-brand">
-          <div class="brand-tt">CrewFit · G리아드</div>
+          <div class="brand-tt">CREWFIT · G리아드</div>
           <div class="brand-sub">당구 동호회 · (주)그린카 · 회장 강민관 / 총무 정종욱</div>
         </div>
         <div class="hdr-ctrls">
-          <span class="ds-badge ds-badge--neutral">🎱 결제일 매월 1일</span>
+          <span class="ds-badge ds-badge--outline" id="dueBadge">🧾 지출결의 마감 18일</span>
           <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="themeBtn" title="다크모드 켜기/끄기" onclick="toggleTheme()"></button>
           <button class="ds-btn ds-btn--ghost ds-btn--sm" onclick="logout()">로그아웃</button>
         </div>
       </div>
       <div class="subbar">
         <div class="ds-field"><input class="ds-input" type="month" id="monthPick" style="padding:8px 12px" onchange="switchMonth(this.value)"></div>
-        <span class="ds-badge ds-badge--outline" id="dueBadge">🧾 지출결의 마감 18일</span>
       </div>
       <div class="tabs-wrap">
         <div class="ds-tabs" id="tabs" role="tablist">
@@ -179,7 +177,7 @@
     <section class="view" id="view-settings">
       <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">기본 정보</h3>
         <div class="ds-table-wrap"><table class="ds-table"><tbody>
-          <tr><td style="width:200px;color:var(--text-tertiary)">동호회 / 소속</td><td>G리아드 (CrewFit) · (주)그린카</td></tr>
+          <tr><td style="width:200px;color:var(--text-tertiary)">동호회 / 소속</td><td>G리아드 (CREWFIT) · (주)그린카</td></tr>
           <tr><td style="color:var(--text-tertiary)">회장 / 총무</td><td>강민관 / 정종욱</td></tr>
           <tr><td style="color:var(--text-tertiary)">월 회비(활동회원)</td><td><input class="ds-input tnum" id="feeInput" type="number" step="1000" style="width:130px" onchange="setFee(this.value)"> 원</td></tr>
           <tr><td style="color:var(--text-tertiary)">당구장 결제일 / 지출결의</td><td>매월 1일 / 매월 18일 마감</td></tr>
