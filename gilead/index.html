@@ -13,7 +13,7 @@
   :root{color-scheme:light}
   [data-theme="dark"]{color-scheme:dark}
   *{box-sizing:border-box}
-  html,body{margin:0}
+  html,body{margin:0;overflow-x:hidden;overscroll-behavior-x:none}  /* 페이지 자체는 절대 좌우로 안 움직임 */
   body{background:var(--surface-page);color:var(--text-primary);font:var(--text-body);font-family:var(--font-text);-webkit-font-smoothing:antialiased}
   .wrap{max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
   @media(min-width:768px){.wrap{padding:0 var(--gutter-md)}}
@@ -39,9 +39,9 @@
   .ds-tab{flex:0 0 auto;white-space:nowrap;padding-bottom:12px!important;line-height:1!important}
   .guide-list{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:var(--space-2)}
   .guide-list li{line-height:1.55}
-  .ds-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ds-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch;max-width:100%}  /* 넓은 표는 표 안에서만 스크롤 */
   .ds-table th,.ds-table td{white-space:nowrap}          /* 셀 내용 한 줄 고정(넘치면 가로 스크롤) */
-  #view-guide .ds-table th,#view-guide .ds-table td{white-space:normal}  /* 가이드 표는 긴 문장이라 예외 */
+  #view-guide .ds-table th,#view-guide .ds-table td,#view-settings .ds-table th,#view-settings .ds-table td{white-space:normal}  /* 가이드·설정 표는 설명형 긴 텍스트라 예외(줄바꿈 허용, 스크롤 없음) */
   .guide-stack{display:flex;flex-direction:column;gap:var(--space-5)}
   .guide-stack>.ds-card{margin:0!important}
   .app{display:none}
