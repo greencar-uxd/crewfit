@@ -682,10 +682,10 @@
       var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0];
       if (!stb || !stb.games) return "";
       var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
-        msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "추천 수지") : "") + "</div>";
+        msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "내 수지") : "") + "</div>";
       h += stb.recSuji
-        ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>추천 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
-        : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 추천 수지를 알려드려요</div>';
+        ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>내 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
+        : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 내 수지를 알려드려요</div>';
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
