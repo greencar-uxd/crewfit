@@ -16,6 +16,9 @@
   var MYTOKEN = localStorage.getItem("srk_token") || ("t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
   localStorage.setItem("srk_token", MYTOKEN);
   var state = { screen: "clubs", clubId: null, sessionId: "summer-mt", tab: "home", pollId: null, alert: "notice", hubTab: "schedule", boardTab: "notice" };
+  // 새로고침 시 보던 화면 복원 (pollId 같은 일시 상태는 제외 · 유효성은 첫 부팅 때 검증)
+  try { var _sv = JSON.parse(localStorage.getItem("srk_view") || "0"); if (_sv && _sv.screen) { state.screen = _sv.screen; state.clubId = _sv.clubId || null; state.sessionId = _sv.sessionId || "summer-mt"; state.tab = _sv.tab || "home"; state.alert = _sv.alert || "notice"; state.hubTab = _sv.hubTab || "schedule"; state.boardTab = _sv.boardTab || "notice"; } } catch (e) {}
+  var navChecked = false;  // 복원한 화면이 여전히 유효한지(크루·일정 존재) 첫 데이터 수신 때 1회 검증
   var viewHist = [], lastSig = null, backing = false; // 뒤로가기용 화면 히스토리
   var intro = { step: "name", pick: null, car: false, newName: null };
   var booted = false;
@@ -222,6 +225,18 @@
   function clubNotices(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubnotices) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return ((b.pinned ? 1e15 : 0) + (b.ts || 0)) - ((a.pinned ? 1e15 : 0) + (a.ts || 0)); }); }
   function clubPolls(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubpolls) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return ((a.closed ? 1 : 0) - (b.closed ? 1 : 0)) || (b.ts || 0) - (a.ts || 0); }); }
   function clubDues(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubdues) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
+  // ── G리아드 운영관리(gilead 앱) 회비 연동 ──────────────────────────
+  // 같은 Firebase의 gilead/months/{YYYY-MM}/dues/{이름}=true 가 진실원본.
+  // 이름에 'G리아드'가 들어간 크루는 자체 회비(clubdues) 대신 이 데이터를 표시(읽기 전용).
+  function gileadData() { return (RAW && RAW.gilead) || null; }
+  function isGileadClub(c) { return !!(c && (c.name || "").indexOf("G리아드") >= 0 && gileadData()); }
+  function gileadMonth() { return new Date().toISOString().slice(0, 7); }   // gilead 앱과 동일 기준
+  function gileadFee() { var g = gileadData(); return (g && g.settings && +g.settings.fee) || 30000; }
+  function gileadPaidByName(name) { var g = gileadData(); var m = g && g.months && g.months[gileadMonth()]; return !!(m && m.dues && m.dues[name]); }
+  // 회원 연동: gilead 활동회원 명단(회비 대상)과 동일 유지 — 고스트(사진만·회비 없음) 제외
+  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "김성준", "장정우", "진익영"];
+  function gileadIsActive(name) { return GILEAD_ACTIVE.indexOf(name) >= 0; }
+  function memberIdByName(name) { var ms = obj(DB.members); for (var k in ms) if ((ms[k].name || "") === name) return k; return null; }
   function climbStats(cid) {
     var agg = {};
     clubRecords(cid, "climb").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, sends: 0, maxGrade: 0, ts: 0, grades: [] }); a.sends++; var g = +r.grade || 0; a.grades.push(g); if (g > a.maxGrade) a.maxGrade = g; if ((r.ts || 0) > a.ts) a.ts = r.ts || 0; });
@@ -550,6 +565,7 @@
     if (lastSig !== null && lastSig !== sig) { if (backing) backing = false; else { viewHist.push(lastSig); if (viewHist.length > 40) viewHist.shift(); } }
     var _sameView = (lastSig === sig);
     lastSig = sig;
+    try { localStorage.setItem("srk_view", JSON.stringify({ screen: state.screen, clubId: state.clubId, sessionId: state.sessionId, tab: state.tab, alert: state.alert, hubTab: state.hubTab, boardTab: state.boardTab })); } catch (e) {}
     var main = $("#app-main");
     var appEl = $("#app");
     appEl.classList.remove("lvl-top", "club-themed", "acc-red", "acc-blue", "acc-green", "acc-purple", "acc-orange");
@@ -666,12 +682,19 @@
       var role = (r && r.role) || roleOf(me) || "crew";
       var cls = role === "manager" ? "mgr" : role === "staff" ? "admin" : "crew";
       var label = role === "manager" ? "관리자" : role === "staff" ? "운영진" : "크루원";
-      var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
-      var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
+      var dueHtml = "";
+      if (isGileadClub(c)) {  // 운영관리(gilead) 연동: 이번 달 납부 체크 기준 (활동회원만 — 고스트는 회비 없음)
+        var myNm0 = memberName(me);
+        if (gileadIsActive(myNm0) && !gileadPaidByName(myNm0)) dueHtml = ' · <span class="me-due">미납 회비 ' + won(gileadFee()) + "</span>";
+      } else {
+        var unpaid = clubDues(c.id).filter(function (d) { return !obj(d.paid)[me]; });
+        var owe = unpaid.reduce(function (a, d) { return a + (+d.amount || 0); }, 0);
+        if (unpaid.length) dueHtml = ' · <span class="me-due">미납 회비 ' + won(owe) + "</span>";
+      }
       h += '<div class="card me-row" data-action="open-club" data-id="' + esc(c.id) + '">' +
         clubAvatar(c, 30) +
         '<div class="me-mid"><div class="me-tt">' + esc(c.name) + '</div>' +
-        '<div class="me-ss">' + esc(sportLabel(c.sport)) + (unpaid.length ? ' · <span class="me-due">미납 회비 ' + won(owe) + '</span>' : "") + '</div></div>' +
+        '<div class="me-ss">' + esc(sportLabel(c.sport)) + dueHtml + '</div></div>' +
         '<span class="me-tr"><span class="rbadge ' + cls + '">' + label + '</span><span class="me-go">›</span></span></div>';
     });
     return h + "</div>";
@@ -1222,6 +1245,7 @@
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club-poll">만들기</button></div>');
   }
   function boardDues(club) {
+    if (isGileadClub(club)) return gileadDuesCard(club);  // G리아드는 운영관리 앱 데이터로 표시
     var cid = club.id, list = clubDues(cid), mng = canManage(me), roster = clubRoster(cid), n = roster.length, h = "";
     if (mng) h += '<button class="btn-pri btn-block" data-action="add-club-dues" style="margin-bottom:12px">' + icon("plus", 16) + " 회비 항목 추가</button>";
     if (!list.length) return h + '<div class="empty-msg">아직 회비 항목이 없어요.' + (mng ? "" : " 운영진이 회비를 등록하면 여기 표시돼요.") + "</div>";
@@ -1245,6 +1269,27 @@
       }
       h += "</div>";
     });
+    return h + "</div>";
+  }
+  function gileadDuesCard(club) {
+    var mk = gileadMonth(), g = gileadData(), m = (g.months && g.months[mk]) || {}, dues = obj(m.dues);
+    var names = GILEAD_ACTIVE, n = names.length, fee = gileadFee();  // 회원도 gilead 활동회원 기준(고스트 제외)
+    var paidCnt = names.filter(function (nm) { return !!dues[nm]; }).length;
+    var pct = n ? Math.round(paidCnt / n * 100) : 0;
+    var myNm = memberName(me), myPaid = gileadPaidByName(myNm);
+    var h = '<div class="card dues-card"><div class="dues-top"><div style="min-width:0"><div class="dues-title">' + mk.replace("-", "년 ") + '월 회비</div>' +
+      '<div class="dues-amt">1인 ' + won(fee) + ' · 활동회원 ' + n + '명(고스트 제외) · G리아드 운영관리와 실시간 연동</div></div>' +
+      (rankCanRec(club.id) && gileadIsActive(myNm) ? '<span class="rbadge ' + (myPaid ? "mgr" : "crew") + '">' + (myPaid ? "납부완료" : "미납") + "</span>" : "") + "</div>" +
+      '<div class="dues-prog"><div class="dues-bar" style="width:' + pct + '%"></div></div>' +
+      '<div class="dues-stat">' + paidCnt + "/" + n + "명 납부 · " + won(paidCnt * fee) + " / " + won(n * fee) + "</div>";
+    h += '<div class="dues-members">';
+    names.forEach(function (nm) {
+      var id = memberIdByName(nm), on = !!dues[nm];
+      var av = id ? avatar(id, 22) : '<span class="av" style="width:22px;height:22px;font-size:10px">' + esc(nm.slice(0, 1)) + "</span>";
+      h += '<span class="dues-mem' + (on ? " on" : "") + '">' + av + "<span>" + esc(nm) + '</span><span class="dm-state">' + (on ? "납부" : "미납") + "</span></span>";
+    });
+    h += "</div>";
+    h += '<div class="hint" style="margin-top:8px">납부 체크는 <a href="gilead/" target="_blank" rel="noopener">G리아드 운영관리</a>에서 관리해요 (회장·총무)</div>';
     return h + "</div>";
   }
   function formClubDues() {
@@ -2678,6 +2723,11 @@
       var dmme = DB.members[me];
       // 이 기기는 localStorage(srk_me)로 기억됨 → 입장 유지. 이름이 사라졌거나 입장 해제(인증 초기화)됐으면 게이트로.
       if (!dmme || !dmme.claimed) { me = null; localStorage.removeItem("srk_me"); intro.step = "name"; intro.pick = null; }
+    }
+    if (!navChecked) {  // 복원 화면 유효성 1회 검증 (삭제된 크루·일정이면 안전한 화면으로)
+      navChecked = true;
+      if (state.screen === "session" && !currentSession()) { state.screen = (state.clubId && currentClub()) ? "hub" : "clubs"; state.pollId = null; }
+      if (state.screen === "hub" && state.clubId && !currentClub()) { state.screen = "clubs"; state.clubId = null; }
     }
     render();
   });
