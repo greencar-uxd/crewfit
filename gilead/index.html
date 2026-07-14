@@ -26,6 +26,9 @@
   .row{display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap}
   .tiny{font:var(--text-caption);color:var(--text-tertiary)}
   .tnum{font-variant-numeric:tabular-nums}
+  .ds-table th.is-right,.ds-table td.is-right{text-align:right}   /* 행 제목(헤더)과 값 정렬 일치 보장 */
+  .ds-table th.is-center,.ds-table td.is-center{text-align:center}
+  .suji-inp{text-align:right}                                      /* 반영 수지 입력 숫자도 우측 정렬 */
   .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--space-5);background:var(--surface-page);overflow:auto}
   .login .box{width:100%;max-width:404px}
   .brandmark{width:48px;height:48px;display:grid;place-items:center;margin:0 auto var(--space-3);font-size:38px;line-height:1}
