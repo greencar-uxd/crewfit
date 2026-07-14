@@ -178,16 +178,15 @@
     </section>
 
     <section class="view" id="view-suji">
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">수지 관리 <span class="tiny">· 크루핏 대전 기록(경기 1회 이상) · 가나다순</span></h3>
-        <p class="tiny" style="margin:0 0 var(--space-3)">최근 수지는 에버리지 기준 전국 전자점수판 통계 환산값(수정 불가). 반영 수지를 입력하고 전체 저장하면 크루핏 마이페이지의 '내 수지'에 반영됩니다.</p>
-        <div class="ds-table-wrap"><table class="ds-table" id="sujiTable"></table></div>
-        <div style="display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4)">
+      <div class="ds-card ds-card--pad">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3)">
+          <h3 class="panel-title" style="margin:0">수지 관리</h3>
           <button class="ds-btn ds-btn--primary ds-btn--md" onclick="saveSujiAll()">전체 저장</button>
         </div>
-      </div>
-      <div class="ds-card ds-card--pad"><h3 class="panel-title">순위 초기화</h3>
-        <p class="tiny" style="margin:0 0 var(--space-3)">반영 수지 저장을 마친 뒤 크루핏 순위(대전 기록)를 비우고 새 시즌을 시작합니다. 반영 수지는 유지되며, 삭제된 대전 기록은 되돌릴 수 없습니다.</p>
-        <button class="ds-btn ds-btn--md" style="color:var(--danger-600);border-color:var(--danger-600)" onclick="resetRanking()">순위(대전 기록) 초기화</button>
+        <div class="ds-table-wrap"><table class="ds-table" id="sujiTable"></table></div>
+        <div style="margin-top:var(--space-4)">
+          <button class="ds-btn ds-btn--md" onclick="resetSujiInputs()">초기화</button>
+        </div>
       </div>
     </section>
 
@@ -420,7 +419,8 @@ function buildCheckTable(names,withDues){var m=M(current);
     var photo='<td class="is-center">'+switchCell(!!m.photos[n],"togglePhoto('"+n+"')",'사진 촬영 '+n)+'</td>';
     return '<tr><td><span style="font-weight:var(--fw-medium)">'+esc(n)+'</span>'+admin+' '+role+'</td>'+dues+photo+'</tr>';}).join('');
   return head+'<tbody>'+body+'</tbody>';}
-function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(ACTIVE,true);document.getElementById('ghostTable').innerHTML=buildCheckTable(GHOST,false);}
+function koSort(arr){return arr.slice().sort(function(a,b){return a.localeCompare(b,'ko');});}  // 모든 명단 가나다순
+function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(koSort(ACTIVE),true);document.getElementById('ghostTable').innerHTML=buildCheckTable(koSort(GHOST),false);}
 function toggleDue(n){var m=M(current);mutate({t:'due',mk:current,name:n,v:!m.dues[n]});}
 function togglePhoto(n){var m=M(current);mutate({t:'photo',mk:current,name:n,v:!m.photos[n]});}
 function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();var fund=(document.getElementById('exFund')&&document.getElementById('exFund').value)||'';if(!fund){toast('재원을 선택하세요 (토스/법인카드)');return;}mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt,fund:fund}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';document.getElementById('exFund').value='';}
@@ -456,33 +456,24 @@ function renderSuji(){
   var agg={};
   Object.keys(CM).forEach(function(cid){var ms=CM[cid]||{};Object.keys(ms).forEach(function(k){var m=ms[k];if(!m||!m.p1||!m.p2)return;
     [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;if(+p.innings>0){a.score+=(+p.score||0);a.inn+=(+p.innings||0);}});});});  // 이닝 없는 복원 경기는 avg 제외
-  var rows=Object.keys(agg).map(function(id){var a=agg[id];var nm=(MB[id]&&MB[id].name)||id;var avg=a.inn?a.score/a.inn:0;
-    return{name:nm,avg:avg,rec:avgToSuji(avg),games:a.games};});
+  var byName={};
+  Object.keys(agg).forEach(function(id){var nm=(MB[id]&&MB[id].name)||id;var b=byName[nm]=byName[nm]||{games:0,score:0,inn:0};b.games+=agg[id].games;b.score+=agg[id].score;b.inn+=agg[id].inn;});
   var suji=DB.suji||{};
-  // 저장된 반영 수지 보유자는 순위 초기화(대전 기록 삭제) 후에도 표에 유지 — 계속 확인·수정 가능
-  Object.keys(suji).forEach(function(nm){if(!rows.some(function(r){return r.name===nm;}))rows.push({name:nm,avg:0,rec:null,games:0});});
+  // 명단 = 활동회원 전원 + 대전 참가자 + 반영 수지 보유자 (가나다순) — 데이터 없으면 전부 0
+  var set={};ACTIVE.forEach(function(n){set[n]=1;});Object.keys(byName).forEach(function(n){set[n]=1;});Object.keys(suji).forEach(function(n){set[n]=1;});
+  var rows=Object.keys(set).map(function(nm){var a=byName[nm]||{games:0,score:0,inn:0};var avg=a.inn?a.score/a.inn:0;return{name:nm,games:a.games,rec:avgToSuji(avg)||0};});
   rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
-  if(!rows.length){el.innerHTML='<tbody><tr><td>'+emptyState('명단 없음','크루핏에서 대전이 기록되거나 반영 수지가 저장되면 여기 표시됩니다')+'</td></tr></tbody>';return;}
   el.innerHTML='<thead><tr><th>이름</th><th class="is-center">경기</th><th class="is-right">최근 수지</th><th class="is-right">반영 수지</th></tr></thead><tbody>'+
-    rows.map(function(r){var cur=(suji[r.name]!=null)?suji[r.name]:(r.rec||'');
-      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-right tnum">'+(r.rec||'-')+(r.games?' <span class="tiny">avg '+(Math.round(r.avg*1000)/1000).toFixed(3)+'</span>':'')+'</td>'+
-        '<td class="is-right"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="1" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
+    rows.map(function(r){var cur=(suji[r.name]!=null)?suji[r.name]:0;
+      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-right tnum">'+r.rec+'</td>'+
+        '<td class="is-right"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
 }
+function resetSujiInputs(){var inps=document.querySelectorAll('.suji-inp');for(var i=0;i<inps.length;i++)inps[i].value=0;toast('반영 수지를 0으로 — 전체 저장을 눌러야 반영됩니다');}
 function saveSujiAll(){
   if(!canWrite){toast('로그인 후 저장할 수 있습니다');return;}
   var inps=document.querySelectorAll('.suji-inp');if(!inps.length){toast('저장할 항목이 없습니다');return;}
   for(var i=0;i<inps.length;i++){var nm=inps[i].getAttribute('data-name');var v=parseInt(inps[i].value)||0;writeLeaf('suji/'+nm,v>0?v:null);}
   toast('반영 수지 '+inps.length+'명 저장 — 크루핏 마이페이지에 반영됩니다');
-}
-function resetRanking(){
-  if(!canWrite){toast('로그인 후 가능합니다');return;}
-  var cids=Object.keys(CM||{}),total=0;cids.forEach(function(c){total+=Object.keys(CM[c]||{}).length;});
-  if(!total){toast('삭제할 대전 기록이 없습니다');return;}
-  if(!confirm('크루핏 순위의 대전 기록 '+total+'건을 모두 삭제합니다.\n반영 수지는 유지됩니다. 되돌릴 수 없습니다. 진행할까요?'))return;
-  pending++;setSync('saving');
-  Promise.all(cids.map(function(c){return db.ref('clubmatches/'+c).remove();}))
-    .then(function(){pending--;toast('순위가 초기화되었습니다');if(!pending)setSync(canWrite?'ok':'ro');})
-    .catch(function(e){pending--;setSync('err','삭제 실패: '+(e.code||e.message));});
 }
 
 /* ================= 로그인 (크루핏 인증번호 대조) ================= */
