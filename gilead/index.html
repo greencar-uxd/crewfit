@@ -458,12 +458,14 @@ function renderSuji(){
     [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;a.score+=(+p.score||0);a.inn+=(+p.innings||0);});});});
   var rows=Object.keys(agg).map(function(id){var a=agg[id];var nm=(MB[id]&&MB[id].name)||id;var avg=a.inn?a.score/a.inn:0;
     return{name:nm,avg:avg,rec:avgToSuji(avg),games:a.games};});
-  rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
-  if(!rows.length){el.innerHTML='<tbody><tr><td>'+emptyState('대전 기록 없음','크루핏에서 대전이 기록되면 여기 표시됩니다')+'</td></tr></tbody>';return;}
   var suji=DB.suji||{};
+  // 저장된 반영 수지 보유자는 순위 초기화(대전 기록 삭제) 후에도 표에 유지 — 계속 확인·수정 가능
+  Object.keys(suji).forEach(function(nm){if(!rows.some(function(r){return r.name===nm;}))rows.push({name:nm,avg:0,rec:null,games:0});});
+  rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
+  if(!rows.length){el.innerHTML='<tbody><tr><td>'+emptyState('명단 없음','크루핏에서 대전이 기록되거나 반영 수지가 저장되면 여기 표시됩니다')+'</td></tr></tbody>';return;}
   el.innerHTML='<thead><tr><th>이름</th><th class="is-center">경기</th><th class="is-right">최근 수지</th><th class="is-right">반영 수지</th></tr></thead><tbody>'+
     rows.map(function(r){var cur=(suji[r.name]!=null)?suji[r.name]:(r.rec||'');
-      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-right tnum">'+(r.rec||'-')+' <span class="tiny">avg '+(Math.round(r.avg*1000)/1000).toFixed(3)+'</span></td>'+
+      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-right tnum">'+(r.rec||'-')+(r.games?' <span class="tiny">avg '+(Math.round(r.avg*1000)/1000).toFixed(3)+'</span>':'')+'</td>'+
         '<td class="is-right"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="1" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
 }
 function saveSujiAll(){
