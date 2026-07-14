@@ -1141,6 +1141,21 @@
     s.addEventListener("change", function () { var v = sujiOf(cid, this.value); if (v) t.value = v; });
     if (!t.value && s.value) { var v0 = sujiOf(cid, s.value); if (v0) t.value = v0; }  // 열릴 때 기본 선택(본인)도 채움
   }
+  // 이닝 없는 복원 경기들의 이닝 일괄 입력 — 채우면 에버리지·수지 계산에 다시 포함됨
+  function formInnings() {
+    var cid = state.clubId;
+    var list = clubMatches(cid).filter(function (m) { return m.p1 && m.p2 && !(+m.p1.innings > 0); });
+    if (!list.length) return;
+    var rows = list.map(function (m) {
+      var d = m.ts ? new Date(m.ts) : null, dTxt = d ? (d.getMonth() + 1) + "/" + d.getDate() : "";
+      return '<div style="display:flex;align-items:center;gap:10px;margin:10px 0"><span style="flex:1;min-width:0;font-size:13px">' +
+        esc(memberName(m.p1.id)) + " " + (+m.p1.score || 0) + " : " + (+m.p2.score || 0) + " " + esc(memberName(m.p2.id)) +
+        (dTxt ? ' <span class="hint">' + dTxt + "</span>" : "") + "</span>" +
+        '<input class="inn-inp" data-key="' + m._key + '" type="number" inputmode="numeric" pattern="[0-9]*" min="1" placeholder="이닝" style="width:80px"></div>';
+    }).join("");
+    openModal('<h2>복원 경기 이닝 입력</h2><p class="hint" style="margin:-4px 0 10px">이닝을 입력하면 해당 경기가 에버리지·수지 계산에 다시 포함돼요. 빈 칸은 건너뜁니다.</p>' + rows +
+      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-innings">저장</button></div>');
+  }
   // 대결 일정(sessions)에 남아있는 완료 경기 중 clubmatches에 없는 것 — 순위 초기화 후 복원용
   function restorableMatches(cid) {
     var have = obj((obj(DB.clubmatches) || {})[cid]);
@@ -1167,6 +1182,8 @@
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     var rst = canManage(me) ? restorableMatches(cid) : [];
     if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
+    var innMiss = canManage(me) ? clubMatches(cid).filter(function (mm) { return mm.p1 && mm.p2 && !(+mm.p1.innings > 0); }).length : 0;
+    if (innMiss) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="fill-innings">✍️ 복원 경기 이닝 입력 (' + innMiss + '건) — 입력하면 에버리지·수지 재계산</button></div>';
     if (ck || lk) {
       var kp = [];
       if (ck) kp.push("☕ 커피왕 <b>" + esc(memberName(ck)) + "</b> " + ckN + "잔 삼");
@@ -2341,6 +2358,18 @@
       Store.push("sessions", msdata); closeModal(); render(); return;
     }
     if (a === "md-pick-winner") { var mw = t.getAttribute("data-w"); var mwi = $("#md-winner"); if (mwi) mwi.value = mw; var w1 = $("#md-w1"), w2 = $("#md-w2"); if (w1) w1.classList.toggle("on", mw === "p1"); if (w2) w2.classList.toggle("on", mw === "p2"); return; }
+    if (a === "fill-innings") { if (canManage(me)) formInnings(); return; }
+    if (a === "save-innings") {  // 이닝 저장 → 양 선수 동일 이닝 기록 → 에버리지·수지 자동 재계산
+      if (!canManage(me)) return;
+      var sic = state.clubId, sn = 0;
+      Array.prototype.forEach.call(document.querySelectorAll(".inn-inp"), function (inp) {
+        var v = parseInt(inp.value) || 0, k = inp.getAttribute("data-key");
+        if (v > 0 && k) { Store.update("clubmatches/" + sic + "/" + k + "/p1", { innings: v }); Store.update("clubmatches/" + sic + "/" + k + "/p2", { innings: v }); sn++; }
+      });
+      closeModal();
+      if (sn) alert(sn + "경기 이닝 저장 — 에버리지·수지가 다시 계산됩니다.");
+      render(); return;
+    }
     if (a === "restore-matches") {  // 순위 초기화 후 — 대결 일정에 남은 완료 경기로 clubmatches 재구성
       var rmc = state.clubId; if (!canManage(me)) return;
       var rml = restorableMatches(rmc); if (!rml.length) return;
