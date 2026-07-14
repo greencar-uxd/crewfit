@@ -1313,7 +1313,7 @@
   }
   function gileadDuesCard(club) {
     var mk = gileadMonth(), g = gileadData(), m = (g.months && g.months[mk]) || {}, dues = obj(m.dues);
-    var names = GILEAD_ACTIVE, n = names.length, fee = gileadFee();  // 회원도 gilead 활동회원 기준(고스트 제외)
+    var names = GILEAD_ACTIVE.slice().sort(function (a, b) { return a.localeCompare(b, "ko"); }), n = names.length, fee = gileadFee();  // gilead 활동회원 기준(고스트 제외) · 가나다순
     var paidCnt = names.filter(function (nm) { return !!dues[nm]; }).length;
     var pct = n ? Math.round(paidCnt / n * 100) : 0;
     var myNm = memberName(me), myPaid = gileadPaidByName(myNm);
