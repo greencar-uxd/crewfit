@@ -1143,8 +1143,16 @@
   }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
+    // 순위 초기화(대전 기록 삭제) 후에도 반영 수지 보유자는 명단 유지 — 0전 · 수지 표시, 새 경기가 쌓이면 순위 재형성
+    var sj = isGileadClub(club) ? ((gileadData() || {}).suji || null) : null;
+    if (sj) Object.keys(sj).forEach(function (nm) {
+      if (rows.some(function (a) { return a.name === nm; })) return;
+      var mid = memberIdByName(nm);
+      rows.push({ id: mid, name: nm, games: 0, wins: 0, avg: 0, winRate: 0, recSuji: null, lastTarget: 0, coffeeBuy: 0, lunchBuy: 0, _noId: !mid });
+    });
+    rows.sort(function (x, y) { var gx = x.games > 0 ? 1 : 0, gy = y.games > 0 ? 1 : 0; if (gx !== gy) return gy - gx; if (gx) return 0; return (gileadSujiOf(y.name) || 0) - (gileadSujiOf(x.name) || 0) || x.name.localeCompare(y.name, "ko"); });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
-    var top1 = rows.length ? rows[0].id : null, ck = null, lk = null, ckN = 0, lkN = 0;
+    var top1 = (rows.length && rows[0].games > 0) ? rows[0].id : null, ck = null, lk = null, ckN = 0, lkN = 0;
     rows.forEach(function (a) { if (a.coffeeBuy > ckN) { ckN = a.coffeeBuy; ck = a.id; } if (a.lunchBuy > lkN) { lkN = a.lunchBuy; lk = a.id; } });
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
@@ -1163,9 +1171,9 @@
       rows.forEach(function (a, i) {
         h += '<div class="rank-row">' +
           '<span class="rk-no rk-' + (i < 3 ? (i + 1) : "n") + '">' + (i + 1) + "</span>" +
-          avatar(a.id, 30) +
+          (a._noId ? '<span class="av" style="width:30px;height:30px;font-size:13px">' + esc((a.name || "?").slice(0, 1)) + "</span>" : avatar(a.id, 30)) +
           '<div class="rk-name"><div>' + esc(a.name) + kb(a.id) + '</div><div class="rk-sub">' + a.games + '전 ' + a.wins + '승 · ' + sujiHint(a) + betTally(a) + '</div></div>' +
-          '<div class="rk-avg"><div class="rk-avg-n">' + fmtAvg(a.avg) + '</div><div class="rk-avg-l">에버리지</div></div>' +
+          '<div class="rk-avg"><div class="rk-avg-n">' + (a.games ? fmtAvg(a.avg) : "-") + '</div><div class="rk-avg-l">에버리지</div></div>' +
           "</div>";
       });
       h += "</div>";
