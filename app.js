@@ -237,6 +237,8 @@
   var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "김성준", "장정우", "진익영"];
   function gileadIsActive(name) { return GILEAD_ACTIVE.indexOf(name) >= 0; }
   function memberIdByName(name) { var ms = obj(DB.members); for (var k in ms) if ((ms[k].name || "") === name) return k; return null; }
+  // 운영관리(gilead)에서 확정한 '반영 수지' — 있으면 계산값보다 우선
+  function gileadSujiOf(name) { var g = gileadData(); var v = g && g.suji && +g.suji[name]; return v > 0 ? v : 0; }
   function climbStats(cid) {
     var agg = {};
     clubRecords(cid, "climb").forEach(function (r) { if (!r.member) return; var a = agg[r.member] || (agg[r.member] = { id: r.member, sends: 0, maxGrade: 0, ts: 0, grades: [] }); a.sends++; var g = +r.grade || 0; a.grades.push(g); if (g > a.maxGrade) a.maxGrade = g; if ((r.ts || 0) > a.ts) a.ts = r.ts || 0; });
@@ -702,13 +704,17 @@
   function msStat(n, l) { return '<div class="ms-stat"><div class="ms-stat-n">' + n + '</div><div class="ms-stat-l">' + l + '</div></div>'; }
   function mySkillBlock(c) {
     if (c.sport === "billiards") {
-      var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0];
-      if (!stb || !stb.games) return "";
+      var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0] || { games: 0, wins: 0, avg: 0, recSuji: null, lastTarget: 0 };
+      var offi = isGileadClub(c) ? gileadSujiOf(memberName(me)) : 0;  // 운영관리에서 확정한 반영 수지
+      var mySuji = offi || stb.recSuji;
+      if (!stb.games && !offi) return "";
       var h = '<div class="card"><div class="mystat-head">' + (c.emoji || "🏅") + " " + esc(c.name) + '</div><div class="md-mystat">' +
-        msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") + (stb.recSuji ? msStat(stb.recSuji, "내 수지") : "") + "</div>";
-      h += stb.recSuji
-        ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>내 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
-        : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 내 수지를 알려드려요</div>';
+        (stb.games ? msStat(fmtAvg(stb.avg), "에버리지") + msStat(stb.games, "경기") + msStat(stb.wins, "승") : "") + (mySuji ? msStat(mySuji, "내 수지") : "") + "</div>";
+      h += offi
+        ? '<div class="hint" style="margin-top:8px">운영진이 확정한 <b>내 수지 ' + offi + '</b>' + (stb.recSuji && stb.recSuji !== offi ? " · 에버리지 환산 " + stb.recSuji : "") + '</div>'
+        : (stb.recSuji
+          ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>내 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
+          : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 내 수지를 알려드려요</div>');
       var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
@@ -1127,9 +1133,9 @@
     }
     return h;
   }
-  function sujiHint(a) { return "수지 " + (a.recSuji || a.lastTarget || "-"); }  // 순위판: 통계 환산 추천 기준 단일 표기(3경기 미만은 최근 사용 수지)
+  function sujiHint(a) { return "수지 " + (gileadSujiOf(a.name) || a.recSuji || a.lastTarget || "-"); }  // 순위판: 반영 수지(운영 확정) > 통계 환산 > 최근 사용
   // 선수의 자동 입력용 수지: 통계 환산 추천 우선, 없으면(3경기 미만) 최근 사용 수지
-  function sujiOf(cid, pid) { if (!pid) return 0; var a = billiardsStats(cid).filter(function (x) { return x.id === pid; })[0]; return a ? (a.recSuji || a.lastTarget || 0) : 0; }
+  function sujiOf(cid, pid) { if (!pid) return 0; var of = gileadSujiOf(memberName(pid)); if (of) return of; var a = billiardsStats(cid).filter(function (x) { return x.id === pid; })[0]; return a ? (a.recSuji || a.lastTarget || 0) : 0; }
   function bindSujiAutofill(cid, selId, inpId) {
     var s = $("#" + selId), t = $("#" + inpId); if (!s || !t) return;
     s.addEventListener("change", function () { var v = sujiOf(cid, this.value); if (v) t.value = v; });
