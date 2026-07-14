@@ -191,7 +191,7 @@
     function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeBuy: 0, lunchBuy: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
-      [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; a.score += (+p.score || 0); a.innings += (+p.innings || 0); if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });
+      [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; if (+p.innings > 0) { a.score += (+p.score || 0); a.innings += (+p.innings || 0); } if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });  // 이닝 없는 복원 경기는 에버리지 계산에서 제외(전적만 반영)
       if (m.winner) { ensure(m.winner).wins++; if (m.bet) { var loserId = m.winner === m.p1.id ? m.p2.id : m.p1.id; var lb = ensure(loserId); if (m.bet.coffee) lb.coffeeBuy++; if (m.bet.lunch) lb.lunchBuy++; } }  // 진 사람이 커피/점심 삼
     });
     var ids = Object.keys(agg);
@@ -1141,6 +1141,13 @@
     s.addEventListener("change", function () { var v = sujiOf(cid, this.value); if (v) t.value = v; });
     if (!t.value && s.value) { var v0 = sujiOf(cid, s.value); if (v0) t.value = v0; }  // 열릴 때 기본 선택(본인)도 채움
   }
+  // 대결 일정(sessions)에 남아있는 완료 경기 중 clubmatches에 없는 것 — 순위 초기화 후 복원용
+  function restorableMatches(cid) {
+    var have = obj((obj(DB.clubmatches) || {})[cid]);
+    return sessionsOfClub(cid).filter(function (s) {
+      return s.kind === "match" && s.match && s.match.status === "done" && s.match.p1 && s.match.p2 && !(s.match.matchKey && have[s.match.matchKey]);
+    });
+  }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
     // 순위 초기화(대전 기록 삭제) 후에도 반영 수지 보유자는 명단 유지 — 0전 · 수지 표시, 새 경기가 쌓이면 순위 재형성
@@ -1158,6 +1165,8 @@
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
+    var rst = canManage(me) ? restorableMatches(cid) : [];
+    if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
     if (ck || lk) {
       var kp = [];
       if (ck) kp.push("☕ 커피왕 <b>" + esc(memberName(ck)) + "</b> " + ckN + "잔 삼");
@@ -2332,6 +2341,19 @@
       Store.push("sessions", msdata); closeModal(); render(); return;
     }
     if (a === "md-pick-winner") { var mw = t.getAttribute("data-w"); var mwi = $("#md-winner"); if (mwi) mwi.value = mw; var w1 = $("#md-w1"), w2 = $("#md-w2"); if (w1) w1.classList.toggle("on", mw === "p1"); if (w2) w2.classList.toggle("on", mw === "p2"); return; }
+    if (a === "restore-matches") {  // 순위 초기화 후 — 대결 일정에 남은 완료 경기로 clubmatches 재구성
+      var rmc = state.clubId; if (!canManage(me)) return;
+      var rml = restorableMatches(rmc); if (!rml.length) return;
+      if (!confirm("대결 일정 " + rml.length + "건에서 대전 기록을 복원할까요?\n(이닝·내기 정보는 일정에 저장돼 있지 않아 에버리지 계산에서는 제외되고, 전적·승패·수지·날짜가 복원됩니다)")) return;
+      rml.forEach(function (s) {
+        var mt = s.match, rmk = mt.matchKey || key();
+        var rts = s.startDate ? (Date.parse(s.startDate) || Date.now()) : Date.now();
+        Store.set("clubmatches/" + rmc + "/" + rmk, { ts: rts, by: me, sessionId: s.id, restored: true, winner: mt.winner || null,
+          p1: { id: mt.p1.id, target: +mt.p1.target || 0, score: +mt.p1score || 0, innings: 0 },
+          p2: { id: mt.p2.id, target: +mt.p2.target || 0, score: +mt.p2score || 0, innings: 0 } });
+      });
+      render(); return;
+    }
     if (a === "finish-match") {
       var fsid = t.getAttribute("data-sid"), fso = sessionById(fsid);
       if (!fso || !fso.match || !rankCanRec(fso.clubId)) return;

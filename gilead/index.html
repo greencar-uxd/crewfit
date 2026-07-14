@@ -455,7 +455,7 @@ function renderSuji(){
   var el=document.getElementById('sujiTable');if(!el)return;
   var agg={};
   Object.keys(CM).forEach(function(cid){var ms=CM[cid]||{};Object.keys(ms).forEach(function(k){var m=ms[k];if(!m||!m.p1||!m.p2)return;
-    [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;a.score+=(+p.score||0);a.inn+=(+p.innings||0);});});});
+    [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;if(+p.innings>0){a.score+=(+p.score||0);a.inn+=(+p.innings||0);}});});});  // 이닝 없는 복원 경기는 avg 제외
   var rows=Object.keys(agg).map(function(id){var a=agg[id];var nm=(MB[id]&&MB[id].name)||id;var avg=a.inn?a.score/a.inn:0;
     return{name:nm,avg:avg,rec:avgToSuji(avg),games:a.games};});
   var suji=DB.suji||{};
