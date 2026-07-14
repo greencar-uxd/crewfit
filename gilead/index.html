@@ -28,7 +28,7 @@
   .tnum{font-variant-numeric:tabular-nums}
   .ds-table th.is-right,.ds-table td.is-right{text-align:right}   /* 행 제목(헤더)과 값 정렬 일치 보장 */
   .ds-table th.is-center,.ds-table td.is-center{text-align:center}
-  .suji-inp{text-align:right}                                      /* 반영 수지 입력 숫자도 우측 정렬 */
+  .suji-inp{text-align:center}                                     /* 반영 수지 입력 숫자 가운데 정렬 */
   .login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:var(--space-5);background:var(--surface-page);overflow:auto}
   .login .box{width:100%;max-width:404px}
   .brandmark{width:48px;height:48px;display:grid;place-items:center;margin:0 auto var(--space-3);font-size:38px;line-height:1}
@@ -468,10 +468,10 @@ function renderSuji(){
   SUJI_EXCLUDE.forEach(function(n){delete set[n];});
   var rows=Object.keys(set).map(function(nm){var a=byName[nm]||{games:0,score:0,inn:0};var avg=a.inn?a.score/a.inn:0;return{name:nm,games:a.games,rec:avgToSuji(avg)||0};});
   rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
-  el.innerHTML='<thead><tr><th>이름</th><th class="is-center">경기</th><th class="is-right">최근 수지</th><th class="is-right">반영 수지</th></tr></thead><tbody>'+
+  el.innerHTML='<thead><tr><th>이름</th><th class="is-center">경기</th><th class="is-center">최근 수지</th><th class="is-center">반영 수지</th></tr></thead><tbody>'+
     rows.map(function(r){var cur=(suji[r.name]!=null)?suji[r.name]:0;
-      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-right tnum">'+r.rec+'</td>'+
-        '<td class="is-right"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
+      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.games+'</td><td class="is-center tnum">'+r.rec+'</td>'+
+        '<td class="is-center"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
 }
 function resetSujiInputs(){var inps=document.querySelectorAll('.suji-inp');for(var i=0;i<inps.length;i++)inps[i].value=0;toast('반영 수지를 0으로 — 전체 저장을 눌러야 반영됩니다');}
 function saveSujiAll(){
