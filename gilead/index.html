@@ -149,11 +149,7 @@
     </section>
 
     <section class="view" id="view-check">
-<div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><h3 class="panel-title">활동회원 <span class="tiny">· 당구장 활동 · 회비 필수 · 11명</span></h3><div class="ds-table-wrap"><table class="ds-table" id="activeTable"></table></div></div>
-      <div class="ds-card ds-card--pad">
-        <h3 class="panel-title">고스트회원 <span class="ds-badge ds-badge--accent">GHOST</span> <span class="tiny">· 사진만 · 회식비 지원용 · 6명</span></h3>
-<div class="ds-table-wrap"><table class="ds-table" id="ghostTable"></table></div>
-      </div>
+      <div class="ds-card ds-card--pad"><h3 class="panel-title">회원 명단 <span class="tiny">· 활동/고스트 · 회비 · 사진 체크</span></h3><div class="ds-table-wrap"><table class="ds-table" id="checkTable"></table></div></div>
     </section>
 
     <section class="view" id="view-expense">
@@ -423,7 +419,7 @@ function buildCheckTable(names,withDues){var m=M(current);
     return '<tr><td><span style="font-weight:var(--fw-medium)">'+esc(n)+'</span>'+admin+' '+role+'</td>'+dues+photo+'</tr>';}).join('');
   return head+'<tbody>'+body+'</tbody>';}
 function koSort(arr){return arr.slice().sort(function(a,b){return a.localeCompare(b,'ko');});}  // 모든 명단 가나다순
-function renderCheck(){document.getElementById('activeTable').innerHTML=buildCheckTable(koSort(ACTIVE),true);document.getElementById('ghostTable').innerHTML=buildCheckTable(koSort(GHOST),false);}
+function renderCheck(){var el=document.getElementById('checkTable');if(el)el.innerHTML=buildCheckTable(koSort(ALL),true);}   // 활동+고스트 한 테이블(가나다순, 행별 활동/고스트 배지)
 function toggleDue(n){var m=M(current);mutate({t:'due',mk:current,name:n,v:!m.dues[n]});}
 function togglePhoto(n){var m=M(current);mutate({t:'photo',mk:current,name:n,v:!m.photos[n]});}
 function addExpense(){var amt=parseInt(document.getElementById('exAmt').value)||0;var memo=document.getElementById('exMemo').value.trim();if(!memo){toast('내용을 입력하세요');return;}if(amt<=0){toast('금액을 입력하세요');return;}var d=document.getElementById('exDate').value||todayISO();var fund=(document.getElementById('exFund')&&document.getElementById('exFund').value)||'';if(!fund){toast('재원을 선택하세요 (토스/법인카드)');return;}mutate({t:'add',kind:'expenses',mk:d.slice(0,7),item:{id:uid(),date:d,memo:memo,amount:amt,fund:fund}});document.getElementById('exMemo').value='';document.getElementById('exAmt').value='';document.getElementById('exFund').value='';}
@@ -472,9 +468,9 @@ function renderSuji(){
   rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
   // 편집 중이던 인풋에 포커스 복원용 — 표는 sujiEdits(사용자가 실제로 바꾼 값)만 우선 사용
   var _act=document.activeElement,_fName=(_act&&_act.getAttribute&&(''+_act.className).indexOf('suji-inp')>=0)?_act.getAttribute('data-name'):null;
-  el.innerHTML='<thead><tr><th>이름</th><th class="is-center">최근 수지</th><th class="is-center">반영 수지</th></tr></thead><tbody>'+
+  el.innerHTML='<thead><tr><th>이름</th><th class="is-center">6월 수지</th><th class="is-center">반영 수지</th></tr></thead><tbody>'+
     rows.map(function(r){var cur=(sujiEdits[r.name]!=null)?sujiEdits[r.name]:((suji[r.name]!=null)?suji[r.name]:0);   // 편집값 > 저장값 > 0
-      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.rec+'</td>'+
+      return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">0</td>'+   // 6월 수지: 이력 없음 — 전부 0 표기
         '<td class="is-center"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'" oninput="sujiEdits[this.getAttribute(\'data-name\')]=this.value"></td></tr>';}).join('')+'</tbody>';
   if(_fName){var _ni=el.querySelectorAll('.suji-inp');for(var _k=0;_k<_ni.length;_k++){if(_ni[_k].getAttribute('data-name')===_fName){var _l=(''+_ni[_k].value).length;_ni[_k].focus();try{_ni[_k].setSelectionRange(_l,_l);}catch(e){}break;}}}
 }

@@ -1032,7 +1032,7 @@
   function viewHub() {
     var club = currentClub() || {}, h = "";
     if (Store.mode === "demo") h += '<div class="demo-note">' + icon("alert", 14) + ' <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 지금 입력한 내용은 이 기기에만 저장되고 다른 크루원에겐 안 보여요. <button class="link" data-action="reload-app">새로고침</button> 후 다시 시도해 주세요.</div>';
-    h += '<div class="hub-head"><h1>' + esc(club.name || "일정") + '</h1><p class="hub-sub">' + esc(club.desc || sportLabel(club.sport)) + '</p></div>';
+    h += '<div class="hub-head"><h1>' + (club.emoji ? esc(club.emoji) + " " : "") + esc(club.name || "일정") + '</h1><p class="hub-sub">' + esc(club.desc || sportLabel(club.sport)) + '</p></div>';
     var ranking = clubHasRanking(club);
     var tabs = [["schedule", "일정"]]; if (ranking) tabs.push(["ranking", "순위"]); if (!isGileadClub(club)) tabs.push(["board", "게시판"]); tabs.push(["members", "멤버"]);  // G리아드는 게시판 예외처리
     var cur = state.hubTab || "schedule"; if (cur === "ranking" && !ranking) cur = "schedule"; if (cur === "board" && isGileadClub(club)) cur = "schedule";
