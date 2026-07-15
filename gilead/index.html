@@ -400,7 +400,7 @@ function statCard(o){
     (o.badge?'<div style="margin-top:var(--space-3)">'+o.badge+'</div>':'')+
     (o.sub?'<p class="tiny" style="margin:var(--space-2) 0 0">'+o.sub+'</p>':'')+'</div>';}
 function badge(v,t){return '<span class="ds-badge ds-badge--'+v+'">'+t+'</span>';}
-function emptyState(t,d){return '<div class="ds-empty"><div class="ds-empty__sig"><span></span><span></span><span></span><span></span><span class="is-point"></span><span></span><span></span><span></span><span></span></div><p class="ds-empty__title">'+esc(t)+'</p><p class="ds-empty__desc">'+esc(d)+'</p></div>';}
+function emptyState(t,d){return '<div class="ds-empty"><p class="ds-empty__title">'+esc(t)+'</p><p class="ds-empty__desc">'+esc(d)+'</p></div>';}
 function renderDash(){var s=stats(current);
   document.getElementById('dashKicker').textContent=current.replace('-','년 ')+'월 요약';
   document.getElementById('dashCards').innerHTML=[
