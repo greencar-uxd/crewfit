@@ -752,7 +752,7 @@
     $("#app-header").innerHTML =
       '<button class="hd-back" data-action="go-clubs" aria-label="크루 목록으로">' + icon("back", 22) + "</button>" +
       '<div class="hd-actions">' +
-      (canManage(me) ? '<button class="hd-gear" data-action="open-club-manage" aria-label="크루 관리">' + icon("gear", 22) + "</button>" : "") +
+      (canManage(me) ? '<button class="hd-gear" data-action="edit-club" data-id="' + esc(club.id) + '" aria-label="크루 정보 수정">' + icon("gear", 22) + "</button>" : "") +
       "</div>";
   }
   function sessHas(f) { var sx = currentSession() || {}; return !sx.features || sx.features.indexOf(f) >= 0; }
@@ -1589,7 +1589,7 @@
       '<label>크루 이름</label><input id="f-cname" placeholder="예: 강남 3구 당구 크루" value="' + (ed ? esc(ed.name || "") : "") + '">' +
       '<label>한 줄 소개 (선택)</label><input id="f-cdesc" placeholder="예: 매주 수요일 저녁 모임" value="' + (ed ? esc(ed.desc || "") : "") + '">' +
       '<label>색상</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + curAcc + '"></div>' +
-      '<input type="hidden" id="f-cvis" value="' + curVis + '">' +      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
+      '<input type="hidden" id="f-cvis" value="' + curVis + '">' +      '<div class="modal-foot">' + (ed && ed._user ? '<button class="link-danger" data-action="del-club" data-id="' + esc(editId) + '">크루 삭제</button>' : "") + '<button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
   }
   /* 일정 추가 폼 (운영진) */
   function formAddSession(editId) {
