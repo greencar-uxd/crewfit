@@ -1568,7 +1568,7 @@
     if (!canManage(me)) return;
     var club = currentClub() || {};
     openModal('<h2>크루 관리</h2>' +
-      '<p class="hint" style="margin:-4px 0 14px">' + esc(club.name || "크루") + ' 정보를 수정하거나, 크루를 삭제할 수 있어요.</p>' +
+      '<p class="hint" style="margin:-4px 0 14px">' + esc(club.name || "크루") + ' 정보를 수정할 수 있어요.' + (club._user ? ' 필요하면 크루를 삭제할 수도 있어요.' : ' (앱에 내장된 크루라 삭제는 안 돼요.)') + '</p>' +
       '<button class="btn-line btn-block" data-action="edit-club" data-id="' + esc(club.id) + '">크루 정보 수정</button>' +
       (club._user ? '<button class="link-danger" data-action="del-club" data-id="' + esc(club.id) + '" style="display:block;width:100%;text-align:center;margin-top:14px">크루 삭제</button>' : "") +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">닫기</button></div>');
