@@ -281,6 +281,8 @@
 var ADMINS=['강민관','정종욱'];
 var ADMIN_ROLE={'강민관':'회장','정종욱':'총무'};
 var ADMIN_ID={'강민관':'m17','정종욱':'jrd01'};   /* 크루핏 members 노드 ID */
+/* 크루핏 로스터 ID → 이름 (members 노드에 없는(미인증) 회원의 대전 기록 id 해석용) */
+var ROSTER_ID={m17:'강민관',jrd01:'정종욱',jrd02:'조민호',jrd03:'진익영',jrd04:'김경호',jrd05:'김규식',jrd06:'김보성',jrd07:'김성준',jrd08:'김유현',jrd09:'김정수',jrd10:'문영건',jrd11:'박수홍',jrd12:'배지현',jrd13:'서지유',jrd14:'왕건모',jrd15:'이순란',jrd16:'이정걸',jrd17:'이진주',jrd18:'장정우'};
 var FEE_DEFAULT=30000;
 var ACTIVE=['문영건','강민관','이정걸','조민호','김규식','배지현','김경호','박수홍','정종욱','장정우','진익영'];
 var GHOST=['김유현','이순란','이진주','김보성','김정수','김성준'];  // 김성준: 활동회원(회비) 제외, 사진·지원 명단(고스트)엔 유지
@@ -460,11 +462,11 @@ function renderSuji(){
   Object.keys(CM).forEach(function(cid){var ms=CM[cid]||{};Object.keys(ms).forEach(function(k){var m=ms[k];if(!m||!m.p1||!m.p2)return;
     [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;if(+p.innings>0){a.score+=(+p.score||0);a.inn+=(+p.innings||0);}});});});  // 이닝 없는 복원 경기는 avg 제외
   var byName={};
-  Object.keys(agg).forEach(function(id){var nm=(MB[id]&&MB[id].name)||id;var b=byName[nm]=byName[nm]||{games:0,score:0,inn:0};b.games+=agg[id].games;b.score+=agg[id].score;b.inn+=agg[id].inn;});
+  Object.keys(agg).forEach(function(id){var nm=(MB[id]&&MB[id].name)||ROSTER_ID[id]||id;var b=byName[nm]=byName[nm]||{games:0,score:0,inn:0};b.games+=agg[id].games;b.score+=agg[id].score;b.inn+=agg[id].inn;});
   var suji=DB.suji||{};
   // 명단 = 활동회원 전원 + 대전 참가자 + 반영 수지 보유자 (가나다순) — 데이터 없으면 전부 0
   var SUJI_EXCLUDE=['김성준'];  // 수지 관리 표에서만 제외(회비·사진 명단엔 유지)
-  var set={};ACTIVE.forEach(function(n){set[n]=1;});Object.keys(byName).forEach(function(n){set[n]=1;});Object.keys(suji).forEach(function(n){set[n]=1;});
+  var set={};ACTIVE.forEach(function(n){set[n]=1;});Object.keys(byName).forEach(function(n){set[n]=1;});Object.keys(suji).forEach(function(n){set[ROSTER_ID[n]||n]=1;});
   SUJI_EXCLUDE.forEach(function(n){delete set[n];});
   var rows=Object.keys(set).map(function(nm){var a=byName[nm]||{games:0,score:0,inn:0};var avg=a.inn?a.score/a.inn:0;return{name:nm,games:a.games,rec:avgToSuji(avg)||0};});
   rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});

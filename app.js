@@ -1357,6 +1357,7 @@
   function formMatch(sessionId, editKey) {
     var cid = state.clubId, roster = clubRoster(cid);
     if (!(me && (obj(DB.members)[me] || {}).claimed && roster.some(function (r) { return r.id === me; }))) { alert("크루원으로 입장한 뒤 기록할 수 있어요."); return; }
+    if (isGileadClub(clubById(cid))) roster = roster.filter(function (r) { return gileadIsActive(r.name) || r.id === me; });  // G리아드: 선수 선택은 활동회원(11명)만 — 고스트·비활동 제외
     var ed = editKey ? (obj(obj(DB.clubmatches)[cid])[editKey]) : null;
     var ep1 = ed ? (ed.p1 || {}) : {}, ep2 = ed ? (ed.p2 || {}) : {};
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
@@ -1484,7 +1485,9 @@
   function formMatchSession() {
     var cid = state.clubId, roster = clubRoster(cid);
     if (!rankCanRec(cid)) { alert("크루원으로 입장한 뒤 만들 수 있어요."); return; }
+    if (isGileadClub(clubById(cid))) roster = roster.filter(function (r) { return gileadIsActive(r.name) || r.id === me; });  // G리아드: 선수 선택은 활동회원(11명)만 — 고스트·비활동 제외
     var p2def = "";
+    var _td = new Date(), tdStr = _td.getFullYear() + "-" + ("0" + (_td.getMonth() + 1)).slice(-2) + "-" + ("0" + _td.getDate()).slice(-2);  // 날짜 기본값 = 오늘
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
     openModal("<h2>1:1 대결 일정</h2>" +
       '<div class="mt-form">' +
@@ -1492,7 +1495,7 @@
         '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span></div></div>' +
       '<div class="mt-col"><label>선수 2</label><select id="ms-p2"><option value="">상대 선수 선택…</option>' + opt(p2def) + "</select>" +
         '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t2" type="number" inputmode="numeric" min="1" placeholder="예 15"></span></div></div>' +
-      '<label>날짜 (선택)</label><input id="ms-date" type="date">' +
+      '<label>날짜 (선택)</label><input id="ms-date" type="date" value="' + tdStr + '">' +
       "</div>" +
       '<div id="ms-err" class="pin-err"></div>' +
       '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-match-session">대결 만들기</button></div>');
