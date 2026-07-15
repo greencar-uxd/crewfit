@@ -186,9 +186,9 @@
   function rosterEntry(id) { var f = (CFG.roster || []).filter(function (r) { return r.id === id; })[0]; if (f) return f; var cs = allClubs(); for (var i = 0; i < cs.length; i++) { var rs = cs[i].roster || []; for (var j = 0; j < rs.length; j++) { if (rs[j].id === id) return rs[j]; } } var dr = obj(DB.roster); for (var ck in dr) { if (dr[ck] && dr[ck][id]) return { id: id, name: (dr[ck][id].name || id), role: (dr[ck][id].role || "crew") }; } return null; }
   function clubHasRanking(c) { return !!(c && (c.sport === "billiards" || c.sport === "climbing" || c.sport === "running")); }
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
-  function billiardsStats(cid) {
+  function billiardsStats(cid, includeAll) {
     var agg = {};
-    var _gilReset = isGileadClub(clubById(cid));  // G리아드: 순위 초기화 — 기준 이전·복원 경기는 순위 집계에서 제외
+    var _gilReset = !includeAll && isGileadClub(clubById(cid));  // G리아드: 순위 초기화 — 기준 이전·복원 경기 제외. includeAll=마이페이지 개인 기록용(전체 집계)
     function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeBuy: 0, lunchBuy: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
@@ -708,7 +708,7 @@
   function msStat(n, l) { return '<div class="ms-stat"><div class="ms-stat-n">' + n + '</div><div class="ms-stat-l">' + l + '</div></div>'; }
   function mySkillBlock(c) {
     if (c.sport === "billiards") {
-      var stb = billiardsStats(c.id).filter(function (a) { return a.id === me; })[0] || { games: 0, wins: 0, avg: 0, recSuji: null, lastTarget: 0 };
+      var stb = billiardsStats(c.id, true).filter(function (a) { return a.id === me; })[0] || { games: 0, wins: 0, avg: 0, recSuji: null, lastTarget: 0 };  // 마이페이지: 개인 기록은 전체 대전 집계(순위 필터 무시)
       var offi = isGileadClub(c) ? gileadSujiOf(memberName(me)) : 0;  // 운영관리에서 확정한 반영 수지
       var mySuji = offi || stb.recSuji;
       if (!stb.games && !offi) return "";
@@ -719,7 +719,7 @@
         : (stb.recSuji
           ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>내 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
           : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 내 수지를 알려드려요</div>');
-      var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me) && (!isGileadClub(c) || (mm.sessionId && !mm.restored && (mm.ts || 0) >= GILEAD_RANK_EPOCH)); }).slice(0, 5);  // G리아드: 순위와 동일하게 1:1 대결 결과만
+      var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);  // 마이페이지: 개인 기록 — 전체 대전 표시(순위엔 안 들어가는 것도)
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
         recent.forEach(function (mm) {
