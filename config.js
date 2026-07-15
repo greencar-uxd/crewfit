@@ -123,7 +123,7 @@ window.SRK_CONFIG = {
         { id: "jrd13", name: "서지유" }, { id: "jrd14", name: "왕건모" }, { id: "jrd15", name: "이순란" },
         { id: "jrd16", name: "이정걸" }, { id: "jrd17", name: "이진주" }, { id: "jrd18", name: "장정우" }
       ] },
-    { id: "gp", name: "그린 포인트", sport: "general", emoji: "🟢", accent: "green", desc: "그린카 그린 포인트 멤버",
+    { id: "gp", name: "그린 포인트", sport: "climbing", emoji: "🟢", accent: "green", desc: "그린카 그린 포인트 멤버",
       roster: [
         { id: "m17", name: "강민관", role: "manager" },
         { id: "jrd01", name: "정종욱" }, { id: "jrd02", name: "조민호" }, { id: "jrd05", name: "김규식" },
