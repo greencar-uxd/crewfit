@@ -144,7 +144,6 @@
     <section class="view active" id="view-dash">
       <div class="sec-head"><p class="ds-kicker" id="dashKicker">이번 달 요약</p></div>
       <div class="grid-cards" id="dashCards"></div>
-      <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><p class="ds-kicker" style="margin-bottom:var(--space-4)">최근 6개월 지출</p><div class="ds-barchart"><div class="ds-barchart__plot" id="dashChart"></div></div></div>
       <div class="ds-card ds-card--pad" style="margin-bottom:var(--space-5)"><p class="ds-kicker" style="margin-bottom:var(--space-4)">회비 미납 · 활동회원</p><div id="unpaidBox"></div></div>
       <div class="ds-card ds-card--pad"><p class="ds-kicker" style="margin-bottom:var(--space-4)">사진 미촬영 · 전원 필요(지원금 조건)</p><div id="unphotoBox"></div></div>
     </section>
@@ -285,7 +284,9 @@ var ADMIN_ID={'강민관':'m17','정종욱':'jrd01'};   /* 크루핏 members 노
 var ROSTER_ID={m17:'강민관',jrd01:'정종욱',jrd02:'조민호',jrd03:'진익영',jrd04:'김경호',jrd05:'김규식',jrd06:'김보성',jrd07:'김성준',jrd08:'김유현',jrd09:'김정수',jrd10:'문영건',jrd11:'박수홍',jrd12:'배지현',jrd13:'서지유',jrd14:'왕건모',jrd15:'이순란',jrd16:'이정걸',jrd17:'이진주',jrd18:'장정우'};
 var FEE_DEFAULT=30000;
 var ACTIVE=['문영건','강민관','이정걸','조민호','김규식','배지현','김경호','박수홍','정종욱','장정우','진익영'];
-var GHOST=['김유현','이순란','이진주','김보성','김정수','김성준'];  // 김성준: 활동회원(회비) 제외, 사진·지원 명단(고스트)엔 유지
+var GHOST=['김유현','이순란','이진주','김보성','김정수','김성준'];  // 김성준: 활동회원(순위·수지) 제외, 사진·지원 명단(고스트)엔 유지
+var DUES_EXTRA=['김성준'];  // 고스트지만 회비는 내는 회원
+var DUES=ACTIVE.concat(DUES_EXTRA);  // 회비 대상 = 활동회원(11) + 회비 내는 고스트 = 12명
 var SUPPORT_PER=30000;
 var FB={apiKey:"AIzaSyDBKcVMjKluqmeahRcZJcxrEfY_BmrsjfA",authDomain:"srk-mt.firebaseapp.com",databaseURL:"https://srk-mt-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"srk-mt",appId:"1:1080501646167:web:88abf17460342d6e260412"};
 var FB_PATH='gilead';
@@ -329,16 +330,16 @@ function cacheLoad(){var r=lsGet(CACHE);if(r){try{DB=norm(JSON.parse(r));}catch(
 
 /* ================= 통계 ================= */
 function stats(mk){var m=M(mk);
-  var duesPaid=ACTIVE.filter(function(n){return m.dues[n];}).length;
+  var duesPaid=DUES.filter(function(n){return m.dues[n];}).length;
   var photoDone=ALL.filter(function(n){return m.photos[n];}).length;
   var support=ALL.length*SUPPORT_PER,supportVat=support;  // 인원당 3만원(부가세 포함) — 별도 가산 없음: 17명 = 51만원
   var expenseTotal=vals(m.expenses).reduce(function(s,e){return s+(+e.amount||0);},0);
   var tossExpense=vals(m.expenses).reduce(function(s,e){return s+((e.fund||'toss')!=='card'?(+e.amount||0):0);},0);
   var cardExpense=vals(m.expenses).reduce(function(s,e){return s+((e.fund||'toss')==='card'?(+e.amount||0):0);},0);
   var incomeTotal=vals(m.income).reduce(function(s,e){return s+(+e.amount||0);},0);
-  return {duesPaid:duesPaid,duesTarget:ACTIVE.length,duesAmount:duesPaid*fee(),duesTargetAmount:ACTIVE.length*fee(),
+  return {duesPaid:duesPaid,duesTarget:DUES.length,duesAmount:duesPaid*fee(),duesTargetAmount:DUES.length*fee(),
     photoDone:photoDone,photoTotal:ALL.length,allPhoto:(photoDone===ALL.length),support:support,supportVat:supportVat,
-    expenseTotal:expenseTotal,tossExpense:tossExpense,cardExpense:cardExpense,incomeTotal:incomeTotal,unpaid:ACTIVE.filter(function(n){return !m.dues[n];}),unphoto:ALL.filter(function(n){return !m.photos[n];})};}
+    expenseTotal:expenseTotal,tossExpense:tossExpense,cardExpense:cardExpense,incomeTotal:incomeTotal,unpaid:DUES.filter(function(n){return !m.dues[n];}),unphoto:ALL.filter(function(n){return !m.photos[n];})};}
 function deadline(mk){var p=mk.split('-'),due=new Date(+p[0],+p[1]-1,18),t=new Date();t.setHours(0,0,0,0);var diff=Math.round((due-t)/86400000);
   if(diff>0)return{txt:'🧾 지출결의 마감 D-'+diff,soon:diff<=5};if(diff===0)return{txt:'🧾 지출결의 마감 D-DAY',soon:true};return{txt:'🧾 지출결의 마감 '+(-diff)+'일 지남',over:true};}
 function monthsBack(n){var a=[],d=new Date();d.setDate(1);for(var i=n-1;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(x.toISOString().slice(0,7));}return a;}
@@ -403,14 +404,11 @@ function emptyState(t,d){return '<div class="ds-empty"><div class="ds-empty__sig
 function renderDash(){var s=stats(current);
   document.getElementById('dashKicker').textContent=current.replace('-','년 ')+'월 요약';
   document.getElementById('dashCards').innerHTML=[
-    statCard({label:'회비 수납 · 활동 '+ACTIVE.length+'명',value:s.duesPaid+' / '+s.duesTarget,prog:Math.round(s.duesPaid/s.duesTarget*100),badge:(s.duesPaid===s.duesTarget?badge('success','완납'):badge('neutral','미납 '+s.unpaid.length+'명')),sub:won(s.duesAmount)+' / 목표 '+won(s.duesTargetAmount)+' · 당구장비 재원'}),
+    statCard({label:'회비 수납 · 대상 '+DUES.length+'명',value:s.duesPaid+' / '+s.duesTarget,prog:Math.round(s.duesPaid/s.duesTarget*100),badge:(s.duesPaid===s.duesTarget?badge('success','완납'):badge('neutral','미납 '+s.unpaid.length+'명')),sub:won(s.duesAmount)+' / 목표 '+won(s.duesTargetAmount)+' · 당구장비 재원'}),
     statCard({label:'사진 촬영 · 전원 '+ALL.length+'명',value:s.photoDone+' / '+s.photoTotal,prog:Math.round(s.photoDone/s.photoTotal*100),badge:(s.allPhoto?badge('success','전원 완료'):badge('warning','미촬영 '+s.unphoto.length+'명')),sub:s.allPhoto?'회사 지원 조건 충족':'전원 촬영 시 지원 조건 충족'}),
     statCard({label:'토스 모임통장 잔액',value:won(tossBalance()),badge:badge('success','회비+기타수입 합산'),sub:'이번 달 회비 +'+won(s.duesAmount)+' · 기타수입 +'+won(s.incomeTotal)+' · 지출 '+won(s.tossExpense)}),
     statCard({label:'법인카드 · 지출결의',value:won(s.cardExpense),badge:(s.allPhoto?badge('success','지원조건 충족'):badge('warning','전원사진 필요')),sub:'회사 지원 한도 '+won(s.supportVat)+'(부가세 포함) 대비 잔여 '+won(Math.max(0,s.supportVat-s.cardExpense))})
   ].join('');
-  var mos=monthsBack(6),vs=mos.map(function(mk){return stats(mk).expenseTotal;}),mx=Math.max.apply(null,vs.concat([1]));
-  document.getElementById('dashChart').innerHTML=mos.map(function(mk,i){var h=Math.max(2,Math.round(vs[i]/mx*120)),cur=(mk===current);
-    return '<div class="ds-barchart__col"><div class="ds-barchart__track"><div class="ds-barchart__val">'+(vs[i]?Math.round(vs[i]/10000)+'만':'0')+'</div><div class="ds-barchart__bar'+(cur?' is-accent':'')+'" style="height:'+h+'px"></div></div><div class="ds-barchart__lbl">'+parseInt(mk.slice(5))+'월</div></div>';}).join('');
   document.getElementById('unpaidBox').innerHTML=s.unpaid.length?('<div class="names">'+s.unpaid.map(function(n){return '<span class="ds-tag">'+esc(n)+'</span>';}).join('')+'</div>'):emptyState('회비 완납','활동회원 전원 회비를 납부했습니다');
   document.getElementById('unphotoBox').innerHTML=s.unphoto.length?('<div class="names">'+s.unphoto.map(function(n){var g=GHOST.indexOf(n)>=0;return '<span class="ds-tag"'+(g?' style="background:var(--surface-accent-subtle);color:var(--text-accent);border-color:transparent"':'')+'>'+esc(n)+(g?' · 고스트':'')+'</span>';}).join('')+'</div>'):emptyState('전원 촬영 완료',ALL.length+'명 전원 사진 완료 — 지원 조건 충족');}
 function toggleCheck(k){var m=M(current);mutate({t:'check',mk:current,key:k,v:!m.checklist[k]});}
@@ -420,7 +418,7 @@ function buildCheckTable(names,withDues){var m=M(current);
   var body=names.map(function(n){
     var role=ACTIVE.indexOf(n)>=0?badge('success','활동'):badge('accent','고스트');
     var admin=ADMIN_ROLE[n]?(' <span class="tiny">('+ADMIN_ROLE[n]+')</span>'):'';
-    var dues=withDues?('<td class="is-center">'+switchCell(!!m.dues[n],"toggleDue('"+n+"')",'회비 납부 '+n)+'</td>'):'<td class="is-center">'+badge('neutral','해당없음')+'</td>';
+    var dues=(DUES.indexOf(n)>=0)?('<td class="is-center">'+switchCell(!!m.dues[n],"toggleDue('"+n+"')",'회비 납부 '+n)+'</td>'):'<td class="is-center">'+badge('neutral','해당없음')+'</td>';
     var photo='<td class="is-center">'+switchCell(!!m.photos[n],"togglePhoto('"+n+"')",'사진 촬영 '+n)+'</td>';
     return '<tr><td><span style="font-weight:var(--fw-medium)">'+esc(n)+'</span>'+admin+' '+role+'</td>'+dues+photo+'</tr>';}).join('');
   return head+'<tbody>'+body+'</tbody>';}
@@ -435,7 +433,7 @@ function renderExpense(){var m=M(current);document.getElementById('exListTitle')
   vals(m.income).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+badge('success','수입')+'</td><td class="is-right tnum" style="color:var(--success-700)">+'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'income\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
   vals(m.expenses).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).forEach(function(t){rows.push('<tr><td class="tiny">'+esc(t.date)+'</td><td>'+esc(t.memo)+'</td><td>'+(t.fund==='card'?badge('accent','법인카드'):badge('neutral','토스'))+'</td><td class="is-right tnum" style="color:var(--danger-600)">−'+won(t.amount)+'</td><td class="is-right"><button class="ds-iconbtn ds-iconbtn--sm" title="삭제" onclick="delItem(\'expenses\',\''+current+'\',\''+t.id+'\')">'+IC.trash+'</button></td></tr>');});
   var s=stats(current);
-  var foot='<tr><td colspan="5" style="padding:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--surface-sunken);border-top:1px solid var(--border)"><span class="tiny" style="flex:0 0 auto">이번 달 합계</span><span class="tnum" style="margin-left:auto;text-align:right;font-weight:var(--fw-medium)">수입 '+won(s.duesAmount+s.incomeTotal)+' · '+badge('neutral','토스')+' 지출 '+won(s.tossExpense)+' · '+badge('accent','법인')+' '+won(s.cardExpense)+'</span></div></td></tr>'+
+  var foot='<tr><td colspan="5" style="padding:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--surface-sunken);border-top:1px solid var(--border)"><span class="tiny" style="flex:0 0 auto">이번 달 합계</span><span class="tnum" style="margin-left:auto;text-align:right;font-weight:var(--fw-medium)">수입 '+won(s.duesAmount+s.incomeTotal)+' · '+badge('neutral','토스')+' 지출 '+won(s.tossExpense)+' · '+badge('accent','법인')+' '+won(s.cardExpense)+' · '+badge('success','법인잔액')+' '+won(Math.max(0,s.supportVat-s.cardExpense))+'</span></div></td></tr>'+
     '<tr><td colspan="5" style="padding:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-card);border-top:1px solid var(--border-strong)"><span style="flex:0 0 auto;font-weight:var(--fw-bold)">토스 모임통장 잔액 (누계)</span><span class="tnum" style="margin-left:auto;text-align:right;font-weight:var(--fw-bold);font-size:var(--fs-lg);color:var(--text-accent)">'+won(tossBalance())+'</span></div></td></tr>';
   document.getElementById('exList').innerHTML='<div class="ds-table-wrap"><table class="ds-table"><thead><tr><th>날짜</th><th>내용</th><th>구분</th><th class="is-right">금액</th><th class="is-right">관리</th></tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="5">'+emptyState('내역 없음','이번 달 지출/수입 내역이 없습니다')+'</td></tr>')+'</tbody><tfoot>'+foot+'</tfoot></table></div>';}
 function renderReport(){var keys=Object.keys(DB.months);if(keys.indexOf(current)<0)keys.push(current);keys.sort();

@@ -1182,8 +1182,9 @@
     rows.forEach(function (a) { if (a.coffeeBuy > ckN) { ckN = a.coffeeBuy; ck = a.id; } if (a.lunchBuy > lkN) { lkN = a.lunchBuy; lk = a.id; } });
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
-    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2></div>' +
-      ((canRec && !isGileadClub(club)) ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";  // G리아드는 1:1 대결 스케쥴로만 기록 — 직접 '대전 기록' 버튼 숨김
+    var h = isGileadClub(club) ? "" :  // G리아드: 순위 헤더(제목·대전 기록 버튼) 제거 — '순위' 탭이 이미 라벨, 기록은 1:1 대결 스케쥴로만
+      ('<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2></div>' +
+      (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>");
     var rst = (canManage(me) && !isGileadClub(club)) ? restorableMatches(cid) : [];  // G리아드는 순수 1:1 대결 기반 — 복원 도구 숨김
     if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
     var innMiss = (canManage(me) && !isGileadClub(club)) ? clubMatches(cid).filter(function (mm) { return mm.p1 && mm.p2 && !(+mm.p1.innings > 0); }).length : 0;
