@@ -458,6 +458,7 @@ function renderSuji(){
   var el=document.getElementById('sujiTable');if(!el)return;
   var agg={};
   Object.keys(CM).forEach(function(cid){var ms=CM[cid]||{};Object.keys(ms).forEach(function(k){var m=ms[k];if(!m||!m.p1||!m.p2)return;
+    if(!m.sessionId||m.restored)return;  // 1:1 대결 스케쥴 결과만 집계 — 직접 입력·복원 기록 제외(최근 수지)
     [m.p1,m.p2].forEach(function(p){if(!p||!p.id)return;var a=agg[p.id]=agg[p.id]||{games:0,score:0,inn:0};a.games++;if(+p.innings>0){a.score+=(+p.score||0);a.inn+=(+p.innings||0);}});});});  // 이닝 없는 복원 경기는 avg 제외
   var byName={};
   Object.keys(agg).forEach(function(id){var nm=(MB[id]&&MB[id].name)||ROSTER_ID[id]||id;var b=byName[nm]=byName[nm]||{games:0,score:0,inn:0};b.games+=agg[id].games;b.score+=agg[id].score;b.inn+=agg[id].inn;});
@@ -484,7 +485,9 @@ function resetSujiInputs(){var inps=document.querySelectorAll('.suji-inp');for(v
 function saveSujiAll(){
   if(!canWrite){toast('로그인 후 저장할 수 있습니다');return;}
   var inps=document.querySelectorAll('.suji-inp');if(!inps.length){toast('저장할 항목이 없습니다');return;}
-  for(var i=0;i<inps.length;i++){var nm=inps[i].getAttribute('data-name');var v=parseInt(inps[i].value)||0;writeLeaf('suji/'+nm,v>0?v:null);}
+  DB.suji=DB.suji||{};
+  for(var i=0;i<inps.length;i++){var nm=inps[i].getAttribute('data-name');var v=parseInt(inps[i].value)||0;if(v>0)DB.suji[nm]=v;else delete DB.suji[nm];writeLeaf('suji/'+nm,v>0?v:null);}  // 로컬에도 즉시 반영 — 저장 후 입력값 유지(0으로 되돌지 않게)
+  renderSuji();
   toast('반영 수지 '+inps.length+'명 저장 — 크루핏 마이페이지에 반영됩니다');
 }
 
