@@ -575,9 +575,11 @@ h1, h2 { margin: 0; }
 .modal {
   position: absolute; left: 0; right: 0; bottom: 0; max-width: var(--maxw); margin: 0 auto;
   background: var(--surface); border: 1px solid var(--line); border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-  max-height: 90vh; overflow-y: auto;
+  max-height: 90vh; overflow-y: auto; overscroll-behavior: contain;
   animation: slideup .25s cubic-bezier(.2,.8,.2,1);
 }
+/* 모달 열림 동안 배경 스크롤 잠금 — iOS 바운스로 바텀시트가 끌려 내려가는 것 방지 */
+body.modal-lock { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
 @keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .modal h2 { font-size: 1rem; font-weight: 800; margin-bottom: 16px; }
 .modal label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin: 16px 0 8px; }

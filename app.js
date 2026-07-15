@@ -2031,8 +2031,9 @@
   /* ============================================================
      모달 & 폼
      ============================================================ */
-  function openModal(html) { var r = $("#modal-root"); r.innerHTML = '<div class="modal-back" data-action="close-modal"></div><div class="modal">' + html + "</div>"; r.classList.add("open"); }
-  function closeModal() { var r = $("#modal-root"); r.classList.remove("open"); r.innerHTML = ""; }
+  var _modalScrollY = 0;
+  function openModal(html) { var r = $("#modal-root"); var wasOpen = r.classList.contains("open"); r.innerHTML = '<div class="modal-back" data-action="close-modal"></div><div class="modal">' + html + "</div>"; r.classList.add("open"); if (!wasOpen) { _modalScrollY = window.scrollY || window.pageYOffset || 0; document.body.style.top = (-_modalScrollY) + "px"; document.body.classList.add("modal-lock"); } }
+  function closeModal() { var r = $("#modal-root"); r.classList.remove("open"); r.innerHTML = ""; if (document.body.classList.contains("modal-lock")) { document.body.classList.remove("modal-lock"); document.body.style.top = ""; window.scrollTo(0, _modalScrollY || 0); } }
   function memberOptions(sel) { return clubRoster().map(function (m) { return '<option value="' + m.id + '"' + (sel === m.id ? " selected" : "") + ">" + esc(m.name) + "</option>"; }).join(""); }
 
   function formNewPoll() {
