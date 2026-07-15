@@ -1184,7 +1184,7 @@
     rows.forEach(function (a) { if (a.coffeeBuy > ckN) { ckN = a.coffeeBuy; ck = a.id; } if (a.lunchBuy > lkN) { lkN = a.lunchBuy; lk = a.id; } });
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
-    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
+    var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
     var rst = (canManage(me) && !isGileadClub(club)) ? restorableMatches(cid) : [];  // G리아드는 순수 1:1 대결 기반 — 복원 도구 숨김
     if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
