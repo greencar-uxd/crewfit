@@ -188,9 +188,11 @@
   function clubMatches(cid) { cid = cid || state.clubId; var m = obj((obj(DB.clubmatches) || {})[cid]); return Object.keys(m).map(function (k) { var x = Object.assign({}, m[k]); x._key = k; return x; }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); }
   function billiardsStats(cid) {
     var agg = {};
+    var _gilReset = isGileadClub(clubById(cid));  // G리아드: 순위 초기화 — 기준 이전·복원 경기는 순위 집계에서 제외
     function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeBuy: 0, lunchBuy: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
+      if (_gilReset && ((m.ts || 0) < GILEAD_RANK_EPOCH || m.restored)) return;
       [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; if (+p.innings > 0) { a.score += (+p.score || 0); a.innings += (+p.innings || 0); } if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });  // 이닝 없는 복원 경기는 에버리지 계산에서 제외(전적만 반영)
       if (m.winner) { ensure(m.winner).wins++; if (m.bet) { var loserId = m.winner === m.p1.id ? m.p2.id : m.p1.id; var lb = ensure(loserId); if (m.bet.coffee) lb.coffeeBuy++; if (m.bet.lunch) lb.lunchBuy++; } }  // 진 사람이 커피/점심 삼
     });
@@ -234,8 +236,10 @@
   function gileadFee() { var g = gileadData(); return (g && g.settings && +g.settings.fee) || 30000; }
   function gileadPaidByName(name) { var g = gileadData(); var m = g && g.months && g.months[gileadMonth()]; return !!(m && m.dues && m.dues[name]); }
   // 회원 연동: gilead 활동회원 명단(회비 대상)과 동일 유지 — 고스트(사진만·회비 없음) 제외
-  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "김성준", "장정우", "진익영"];
+  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "장정우", "진익영"];  // 실제 활동회원 11명 (김성준 제외 — 핀번호·계정은 유지)
   function gileadIsActive(name) { return GILEAD_ACTIVE.indexOf(name) >= 0; }
+  // 순위 초기화 기준 — 이 시점 이전에 기록된(또는 복원된) 1:1 대결은 순위에서 제외, 이후 새 경기만 반영
+  var GILEAD_RANK_EPOCH = Date.parse("2026-07-15T00:00:00+09:00");
   function memberIdByName(name) { var ms = obj(DB.members); for (var k in ms) if ((ms[k].name || "") === name) return k; return null; }
   // 운영관리(gilead)에서 확정한 '반영 수지' — 있으면 계산값보다 우선
   function gileadSujiOf(name) { var g = gileadData(); var v = g && g.suji && +g.suji[name]; return v > 0 ? v : 0; }
@@ -1032,8 +1036,8 @@
     if (Store.mode === "demo") h += '<div class="demo-note">' + icon("alert", 14) + ' <b>오프라인 임시 모드</b> — 실시간 연결이 안 돼, 지금 입력한 내용은 이 기기에만 저장되고 다른 크루원에겐 안 보여요. <button class="link" data-action="reload-app">새로고침</button> 후 다시 시도해 주세요.</div>';
     h += '<div class="hub-head"><h1>' + esc(club.name || "일정") + '</h1><p class="hub-sub">' + esc(club.desc || sportLabel(club.sport)) + '</p></div>';
     var ranking = clubHasRanking(club);
-    var tabs = [["schedule", "일정"]]; if (ranking) tabs.push(["ranking", "순위"]); tabs.push(["board", "게시판"]); tabs.push(["members", "멤버"]);
-    var cur = state.hubTab || "schedule"; if (cur === "ranking" && !ranking) cur = "schedule";
+    var tabs = [["schedule", "일정"]]; if (ranking) tabs.push(["ranking", "순위"]); if (!isGileadClub(club)) tabs.push(["board", "게시판"]); tabs.push(["members", "멤버"]);  // G리아드는 게시판 예외처리
+    var cur = state.hubTab || "schedule"; if (cur === "ranking" && !ranking) cur = "schedule"; if (cur === "board" && isGileadClub(club)) cur = "schedule";
     h += '<div class="hub-subnav">' + tabs.map(function (t) { return '<button class="hsub' + (cur === t[0] ? " on" : "") + '" data-action="hub-tab" data-tab="' + t[0] + '">' + t[1] + "</button>"; }).join("") + "</div>";
     if (cur === "members") h += hubMembers(club);
     else if (cur === "ranking") h += hubRanking(club);
@@ -1051,7 +1055,7 @@
     var done = list.filter(function (s) { return isSessionDone(s); }).reverse();
     var h = '<div class="list-grid sess-grid">';
     active.forEach(function (s) { h += sessionCard(s); });
-    if (isMeAdmin()) h += '<button class="card sess-add" data-action="add-session">' + icon("plus", 24) + "<span>일정 추가하기</span></button>";
+    if (isMeAdmin() && !isGileadClub(club)) h += '<button class="card sess-add" data-action="add-session">' + icon("plus", 24) + "<span>일정 추가하기</span></button>";  // G리아드는 일정 만들기 예외처리
     if (club.sport === "billiards" && rankCanRec(club.id)) h += '<button class="card sess-add" data-action="add-match-session">' + icon("ballot", 24) + "<span>1:1 대결 만들기</span></button>";
     h += "</div>";
     if (!active.length && !done.length && !isMeAdmin()) h += '<div class="empty-msg">아직 등록된 일정이 없어요.</div>';
@@ -1065,6 +1069,7 @@
   }
   function hubMembers(club) {
     var roster = clubRoster(club.id);
+    if (isGileadClub(club)) roster = roster.filter(function (r) { return gileadIsActive(r.name); });  // G리아드: 실제 활동회원 11명만
     var canMng = canManage(me), meMgr = isManager(me);
     var h = "";
     if (canMng) h += '<p class="hint" style="margin-bottom:10px">멤버 권한 관리 — <b>운영진 지정</b>·<b>크루원 삭제</b>·<b>인증번호 초기화</b>(분실 시). 운영진 해제는 관리자만.</p>';
@@ -1168,6 +1173,7 @@
     // 순위 초기화(대전 기록 삭제) 후에도 반영 수지 보유자는 명단 유지 — 0전 · 수지 표시, 새 경기가 쌓이면 순위 재형성
     var sj = isGileadClub(club) ? ((gileadData() || {}).suji || null) : null;
     if (sj) Object.keys(sj).forEach(function (nm) {
+      if (!gileadIsActive(nm)) return;  // 실제 활동회원(11명)만 명단 유지 — 김성준·고스트 제외
       if (rows.some(function (a) { return a.name === nm; })) return;
       var mid = memberIdByName(nm);
       rows.push({ id: mid, name: nm, games: 0, wins: 0, avg: 0, winRate: 0, recSuji: null, lastTarget: 0, coffeeBuy: 0, lunchBuy: 0, _noId: !mid });
@@ -1180,9 +1186,9 @@
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2><div class="hint" style="margin-top:2px">누적 에버리지(득점÷이닝) · 대대 기준</div></div>' +
       (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
-    var rst = canManage(me) ? restorableMatches(cid) : [];
+    var rst = (canManage(me) && !isGileadClub(club)) ? restorableMatches(cid) : [];  // G리아드는 순수 1:1 대결 기반 — 복원 도구 숨김
     if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
-    var innMiss = canManage(me) ? clubMatches(cid).filter(function (mm) { return mm.p1 && mm.p2 && !(+mm.p1.innings > 0); }).length : 0;
+    var innMiss = (canManage(me) && !isGileadClub(club)) ? clubMatches(cid).filter(function (mm) { return mm.p1 && mm.p2 && !(+mm.p1.innings > 0); }).length : 0;
     if (innMiss) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="fill-innings">✍️ 복원 경기 이닝 입력 (' + innMiss + '건) — 입력하면 에버리지·수지 재계산</button></div>';
     if (ck || lk) {
       var kp = [];
@@ -1204,7 +1210,7 @@
       });
       h += "</div>";
     }
-    var ms = clubMatches(cid);
+    var ms = isGileadClub(club) ? [] : clubMatches(cid);  // G리아드: 순위 메뉴에서 '최근 대전' 제외 — 순수 순위만 표시
     if (ms.length) {
       h += '<h2 class="sec" style="margin-top:24px">최근 대전</h2><div class="match-list">';
       ms.slice(0, 12).forEach(function (m) {
@@ -2347,7 +2353,7 @@
       if (so.kind === "app") state.tab = "home";
       render(); return;
     }
-    if (a === "add-session") { formAddSession(); return; }
+    if (a === "add-session") { if (isGileadClub(currentClub())) return; formAddSession(); return; }
     if (a === "add-match-session") { formMatchSession(); return; }
     if (a === "save-match-session") {
       var mcid = state.clubId; if (!rankCanRec(mcid)) return;
@@ -2481,11 +2487,11 @@
     if (a === "top-nav") { if (state.screen === "clubs" && t.getAttribute("data-screen") !== "clubs") markFeedSeen(); state.screen = t.getAttribute("data-screen") || "clubs"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "go-explore") { state.screen = "explore"; state.clubId = null; state.pollId = null; render(); return; }
     if (a === "go-crews") { state.screen = "crews"; state.clubId = null; state.pollId = null; render(); return; }
-    if (a === "go-club-tab") { markFeedSeen(); state.clubId = t.getAttribute("data-id"); state.hubTab = t.getAttribute("data-tab") || "schedule"; state.boardTab = t.getAttribute("data-bt") || "notice"; state.screen = "hub"; state.pollId = null; render(); return; }
+    if (a === "go-club-tab") { markFeedSeen(); state.clubId = t.getAttribute("data-id"); state.hubTab = t.getAttribute("data-tab") || "schedule"; if (state.hubTab === "board" && isGileadClub(currentClub())) state.hubTab = "schedule"; state.boardTab = t.getAttribute("data-bt") || "notice"; state.screen = "hub"; state.pollId = null; render(); return; }
     if (a === "del-notif") { Store.remove("notifications/" + me + "/" + t.getAttribute("data-id")); openNotifs(); return; }
     if (a === "clear-notifs") { if (confirm("알림을 모두 삭제할까요?")) { myNotifs().forEach(function (kv) { Store.remove("notifications/" + me + "/" + kv[0]); }); closeModal(); } return; }
     if (a === "dismiss-notif") { ev.stopPropagation(); var dnId = t.getAttribute("data-id"); Store.update("notifications/" + me + "/" + dnId, { dismissed: true, read: true }); return; }
-    if (a === "open-notif") { closeModal(); state.pollId = null; var onCid = t.getAttribute("data-cid"); if (onCid) { state.screen = "hub"; state.clubId = onCid; state.hubTab = "board"; state.boardTab = t.getAttribute("data-bt") || "notice"; render(); return; } var onT = t.getAttribute("data-ntype") || ""; if (onT === "ride") { state.tab = "carpool"; } else if (onT === "settle") { state.tab = "my"; } else { state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : "notice"; } render(); return; }
+    if (a === "open-notif") { closeModal(); state.pollId = null; var onCid = t.getAttribute("data-cid"); if (onCid) { state.screen = "hub"; state.clubId = onCid; state.hubTab = isGileadClub(clubById(onCid)) ? "schedule" : "board"; state.boardTab = t.getAttribute("data-bt") || "notice"; render(); return; } var onT = t.getAttribute("data-ntype") || ""; if (onT === "ride") { state.tab = "carpool"; } else if (onT === "settle") { state.tab = "my"; } else { state.tab = "alert"; state.alert = onT === "vote" ? "vote" : onT === "schedule" ? "schedule" : "notice"; } render(); return; }
 
     /* 홈 히어로 배경 */
     if (a === "pick-hero") {
