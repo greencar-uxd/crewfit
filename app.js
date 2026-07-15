@@ -719,7 +719,7 @@
         : (stb.recSuji
           ? '<div class="hint" style="margin-top:8px">에버리지 기준 <b>내 수지 ' + stb.recSuji + '</b>' + (stb.lastTarget ? " (현재 " + stb.lastTarget + ")" : "") + ' · 전국 전자점수판 통계(129만 경기) 환산 · 경기가 쌓일수록 정확해져요</div>'
           : '<div class="hint" style="margin-top:8px">3경기 이상 쌓이면 내 수지를 알려드려요</div>');
-      var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me); }).slice(0, 5);
+      var recent = clubMatches(c.id).filter(function (mm) { return mm.p1 && mm.p2 && (mm.p1.id === me || mm.p2.id === me) && (!isGileadClub(c) || (mm.sessionId && !mm.restored && (mm.ts || 0) >= GILEAD_RANK_EPOCH)); }).slice(0, 5);  // G리아드: 순위와 동일하게 1:1 대결 결과만
       if (recent.length) {
         h += '<div class="match-list" style="margin-top:12px">';
         recent.forEach(function (mm) {
