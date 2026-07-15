@@ -192,7 +192,7 @@
     function ensure(id) { if (!agg[id]) agg[id] = { id: id, games: 0, wins: 0, score: 0, innings: 0, lastTarget: 0, ts: 0, coffeeBuy: 0, lunchBuy: 0 }; return agg[id]; }
     clubMatches(cid).forEach(function (m) {
       if (!m.p1 || !m.p2) return;
-      if (_gilReset && ((m.ts || 0) < GILEAD_RANK_EPOCH || m.restored)) return;
+      if (_gilReset && ((m.ts || 0) < GILEAD_RANK_EPOCH || m.restored || !m.sessionId)) return;  // 1:1 대결(스케쥴) 결과만 순위 집계 — 직접 '대전 기록'(sessionId 없음)은 제외
       [m.p1, m.p2].forEach(function (p) { if (!p || !p.id) return; var a = ensure(p.id); a.games++; if (+p.innings > 0) { a.score += (+p.score || 0); a.innings += (+p.innings || 0); } if ((m.ts || 0) >= a.ts) { a.ts = m.ts || 0; a.lastTarget = +p.target || a.lastTarget; } });  // 이닝 없는 복원 경기는 에버리지 계산에서 제외(전적만 반영)
       if (m.winner) { ensure(m.winner).wins++; if (m.bet) { var loserId = m.winner === m.p1.id ? m.p2.id : m.p1.id; var lb = ensure(loserId); if (m.bet.coffee) lb.coffeeBuy++; if (m.bet.lunch) lb.lunchBuy++; } }  // 진 사람이 커피/점심 삼
     });
@@ -1072,7 +1072,6 @@
     if (isGileadClub(club)) roster = roster.filter(function (r) { return gileadIsActive(r.name); });  // G리아드: 실제 활동회원 11명만
     var canMng = canManage(me), meMgr = isManager(me);
     var h = "";
-    if (canMng) h += '<p class="hint" style="margin-bottom:10px">멤버 권한 관리 — <b>운영진 지정</b>·<b>크루원 삭제</b>·<b>인증번호 초기화</b>(분실 시). 운영진 해제는 관리자만.</p>';
     h += '<div class="mem-list-club">';
     roster.forEach(function (r) {
       var dm = obj(DB.members)[r.id] || {}, self = (r.id === me), tr = roleOf(r.id), acts = "";
@@ -1093,7 +1092,6 @@
       h += '<div class="mem-row">' + av + '<div style="flex:1;min-width:0"><div class="mr-name">' + esc(r.name) + " " + roleTag(r.id) + (self ? ' <span class="rbadge crew">나</span>' : "") + '</div>' + (subHtml ? '<div class="mr-sub">' + subHtml + '</div>' : "") + '</div>' + (acts ? '<div class="mr-act">' + acts + '</div>' : "") + '</div>';
     });
     h += "</div>";
-    h += '<div class="hint" style="margin-top:12px">멤버 ' + roster.length + '명 · 게이트의 "직접 추가"로 누구나 합류할 수 있어요.</div>';
     return h;
   }
   function hubRanking(club) {
@@ -1185,7 +1183,7 @@
     function kb(id) { var s = (id === top1 ? "🏆" : "") + (id === ck ? "☕" : "") + (id === lk ? "🍚" : ""); return s ? ' <span class="king-badge">' + s + "</span>" : ""; }
     function betTally(a) { var s = ""; if (a.coffeeBuy) s += " ☕" + a.coffeeBuy; if (a.lunchBuy) s += " 🍚" + a.lunchBuy; return s; }
     var h = '<div class="rank-head"><div><h2 class="sec" style="margin:0">3쿠션 순위</h2></div>' +
-      (canRec ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";
+      ((canRec && !isGileadClub(club)) ? '<button class="btn-pri btn-sm" data-action="add-match">대전 기록</button>' : "") + "</div>";  // G리아드는 1:1 대결 스케쥴로만 기록 — 직접 '대전 기록' 버튼 숨김
     var rst = (canManage(me) && !isGileadClub(club)) ? restorableMatches(cid) : [];  // G리아드는 순수 1:1 대결 기반 — 복원 도구 숨김
     if (rst.length) h += '<div class="hint" style="margin:8px 0"><button class="btn-line btn-sm" data-action="restore-matches">🛠 대결 일정에서 대전 기록 ' + rst.length + '건 복원</button></div>';
     var innMiss = (canManage(me) && !isGileadClub(club)) ? clubMatches(cid).filter(function (mm) { return mm.p1 && mm.p2 && !(+mm.p1.innings > 0); }).length : 0;
@@ -1597,9 +1595,7 @@
       '<label>크루 이름</label><input id="f-cname" placeholder="예: 강남 3구 당구 크루" value="' + (ed ? esc(ed.name || "") : "") + '">' +
       '<label>한 줄 소개 (선택)</label><input id="f-cdesc" placeholder="예: 매주 수요일 저녁 모임" value="' + (ed ? esc(ed.desc || "") : "") + '">' +
       '<label>색상</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + curAcc + '"></div>' +
-      '<label>공개 설정</label><div class="seg">' + [["public", "공개"], ["private", "비공개"]].map(function (v) { return '<button type="button" class="seg-b' + (v[0] === curVis ? " on" : "") + '" data-action="pick-vis" data-v="' + v[0] + '">' + v[1] + "</button>"; }).join("") + '<input type="hidden" id="f-cvis" value="' + curVis + '"></div>' +
-      '<p class="pf-note" style="margin:-8px 0 4px">공개=탐색에 노출되어 누구나 가입 · 비공개=직접 추가(초대)로만</p>' +
-      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
+      '<label>공개 설정</label><div class="seg">' + [["public", "공개"], ["private", "비공개"]].map(function (v) { return '<button type="button" class="seg-b' + (v[0] === curVis ? " on" : "") + '" data-action="pick-vis" data-v="' + v[0] + '">' + v[1] + "</button>"; }).join("") + '<input type="hidden" id="f-cvis" value="' + curVis + '"></div>' +      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
   }
   /* 일정 추가 폼 (운영진) */
   function formAddSession(editId) {
