@@ -1583,7 +1583,7 @@
   function formAddClub(editId) {
     if (!isMeAdmin()) return;
     var ed = editId ? clubById(editId) : null;
-    var sports = [["climbing", "클라이밍"], ["billiards", "당구"], ["running", "러닝"], ["general", "일반"]];
+    var sports = [["climbing", "클라이밍"], ["billiards", "당구"]];  // 러닝·일반 종목 선택지 제외
     var emojis = ["🧗", "🎱", "🏃", "🏅", "⚽", "🏀", "🏸", "🎾", "🚴", "🧘", "🥾", "🏊"];
     var accents = [["red", "레드"], ["blue", "블루"], ["green", "그린"], ["purple", "퍼플"], ["orange", "오렌지"]];
     var curEmoji = ed && ed.emoji ? ed.emoji : emojis[0], curAcc = ed && ed.accent ? ed.accent : "red", curSport = ed && ed.sport ? ed.sport : "climbing";
