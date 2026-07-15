@@ -1487,7 +1487,6 @@
     var p2def = "";
     var opt = function (sel) { return roster.map(function (r) { return '<option value="' + r.id + '"' + (sel === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>"; }).join(""); };
     openModal("<h2>1:1 대결 일정</h2>" +
-      '<p class="hint" style="margin:-4px 0 10px">대대(큰 테이블) 3쿠션. 각자 수지를 미리 정해두고, 대결 후 결과를 입력하면 순위에 반영돼요.</p>' +
       '<div class="mt-form">' +
       '<div class="mt-col"><label>선수 1</label><select id="ms-p1">' + opt(me) + "</select>" +
         '<div class="mt-3"><span><label>수지(목표)</label><input id="ms-t1" type="number" inputmode="numeric" min="1" placeholder="예 20"></span></div></div>' +
