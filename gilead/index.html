@@ -340,7 +340,7 @@ function stats(mk){var m=M(mk);
 function deadline(mk){var p=mk.split('-'),due=new Date(+p[0],+p[1]-1,18),t=new Date();t.setHours(0,0,0,0);var diff=Math.round((due-t)/86400000);
   if(diff>0)return{txt:'🧾 지출결의 마감 D-'+diff,soon:diff<=5};if(diff===0)return{txt:'🧾 지출결의 마감 D-DAY',soon:true};return{txt:'🧾 지출결의 마감 '+(-diff)+'일 지남',over:true};}
 function monthsBack(n){var a=[],d=new Date();d.setDate(1);for(var i=n-1;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(x.toISOString().slice(0,7));}return a;}
-function tossBalance(){var bal=0;Object.keys(DB.months||{}).forEach(function(mk){var m=Mof(DB,mk);bal+=ACTIVE.filter(function(n){return m.dues[n];}).length*fee();vals(m.income).forEach(function(t){bal+=(+t.amount||0);});vals(m.expenses).forEach(function(t){if((t.fund||'toss')!=='card')bal-=(+t.amount||0);});});return bal;}
+function tossBalance(){var bal=0;Object.keys(DB.months||{}).forEach(function(mk){var m=Mof(DB,mk);bal+=Object.keys(m.dues||{}).filter(function(n){return m.dues[n];}).length*fee();vals(m.income).forEach(function(t){bal+=(+t.amount||0);});vals(m.expenses).forEach(function(t){if((t.fund||'toss')!=='card')bal-=(+t.amount||0);});});return bal;}  // 잔액은 '실제 납부자 전원' 기준(활동/고스트 명단 변경과 무관) — 실제 들어온 돈을 그대로 반영
 
 /* ================= Firebase 실시간 ================= */
 var app,db,auth,subscribed=false,pending=0;
