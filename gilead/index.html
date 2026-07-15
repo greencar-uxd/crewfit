@@ -454,6 +454,7 @@ function avgToSuji(avg){if(!avg||avg<=0)return null;var t=SUJI_AVG,lo=t[0],hi=t[
   else for(var i=0;i<t.length-1;i++){if(avg<=t[i+1][1]){lo=t[i];hi=t[i+1];break;}}
   var s=lo[0]+(hi[0]-lo[0])*(avg-lo[1])/(hi[1]-lo[1]);return Math.max(5,Math.min(50,Math.round(s)));}
 var CM={},MB={};  // 크루핏 clubmatches(대전 기록) / members — 같은 Firebase 루트에서 구독
+var sujiEdits={};   // 편집 중(아직 저장 안 한) 반영수지 — name->value. 저장/초기화 때만 정리 (표 재렌더가 저장값을 0으로 덮지 않게)
 function renderSuji(){
   var el=document.getElementById('sujiTable');if(!el)return;
   var agg={};
@@ -469,24 +470,21 @@ function renderSuji(){
   SUJI_EXCLUDE.forEach(function(n){delete set[n];});
   var rows=Object.keys(set).map(function(nm){var a=byName[nm]||{games:0,score:0,inn:0};var avg=a.inn?a.score/a.inn:0;return{name:nm,games:a.games,rec:avgToSuji(avg)||0};});
   rows.sort(function(x,y){return x.name.localeCompare(y.name,'ko');});
-  // 편집 중 입력값·포커스 보존 — 파이어베이스 갱신으로 표가 다시 그려져도 아직 저장 안 한 반영수지 입력이 사라지지 않게
-  var _prev={},_fName=null,_selS=null,_selE=null,_curInp=el.querySelectorAll('.suji-inp');
-  for(var _i=0;_i<_curInp.length;_i++){var _c=_curInp[_i],_cn=_c.getAttribute('data-name');_prev[_cn]=_c.value;if(document.activeElement===_c){_fName=_cn;_selS=_c.selectionStart;_selE=_c.selectionEnd;}}
+  // 편집 중이던 인풋에 포커스 복원용 — 표는 sujiEdits(사용자가 실제로 바꾼 값)만 우선 사용
+  var _act=document.activeElement,_fName=(_act&&_act.getAttribute&&(''+_act.className).indexOf('suji-inp')>=0)?_act.getAttribute('data-name'):null;
   el.innerHTML='<thead><tr><th>이름</th><th class="is-center">최근 수지</th><th class="is-center">반영 수지</th></tr></thead><tbody>'+
-    rows.map(function(r){var cur=(suji[r.name]!=null)?suji[r.name]:0;
+    rows.map(function(r){var cur=(sujiEdits[r.name]!=null)?sujiEdits[r.name]:((suji[r.name]!=null)?suji[r.name]:0);   // 편집값 > 저장값 > 0
       return '<tr><td>'+esc(r.name)+'</td><td class="is-center tnum">'+r.rec+'</td>'+
-        '<td class="is-center"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'"></td></tr>';}).join('')+'</tbody>';
-  var _nowInp=el.querySelectorAll('.suji-inp');
-  for(var _j=0;_j<_nowInp.length;_j++){var _n=_nowInp[_j],_nm=_n.getAttribute('data-name');
-    if(_prev.hasOwnProperty(_nm)&&_prev[_nm]!==_n.value)_n.value=_prev[_nm];   // 사용자가 입력해 둔 값 복원
-    if(_nm===_fName){_n.focus();try{_n.setSelectionRange(_selS,_selE);}catch(e){}}}   // 포커스·커서 위치 복원
+        '<td class="is-center"><input class="ds-input tnum suji-inp" data-name="'+esc(r.name)+'" type="number" inputmode="numeric" pattern="[0-9]*" min="0" style="width:90px" value="'+cur+'" oninput="sujiEdits[this.getAttribute(\'data-name\')]=this.value"></td></tr>';}).join('')+'</tbody>';
+  if(_fName){var _ni=el.querySelectorAll('.suji-inp');for(var _k=0;_k<_ni.length;_k++){if(_ni[_k].getAttribute('data-name')===_fName){var _l=(''+_ni[_k].value).length;_ni[_k].focus();try{_ni[_k].setSelectionRange(_l,_l);}catch(e){}break;}}}
 }
-function resetSujiInputs(){var inps=document.querySelectorAll('.suji-inp');for(var i=0;i<inps.length;i++)inps[i].value=0;toast('반영 수지를 0으로 — 전체 저장을 눌러야 반영됩니다');}
+function resetSujiInputs(){var inps=document.querySelectorAll('.suji-inp');for(var i=0;i<inps.length;i++){inps[i].value=0;sujiEdits[inps[i].getAttribute('data-name')]='0';}toast('반영 수지를 0으로 — 전체 저장을 눌러야 반영됩니다');}
 function saveSujiAll(){
   if(!canWrite){toast('로그인 후 저장할 수 있습니다');return;}
   var inps=document.querySelectorAll('.suji-inp');if(!inps.length){toast('저장할 항목이 없습니다');return;}
   DB.suji=DB.suji||{};
-  for(var i=0;i<inps.length;i++){var nm=inps[i].getAttribute('data-name');var v=parseInt(inps[i].value)||0;if(v>0)DB.suji[nm]=v;else delete DB.suji[nm];writeLeaf('suji/'+nm,v>0?v:null);}  // 로컬에도 즉시 반영 — 저장 후 입력값 유지(0으로 되돌지 않게)
+  for(var i=0;i<inps.length;i++){var nm=inps[i].getAttribute('data-name');var v=parseInt(inps[i].value)||0;if(v>0)DB.suji[nm]=v;else delete DB.suji[nm];writeLeaf('suji/'+nm,v>0?v:null);}  // 로컬에도 즉시 반영
+  sujiEdits={};   // 저장 완료 — 편집 상태 해제(이제 저장된 값 표시)
   renderSuji();
   toast('반영 수지 '+inps.length+'명 저장 — 크루핏 마이페이지에 반영됩니다');
 }

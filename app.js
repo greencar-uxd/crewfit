@@ -745,9 +745,7 @@
     return "";
   }
   function mySkillStatsHtml() {
-    var blocks = myClubs().map(mySkillBlock).filter(function (b) { return b; });
-    if (!blocks.length) return "";
-    return '<h2 class="sec" style="margin-top:18px">내 기록</h2>' + blocks.join("");
+    return "";  // 마이페이지 전적 대시보드 박스 제거(당구·클라이밍)
   }
   function renderHubHeader(club) {
     club = club || {};
@@ -1168,14 +1166,7 @@
   }
   function billiardsRanking(club) {
     var cid = club.id, rows = billiardsStats(cid).filter(function (a) { return a.games > 0; });
-    // 순위 초기화(대전 기록 삭제) 후에도 반영 수지 보유자는 명단 유지 — 0전 · 수지 표시, 새 경기가 쌓이면 순위 재형성
-    var sj = isGileadClub(club) ? ((gileadData() || {}).suji || null) : null;
-    if (sj) Object.keys(sj).forEach(function (nm) {
-      if (!gileadIsActive(nm)) return;  // 실제 활동회원(11명)만 명단 유지 — 김성준·고스트 제외
-      if (rows.some(function (a) { return a.name === nm; })) return;
-      var mid = memberIdByName(nm);
-      rows.push({ id: mid, name: nm, games: 0, wins: 0, avg: 0, winRate: 0, recSuji: null, lastTarget: 0, coffeeBuy: 0, lunchBuy: 0, _noId: !mid });
-    });
+    // 경기 없는(0전) 회원은 순위에 표시하지 않음 — 실제 대전 기록이 있는 사람만 노출
     rows.sort(function (x, y) { var gx = x.games > 0 ? 1 : 0, gy = y.games > 0 ? 1 : 0; if (gx !== gy) return gy - gx; if (gx) return 0; return (gileadSujiOf(y.name) || 0) - (gileadSujiOf(x.name) || 0) || x.name.localeCompare(y.name, "ko"); });
     var canRec = !!(me && (obj(DB.members)[me] || {}).claimed && clubRoster(cid).some(function (r) { return r.id === me; }));
     var top1 = (rows.length && rows[0].games > 0) ? rows[0].id : null, ck = null, lk = null, ckN = 0, lkN = 0;
@@ -1598,7 +1589,7 @@
       '<label>크루 이름</label><input id="f-cname" placeholder="예: 강남 3구 당구 크루" value="' + (ed ? esc(ed.name || "") : "") + '">' +
       '<label>한 줄 소개 (선택)</label><input id="f-cdesc" placeholder="예: 매주 수요일 저녁 모임" value="' + (ed ? esc(ed.desc || "") : "") + '">' +
       '<label>색상</label><div class="seg">' + accents.map(function (a) { return '<button type="button" class="seg-b' + (a[0] === curAcc ? " on" : "") + '" data-action="pick-accent" data-a="' + a[0] + '">' + a[1] + "</button>"; }).join("") + '<input type="hidden" id="f-saccent" value="' + curAcc + '"></div>' +
-      '<label>공개 설정</label><div class="seg">' + [["public", "공개"], ["private", "비공개"]].map(function (v) { return '<button type="button" class="seg-b' + (v[0] === curVis ? " on" : "") + '" data-action="pick-vis" data-v="' + v[0] + '">' + v[1] + "</button>"; }).join("") + '<input type="hidden" id="f-cvis" value="' + curVis + '"></div>' +      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
+      '<input type="hidden" id="f-cvis" value="' + curVis + '">' +      '<div class="modal-foot"><button class="btn-line" data-action="close-modal">취소</button><button class="btn-pri" data-action="save-club"' + (ed ? ' data-edit="' + esc(editId) + '"' : "") + '>' + (ed ? "저장" : "개설") + "</button></div>");
   }
   /* 일정 추가 폼 (운영진) */
   function formAddSession(editId) {
