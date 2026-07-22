@@ -121,7 +121,6 @@
         </div>
         <div class="ds-field hdr-month"><input class="ds-input" type="month" id="monthPick" style="padding:8px 12px" onchange="switchMonth(this.value)"></div>
         <div class="hdr-ctrls">
-          <span class="ds-badge ds-badge--outline" id="dueBadge">🧾 지출결의 마감 18일</span>
           <button class="ds-iconbtn ds-iconbtn--sm ds-iconbtn--outline" id="themeBtn" title="다크모드 켜기/끄기" onclick="toggleTheme()"></button>
           <button class="ds-btn ds-btn--ghost ds-btn--sm" onclick="logout()">로그아웃</button>
         </div>
@@ -510,7 +509,7 @@ function enterApp(){document.getElementById('login').style.display='none';docume
 function logout(){lsDel(SESSION);sessionUser=null;pendingUser=null;canWrite=false;document.getElementById('pin').value='';document.getElementById('loginMsg').textContent='';var els=document.querySelectorAll('#whoBtns button');for(var i=0;i<els.length;i++)els[i].classList.remove('ds-segmented__btn--active');document.getElementById('app').style.display='none';document.getElementById('login').style.display='flex';}
 
 /* ================= 월/탭/테마/토스트 ================= */
-function switchMonth(mk){current=mk||curMonth();document.getElementById('monthPick').value=current;var d=deadline(current);var b=document.getElementById('dueBadge');b.textContent=d.txt;b.className='ds-badge '+(d.over?'ds-badge--danger':d.soon?'ds-badge--warning':'ds-badge--outline');renderAll();}
+function switchMonth(mk){current=mk||curMonth();document.getElementById('monthPick').value=current;renderAll();}
 function show(tab){var vws=document.querySelectorAll('.view');for(var i=0;i<vws.length;i++)vws[i].classList.remove('active');var el=document.getElementById('view-'+tab);if(el)el.classList.add('active');var bs=document.querySelectorAll('#tabs button');for(var j=0;j<bs.length;j++)bs[j].classList.toggle('ds-tab--active',bs[j].dataset.tab===tab);lsSet(TABKEY,tab);}
 function applyTheme(t){var de=document.documentElement;if(de&&de.setAttribute){if(t==='dark')de.setAttribute('data-theme','dark');else de.removeAttribute('data-theme');}lsSet(THEME,t);['themeBtn','themeBtnLogin'].forEach(function(id){var b=document.getElementById(id);if(b)b.innerHTML=(t==='dark'?IC.sun:IC.moon);});}
 function toggleTheme(){applyTheme(lsGet(THEME)==='dark'?'light':'dark');}
