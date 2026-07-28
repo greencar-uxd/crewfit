@@ -1,0 +1,8 @@
+{
+  "extraKnownMarketplaces": {
+    "ponytail": {
+      "source": { "source": "github", "repo": "greencar-uxd/ponytail" }
+    }
+  },
+  "enabledPlugins": { "ponytail@ponytail": true }
+}
