@@ -197,8 +197,8 @@
         </tbody></table></div>
       </div>
       <div class="ds-card ds-card--pad"><h3 class="panel-title">명단 · 17명</h3>
-        <p class="tiny" style="margin:0 0 var(--space-2)">활동회원 9명</p><div class="names" id="listActive" style="margin-bottom:var(--space-4)"></div>
-        <p class="tiny" style="margin:0 0 var(--space-2)">고스트회원 8명</p><div class="names" id="listGhost"></div>
+        <p class="tiny" style="margin:0 0 var(--space-2)">활동회원 7명</p><div class="names" id="listActive" style="margin-bottom:var(--space-4)"></div>
+        <p class="tiny" style="margin:0 0 var(--space-2)">고스트회원 10명</p><div class="names" id="listGhost"></div>
       </div>
     </section>
 
@@ -278,11 +278,11 @@ var ADMIN_ID={'강민관':'m17','정종욱':'jrd01'};   /* 크루핏 members 노
 /* 크루핏 로스터 ID → 이름 (members 노드에 없는(미인증) 회원의 대전 기록 id 해석용) */
 var ROSTER_ID={m17:'강민관',jrd01:'정종욱',jrd02:'조민호',jrd03:'진익영',jrd04:'김경호',jrd05:'김규식',jrd06:'김보성',jrd07:'김성준',jrd08:'김유현',jrd09:'김정수',jrd10:'문영건',jrd11:'박수홍',jrd12:'배지현',jrd13:'서지유',jrd14:'왕건모',jrd15:'이순란',jrd16:'이정걸',jrd17:'이진주',jrd18:'장정우'};
 var FEE_DEFAULT=30000;
-var ACTIVE=['문영건','강민관','이정걸','조민호','배지현','박수홍','정종욱','장정우','진익영'];
-var GHOST=['김유현','이순란','이진주','김보성','김정수','김성준','김경호','김규식'];  // 김성준: 활동회원(순위·수지) 제외, 사진·지원 명단(고스트)엔 유지
+var ACTIVE=['문영건','강민관','이정걸','조민호','배지현','정종욱','장정우'];
+var GHOST=['김유현','이순란','이진주','김보성','김정수','김성준','김경호','김규식','박수홍','진익영'];  // 김성준: 활동회원(순위·수지) 제외, 사진·지원 명단(고스트)엔 유지
 var DUES_EXTRA=['김성준'];  // 고스트지만 회비는 내는 회원
-var DUES=ACTIVE.concat(DUES_EXTRA);  // 회비 대상 = 활동회원(9) + 회비 내는 고스트 = 10명
-var GHOST_FROM={'김경호':'2026-08','김규식':'2026-08'};  // 이 달부터 고스트 — 그 이전 달은 회비 대상으로 계산(과거 결산 보존)
+var DUES=ACTIVE.concat(DUES_EXTRA);  // 회비 대상 = 활동회원(7) + 회비 내는 고스트 = 8명
+var GHOST_FROM={'김경호':'2026-08','김규식':'2026-08','박수홍':'2026-08','진익영':'2026-08'};  // 이 달부터 고스트 — 그 이전 달은 회비 대상으로 계산(과거 결산 보존)
 function duesOf(mk){return DUES.concat(Object.keys(GHOST_FROM).filter(function(n){return mk<GHOST_FROM[n];}));}
 var SUPPORT_PER=30000;
 var FB={apiKey:"AIzaSyDBKcVMjKluqmeahRcZJcxrEfY_BmrsjfA",authDomain:"srk-mt.firebaseapp.com",databaseURL:"https://srk-mt-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"srk-mt",appId:"1:1080501646167:web:88abf17460342d6e260412"};
@@ -439,7 +439,7 @@ function renderExpense(){var m=M(current);document.getElementById('exListTitle')
   var foot='<tr><td colspan="5" style="padding:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--surface-sunken);border-top:1px solid var(--border)"><span class="tiny" style="flex:0 0 auto">이번 달 합계</span><span class="tnum" style="margin-left:auto;text-align:right;font-weight:var(--fw-medium);font-size:var(--fs-sm,13px)">수입 '+won(s.duesAmount+s.incomeTotal)+' · '+badge('neutral','토스')+' 지출 '+won(s.tossExpense)+' · '+badge('accent','법인')+' '+won(s.cardExpense)+' · '+badge('success','법인잔액')+' '+won(Math.max(0,s.supportVat-s.cardExpense))+'</span></div></td></tr>'+
     '<tr><td colspan="5" style="padding:0"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;background:var(--surface-card);border-top:1px solid var(--border-strong)"><span style="flex:0 0 auto;font-weight:var(--fw-bold)">토스 모임통장 잔액 (해당 월 말 기준)</span><span class="tnum" style="margin-left:auto;text-align:right;font-weight:var(--fw-bold);font-size:var(--fs-lg);color:var(--text-accent)">'+won(tossBalance(current))+'</span></div></td></tr>';
   document.getElementById('exList').innerHTML='<div class="ds-table-wrap"><table class="ds-table"><thead><tr><th>날짜</th><th>내용</th><th>구분</th><th class="is-right">금액</th><th class="is-right">관리</th></tr></thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="5">'+emptyState('내역 없음','이번 달 지출/수입 내역이 없습니다')+'</td></tr>')+'</tbody><tfoot>'+foot+'</tfoot></table></div>';}
-function renderReport(){var keys=Object.keys(DB.months);if(keys.indexOf(current)<0)keys.push(current);keys.sort();
+function renderReport(){var keys=Object.keys(DB.months);if(keys.indexOf(current)<0)keys.push(current);keys.sort().reverse();   // 최신 월이 위로(내역과 동일)
   var head='<thead><tr><th>월</th><th class="is-center">회비</th><th class="is-right">회비액</th><th class="is-center">사진</th><th class="is-center">지원조건</th><th class="is-right">토스지출</th><th class="is-right">법인지출</th><th class="is-center">결제</th><th class="is-center">지출결의</th></tr></thead>';
   var body=keys.map(function(mk){var s=stats(mk),m=M(mk);return '<tr><td><b>'+mk.replace('-','.')+'</b></td><td class="is-center tnum">'+s.duesPaid+'/'+s.duesTarget+'</td><td class="is-right tnum">'+won(s.duesAmount)+'</td><td class="is-center tnum">'+s.photoDone+'/'+s.photoTotal+'</td><td class="is-center">'+(s.allPhoto?badge('success','충족'):badge('neutral','미충족'))+'</td><td class="is-right tnum">'+won(s.tossExpense)+'</td><td class="is-right tnum">'+won(s.cardExpense)+'</td><td class="is-center">'+(m.checklist.pay?badge('success','완료'):'—')+'</td><td class="is-center">'+(m.checklist.resolve?badge('success','완료'):'—')+'</td></tr>';}).join('');
   document.getElementById('repTable').innerHTML=head+'<tbody>'+body+'</tbody>';}
