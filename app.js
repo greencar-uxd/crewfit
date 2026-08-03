@@ -236,7 +236,7 @@
   function gileadFee() { var g = gileadData(); return (g && g.settings && +g.settings.fee) || 30000; }
   function gileadPaidByName(name) { var g = gileadData(); var m = g && g.months && g.months[gileadMonth()]; return !!(m && m.dues && m.dues[name]); }
   // 회원 연동: gilead 활동회원 명단(회비 대상)과 동일 유지 — 고스트(사진만·회비 없음) 제외
-  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "김규식", "배지현", "김경호", "박수홍", "정종욱", "장정우", "진익영"];  // 실제 활동회원 11명 (김성준 제외 — 핀번호·계정은 유지)
+  var GILEAD_ACTIVE = ["문영건", "강민관", "이정걸", "조민호", "배지현", "박수홍", "정종욱", "장정우", "진익영"];  // 실제 활동회원 9명 (김성준·김경호·김규식은 고스트 — 핀번호·계정은 유지)
   function gileadIsActive(name) { return GILEAD_ACTIVE.indexOf(name) >= 0; }
   // 순위 초기화 기준 — 이 시점 이전에 기록된(또는 복원된) 1:1 대결은 순위에서 제외, 이후 새 경기만 반영
   var GILEAD_RANK_EPOCH = Date.parse("2026-07-15T00:00:00+09:00");
