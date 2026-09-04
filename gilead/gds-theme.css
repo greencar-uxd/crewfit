@@ -1,0 +1,199 @@
+/* ============================================================
+   GDS 테마 — gilead 용 시맨틱 토큰 층
+   ------------------------------------------------------------
+   원본: GDS(그린카 디자인 시스템) 토큰
+         https://gds-e3y.pages.dev/tokens/gds.css  (--gds-* 원시 토큰)
+   역할: 컴포넌트 CSS(.ds-*)가 쓰는 시맨틱 이름을 GDS 원시 토큰에
+         연결한다. 값을 새로 만들지 않고 GDS 값을 가리키는 것이 원칙.
+
+   표기 규칙
+     [GDS]  GDS 가 정한 값을 그대로 쓴다.
+     [파생] GDS 에 없어서 GDS 값에서 계산해 만들었다.
+     [갭]   GDS 에 대응하는 것이 아예 없다. 확인 필요.
+
+   대비비는 실제로 계산한 값이다(WCAG 2.x 상대휘도).
+   ============================================================ */
+
+:root {
+  /* ---------- 서체 ---------- [GDS] 폰트는 Noto Sans KR 단일 */
+  --font-display: var(--gds-font-family);   /* "Noto Sans KR", sans-serif */
+  --font-text:    var(--gds-font-family);
+  --font-mono:    var(--font-text);          /* GDS 는 단일 서체 — 숫자는 tabular-nums 로 처리 */
+
+  /* ---------- 굵기 ---------- [GDS] 400 / 500 / 700 세 단계뿐 */
+  --fw-medium:   400;                        /* GDS Body = 400 */
+  --fw-semibold: var(--gds-type-title-5-weight);  /* 500 · GDS Title(Button_label 포함) */
+  --fw-bold:     var(--gds-type-heading-3-weight); /* 700 · GDS Heading */
+
+  /* ---------- 글자 크기 ---------- [GDS] Type scale */
+  --fs-caption: var(--gds-type-caption-1-size);  /* 12px */
+  --fs-sm:      var(--gds-type-body-2-size);     /* 14px */
+  --fs-base:    var(--gds-type-body-1-size);     /* 16px */
+  --fs-lg:      var(--gds-type-title-3-size);    /* 20px */
+  --fs-h4:      var(--gds-type-title-4-size);    /* 18px */
+  --fs-h3:      var(--gds-type-title-1-size);    /* 24px · GDS 스케일 최댓값 */
+
+  /* ---------- 행간 ---------- [갭] GDS 는 행간을 Figma Auto 로 두고
+     단계값을 정하지 않는다(--gds-type-line-height: normal).
+     웹 본문 가독성에 필요한 값이라 여기서 정한다. */
+  --lh-snug: 1.18;
+  --lh-body: 1.6;
+
+  /* ---------- 자간 ---------- [GDS] typo/letter-spacing/0 — 전 단계 0 */
+  --ls-snug:  var(--gds-type-letter-spacing);
+  --ls-tight: var(--gds-type-letter-spacing);
+  --ls-wide:  var(--gds-type-letter-spacing);
+  --ls-caps:  var(--gds-type-letter-spacing);
+
+  /* ---------- 타이포 묶음 ---------- */
+  --text-h3:      var(--fw-bold) var(--fs-h3)/var(--lh-snug) var(--font-display);
+  --text-h4:      var(--fw-bold) var(--fs-h4)/var(--lh-snug) var(--font-display);
+  --text-body-lg: var(--fw-medium) var(--fs-lg)/var(--lh-body) var(--font-text);
+  --text-body:    var(--fw-medium) var(--fs-base)/var(--lh-body) var(--font-text);
+  --text-body-sm: var(--fw-medium) var(--fs-sm)/var(--lh-body) var(--font-text);
+  --text-caption: var(--fw-medium) var(--fs-caption)/var(--lh-body) var(--font-text);
+  --text-label:   var(--fw-semibold) var(--fs-sm)/var(--lh-body) var(--font-text);
+
+  /* ---------- 여백 ---------- [GDS] Spacing scale */
+  --space-1: var(--gds-spacing-200);   /* 4  */
+  --space-2: var(--gds-spacing-300);   /* 8  */
+  --space-3: var(--gds-spacing-400);   /* 12 */
+  --space-4: var(--gds-spacing-500);   /* 16 */
+  --space-5: var(--gds-spacing-600);   /* 20 */
+  --space-6: var(--gds-spacing-700);   /* 24 */
+  --space-8: var(--gds-spacing-900);   /* 32 */
+
+  /* ---------- 모서리 ---------- [GDS] Radius scale */
+  --radius-xs:   var(--gds-radius-xs);    /* 4  */
+  --radius-sm:   var(--gds-radius-sm);    /* 8  */
+  --radius-md:   var(--gds-radius-md);    /* 10 */
+  --radius-lg:   var(--gds-radius-lg);    /* 12 */
+  --radius-xl:   var(--gds-radius-xl);    /* 16 */
+  --radius-2xl:  var(--gds-radius-xxl);   /* 20 */
+  --radius-pill: var(--gds-radius-full);
+
+  /* ---------- 그림자 ---------- [GDS] Elevation 1~5 */
+  --shadow-xs: var(--gds-elevation-1);
+  --shadow-sm: var(--gds-elevation-2);
+  --shadow-md: var(--gds-elevation-3);
+  --shadow-lg: var(--gds-elevation-4);
+  --shadow-xl: var(--gds-elevation-5);
+
+  /* ---------- 모션 ---------- [갭] GDS 에 모션 토큰이 없다. */
+  --ease-out:    cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out: cubic-bezier(.4, 0, .2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+
+  /* ---------- 레이아웃 ---------- */
+  --gutter:    var(--gds-layout-margin-side);  /* [GDS] 좌·우 마진은 20px 로 통일 */
+  --gutter-md: var(--gds-layout-margin-side);
+  --gutter-lg: var(--gds-layout-margin-side);
+  --container-sm:  640px;   /* [갭] GDS 는 모바일 화면 폭(375/360)만 정한다. */
+  --container-md:  768px;
+  --container-lg: 1024px;
+  --container-max: 1200px;
+
+  /* ---------- 회색 원시값 (컴포넌트가 직접 참조) ---------- [GDS] */
+  --gray-0:   var(--gds-color-gray-scale-000);
+  --gray-300: var(--gds-color-gray-scale-030);
+  --gray-950: var(--gds-color-gray-scale-100);
+
+  /* ---------- 글자색 ---------- [GDS] 텍스트는 Gray scale 만 쓴다 */
+  --text-primary:   var(--gds-color-text-default);        /* Gray 100 · 21.0:1 */
+  --text-secondary: var(--gds-color-gray-scale-070);      /* #5C5C5C · 6.7:1 */
+  --text-tertiary:  var(--gds-color-text-secondary);      /* Gray 060 #757575 · 4.6:1 (AA) */
+  --text-inverse:   var(--gds-color-gray-scale-000);
+
+  /* ---------- 면 ---------- [GDS] 화면 바탕은 흰색, 카드는 라인으로 구분.
+     GDS 는 모바일 화면을 흰 바탕 + Input Line 으로 구성한다. 회색 바탕을
+     깔면 Gray 060 본문이 4.3:1 로 AA 에 못 미쳐 흰 바탕을 유지한다. */
+  --surface-page:   var(--gds-color-gray-scale-000);
+  --surface-card:   var(--gds-color-gray-scale-000);
+  --surface-sunken: var(--gds-color-gray-scale-005);
+  --surface-inverse: var(--gds-color-gray-scale-080);
+  --surface-accent-subtle: var(--gds-color-primary-red-010);
+
+  /* ---------- 선 ---------- */
+  --border:        var(--gds-color-border-line);        /* [GDS] System/Input Line */
+  --border-strong: var(--gds-color-gray-scale-030);
+  --border-control: var(--gds-color-gray-scale-060);    /* 입력 경계 4.6:1 — WCAG 1.4.11(3:1) 충족.
+                                                          GDS Input Line(#D9DDDF)은 1.4:1 이라 폼 경계로는 못 쓴다. */
+  --border-accent: var(--gds-color-primary-main);
+
+  /* ---------- 강조색 ---------- [GDS] Primary/Red */
+  --accent:             var(--gds-color-primary-main);      /* Red 040 · 장식용 */
+  --accent-solid:       var(--gds-color-primary-red-060);   /* 흰 글자 얹는 면 · 6.3:1 */
+  --accent-solid-hover: var(--gds-color-primary-red-070);   /* 9.4:1 */
+  --on-accent:          var(--gds-color-gray-scale-000);
+  --text-accent:        var(--gds-color-primary-red-060);   /* 6.3:1 — Red 050 은 4.4:1 로 AA 미달 */
+  --focus-ring:         var(--gds-color-system-focus-line); /* [GDS] System/Focus Line */
+
+  /* ---------- 주요 동작 ---------- */
+  --action-primary-bg:       var(--gds-color-primary-red-060);
+  --action-primary-bg-hover: var(--gds-color-primary-red-070);
+  --action-primary-fg:       var(--gds-color-gray-scale-000);
+
+  /* ---------- 상태 ---------- */
+  --success-500: var(--gds-color-system-success);                                  /* [GDS] #00C88C */
+  --success-600: color-mix(in srgb, var(--gds-color-system-success) 62%, #000);    /* [파생] 4.9:1 */
+  --success-700: color-mix(in srgb, var(--gds-color-system-success) 52%, #000);    /* [파생] 본문용 */
+  --success-50:  color-mix(in srgb, var(--gds-color-system-success) 12%, #fff);    /* [파생] */
+  --danger-500:  var(--gds-color-system-alarm);                                    /* [GDS] #D32828 · 5.1:1 */
+  --danger-600:  color-mix(in srgb, var(--gds-color-system-alarm) 80%, #000);      /* [파생] */
+  --danger-700:  color-mix(in srgb, var(--gds-color-system-alarm) 62%, #000);      /* [파생] */
+  --danger-50:   color-mix(in srgb, var(--gds-color-system-alarm) 10%, #fff);      /* [파생] */
+  --warning-500: var(--gds-color-brand-oda);                                       /* [갭] GDS 에 경고색이 없어
+                                                                                      Brand/ODA(#ED9A1E)를 빌려 쓴다. */
+  --warning-600: var(--gds-color-brand-oda-line);                                  /* [갭] #BF7200 */
+  --warning-700: color-mix(in srgb, var(--gds-color-brand-oda-line) 78%, #000);    /* [파생] */
+  --warning-50:  color-mix(in srgb, var(--gds-color-brand-oda) 14%, #fff);         /* [파생] */
+  --info-50:     var(--surface-accent-subtle);
+}
+
+/* ============================================================
+   다크 — [갭] GDS 는 다크 팔레트를 정하지 않았다.
+   GDS 의 어두운 계열인 Navy 램프와 Gray scale 로만 구성한다.
+   ============================================================ */
+[data-theme="dark"] {
+  --text-primary:   var(--gds-color-gray-scale-010);   /* #F1F1F1 · Navy 080 위 15.1:1 */
+  --text-secondary: var(--gds-color-gray-scale-040);
+  --text-tertiary:  var(--gds-color-gray-scale-050);   /* #B7B7B7 · 10.0:1 */
+  --text-inverse:   var(--gds-color-gray-scale-100);
+
+  --surface-page:    var(--gds-color-navy-100);
+  --surface-card:    var(--gds-color-navy-080);
+  --surface-sunken:  var(--gds-color-navy-070);
+  --surface-inverse: var(--gds-color-gray-scale-010);
+  --surface-accent-subtle: color-mix(in srgb, var(--gds-color-primary-red-040) 22%, var(--gds-color-navy-080));
+
+  --border:         var(--gds-color-navy-070);
+  --border-strong:  var(--gds-color-navy-060);
+  --border-control: var(--gds-color-gray-scale-060);   /* 4.4:1 on Navy 090 — 1.4.11 충족 */
+  --border-accent:  var(--gds-color-primary-red-030);
+
+  --accent:             var(--gds-color-primary-red-030);   /* #F4777C · 7.4:1 */
+  --accent-solid:       var(--gds-color-primary-red-030);
+  --accent-solid-hover: var(--gds-color-primary-red-020);
+  --on-accent:          var(--gds-color-navy-100);
+  --text-accent:        var(--gds-color-primary-red-030);
+  --focus-ring:         var(--gds-color-primary-red-030); /* System/Focus Line(#0029FF)은 Navy 바탕에서 안 보인다 */
+
+  --action-primary-bg:       var(--gds-color-primary-red-030);
+  --action-primary-bg-hover: var(--gds-color-primary-red-020);
+  --action-primary-fg:       var(--gds-color-navy-100);
+
+  /* 상태색은 어두운 바탕에서 읽히도록 밝은 쪽으로 뒤집는다.
+     Navy 080 카드 위 대비: success 7.8:1 · 8.6:1 / danger 5.2:1 / warning 7.5:1 · 8.5:1 */
+  --success-600: var(--gds-color-system-success);
+  --success-700: color-mix(in srgb, var(--gds-color-system-success) 85%, #fff);
+  --danger-600:  color-mix(in srgb, var(--gds-color-system-alarm) 70%, #fff);
+  --danger-700:  color-mix(in srgb, var(--gds-color-system-alarm) 60%, #fff);
+  --warning-600: var(--gds-color-brand-oda);
+  --warning-700: color-mix(in srgb, var(--gds-color-brand-oda) 85%, #fff);
+  --success-50: color-mix(in srgb, var(--gds-color-system-success) 18%, var(--gds-color-navy-090));
+  --danger-50:  color-mix(in srgb, var(--gds-color-system-alarm) 22%, var(--gds-color-navy-090));
+  --warning-50: color-mix(in srgb, var(--gds-color-brand-oda) 20%, var(--gds-color-navy-090));
+  --info-50:    var(--surface-accent-subtle);
+}
