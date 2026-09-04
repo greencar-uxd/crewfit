@@ -1,0 +1,219 @@
+/* GDS — G car Design System 토큰
+ * 생성: GDS(Greencar Design System).fig (export 2026-07-23)
+ * 출처: ✅ Foundation 페이지 원본. 레거시 스타일(현황)은 포함하지 않습니다.
+ * 자동 생성 파일입니다 — 직접 수정하지 마세요.
+ */
+:root {
+  /* Color */
+  --gds-color-primary-red-010: #FBD2D3;
+  --gds-color-primary-red-020: #F8A4A7;
+  --gds-color-primary-red-030: #F4777C;  /* 구 Primary/Red 300 */
+  --gds-color-primary-red-040: #F14950;  /* 구 Primary/Red 400 · 메인 색상 */
+  --gds-color-primary-red-050: #ED1C24;  /* 구 Primary/Red 500 */
+  --gds-color-primary-red-060: #BE161D;
+  --gds-color-primary-red-070: #8E1116;
+  --gds-color-primary-red-080: #5F0B0E;
+  --gds-color-primary-red-090: #2F0607;
+  --gds-color-gray-scale-000: #FFFFFF;
+  --gds-color-gray-scale-005: #F8F8F8;  /* 보조 단계 — 10단위 규칙 예외(승인됨) */
+  --gds-color-gray-scale-010: #F1F1F1;
+  --gds-color-gray-scale-020: #E2E2E2;
+  --gds-color-gray-scale-030: #D4D4D4;
+  --gds-color-gray-scale-040: #C5C5C5;
+  --gds-color-gray-scale-050: #B7B7B7;
+  --gds-color-gray-scale-060: #757575;  /* 구 값 #898989 — 본문 대비 정정 */
+  --gds-color-gray-scale-070: #5C5C5C;
+  --gds-color-gray-scale-080: #2F2E2E;
+  --gds-color-gray-scale-100: #000000;
+  --gds-color-navy-010: #E8ECEF;
+  --gds-color-navy-020: #D0D8DD;
+  --gds-color-navy-030: #A1B1BB;
+  --gds-color-navy-040: #728A9A;  /* 구 Navy/navy 040 */
+  --gds-color-navy-050: #436378;
+  --gds-color-navy-060: #0A3C5C;
+  --gds-color-navy-070: #0F2D41;
+  --gds-color-navy-080: #0A1E2B;
+  --gds-color-navy-090: #060809;  /* 구 값 #020609 — 명도 역전 정정 */
+  --gds-color-navy-100: #020609;  /* 구 값 #060809 — 명도 역전 정정 */
+  --gds-color-badge-time-deal: #FF8159;
+  --gds-color-badge-bookmark: #FED500;
+  --gds-color-badge-event: #F8679C;
+  --gds-color-badge-hot-deal: #FD8484;  /* 값이 Map Marker/Free Zone 와 같습니다 — 원본을 정하지 못해 따로 둡니다(GAP-5) */
+  --gds-color-badge-new-zone: #FD9F4D;
+  --gds-color-badge-new-car: #5B68FE;
+  --gds-color-badge-eleccar: #A87DF9;
+  --gds-color-badge-economy: #C0C259;
+  --gds-color-badge-clean: #59BBF2;
+  --gds-color-brand-oda: #ED9A1E;  /* 구 Badge/ODA */
+  --gds-color-map-marker-active: var(--gds-color-gray-scale-000);  /* Gray Scale/Gray 000 의 별칭 — 값은 원본이 갖습니다 */
+  --gds-color-map-marker-active-line: var(--gds-color-navy-030);  /* Navy/Navy 030 의 별칭 — 값은 원본이 갖습니다 · 구 Map Marker/Active_Line */
+  --gds-color-map-marker-corporation: #005E97;
+  --gds-color-map-marker-disabled-line: #B3BABF;
+  --gds-color-map-marker-disabled-text: #BEC3C7;
+  --gds-color-map-marker-free-zone: #FD8484;  /* 값이 Badge/Hot Deal 와 같습니다 — 원본을 정하지 못해 따로 둡니다(GAP-5) */
+  --gds-color-map-marker-free-zone-line: #EB6565;
+  --gds-color-map-marker-shadow: #0000001A;  /* 구 값 #E2E2E2 — GAP-4 */
+  --gds-color-brand-g-car-red: var(--gds-color-primary-red-050);  /* Primary/Red 050 의 별칭 — 값은 원본이 갖습니다 */
+  --gds-color-brand-g-car-gray: #3E3A39;
+  --gds-color-brand-l-point: #009BFA;
+  --gds-color-brand-l-point-2: #0079C3;
+  --gds-color-brand-t-membership: #3617CB;
+  --gds-color-brand-oda-line: #BF7200;
+  --gds-color-system-alarm: #D32828;
+  --gds-color-system-success: #00C88C;
+  --gds-color-system-focus-line: #0029FF;
+  --gds-color-system-input-line: #D9DDDF;
+  --gds-color-system-dim-layer-060: #00000099;  /* 알파 60% */
+  --gds-color-system-dim-layer-080: #000000CC;  /* 알파 80% */
+  --gds-color-primary-main: var(--gds-color-primary-red-040);  /* = Primary/Red 040 #F14950 · 강민관 확정 2026-08-04 */
+
+  /* Semantic — 원본 규칙에서 끌어낸 별칭 */
+  --gds-color-text-default: var(--gds-color-gray-scale-100);  /* Gray Scale/Gray 100 · Color system ✅ — "Text 의 경우 모두 Gray scale 로 사용하는 것을 원칙으로 합니다" */
+  --gds-color-text-secondary: var(--gds-color-gray-scale-060);  /* Gray Scale/Gray 060 · Color system ✅ Secondary 규칙 — 보조 텍스트는 Gray scale */
+  --gds-color-text-disabled: var(--gds-color-gray-scale-040);  /* Gray Scale/Gray 040 · Bottom navigation ✅ — Disabled(미선택) 텍스트 컬러 Gray scale 40 */
+  --gds-color-icon-default: var(--gds-color-gray-scale-080);  /* Gray Scale/Gray 080 · Bottom navigation ✅ — Pressed(선택) 아이콘 컬러 Gray scale 80 */
+  --gds-color-icon-disabled: var(--gds-color-gray-scale-040);  /* Gray Scale/Gray 040 · Bottom navigation ✅ — Disabled(미선택) 아이콘 컬러 Gray scale 40 */
+  --gds-color-dim-layer-01: var(--gds-color-system-dim-layer-060);  /* System/Dim Layer 060 · Modal ✅ — Basic alert 는 Dim layer 1 사용 */
+  --gds-color-dim-layer-02: var(--gds-color-system-dim-layer-080);  /* System/Dim Layer 080 · Modal ✅ — Full screen alert 는 Dim layer 2 사용 */
+  --gds-color-border-line: var(--gds-color-system-input-line);  /* System/Input Line · GDS 라이브러리 System/Input Line 스타일 · Color system ✅ System 정의 */
+
+  /* 타이포 쓰임새 — ✅ Type scale 표 Usage 열의 이름 그대로 */
+  --gds-type-usage-badge-label-size: var(--gds-type-title-8-size);  /* Title 8 · Usage "Badge_label" */
+  --gds-type-usage-badge-label-weight: var(--gds-type-title-8-weight);
+  --gds-type-usage-bottom-navigation-label-size: var(--gds-type-title-7-size);  /* Title 7 · Usage "Bottom navigation_label" */
+  --gds-type-usage-bottom-navigation-label-weight: var(--gds-type-title-7-weight);
+  --gds-type-usage-bottom-sheet-size: var(--gds-type-title-5-size);  /* Title 5 · Usage "Bottom sheet" */
+  --gds-type-usage-bottom-sheet-weight: var(--gds-type-title-5-weight);
+  --gds-type-usage-button-label-size: var(--gds-type-title-5-size);  /* Title 5 · Usage "Button_label" */
+  --gds-type-usage-button-label-weight: var(--gds-type-title-5-weight);
+  --gds-type-usage-modal-size: var(--gds-type-title-3-size);  /* Title 3 · Usage "Modal" */
+  --gds-type-usage-modal-weight: var(--gds-type-title-3-weight);
+  --gds-type-usage-time-picker-date-size: var(--gds-type-title-2-size);  /* Title 2 · Usage "Time picker_date" */
+  --gds-type-usage-time-picker-date-weight: var(--gds-type-title-2-weight);
+  --gds-type-usage-time-picker-number-size: var(--gds-type-title-1-size);  /* Title 1 · Usage "Time picker_number" */
+  --gds-type-usage-time-picker-number-weight: var(--gds-type-title-1-weight);
+  --gds-type-usage-top-app-bar-size: var(--gds-type-title-5-size);  /* Title 5 · Usage "Top app bar" */
+  --gds-type-usage-top-app-bar-weight: var(--gds-type-title-5-weight);
+
+  /* Layout — Guidelines 계층 */
+  --gds-layout-screen-ios-width: 375px;  /* ios · 두 ✅ 페이지와 실무 기준이 모두 일치합니다 */
+  --gds-layout-screen-ios-height: 812px;  /* ios */
+  --gds-layout-screen-aos-web-width: 360px;  /* aos/web · AOS 와 Web 은 같은 폭을 씁니다 — 원본 행 그대로이며 실무 기준도 같습니다 (강민관 2026-08-06 확정) */
+  --gds-layout-screen-aos-web-height: 800px;  /* aos/web */
+  --gds-layout-margin-side: 20px;  /* 좌·우 마진은 20px 로 통일합니다 */
+  --gds-layout-margin-top: 20px;  /* 상단 마진은 20px 로 통일합니다 */
+  --gds-layout-margin-bottom: 0px;  /* 콘텐츠형 화면([Header+Contents])의 하단 마진 — iOS 는 홈 인디케이터 대응(43185:38430), AOS·Web 은 iOS 와의 일관성(43185:38669)으로 전 플랫폼 0px */
+  --gds-layout-button-margin-bottom-ios: 0px;  /* ios · 버튼형 화면의 버튼 하단 — iOS 는 하단만 0px(43185:38531) */
+  --gds-layout-button-margin-bottom-aos-web: 20px;  /* aos/web · 버튼형 화면의 버튼 하단 — 홈 인디케이터가 없는 환경이므로 20px 유지(43185:38800) */
+  --gds-layout-home-indicator-height: 34px;  /* ios */
+  --gds-layout-header-border-width: 1px;  /* 헤더 영역 하단에는 1px 라인을 기본으로 포함합니다 */
+
+  /* Effect — Elevation 이 아닌 효과 (컴포넌트 전용 · 재질) */
+  --gds-effect-bottom-sheet: 0px 4px 8px 3px rgba(0, 0, 0, 0.149), 0px 1px 3px 0px rgba(0, 0, 0, 0.302), 0px 0px 6px 0px rgba(0, 0, 0, 0.149);  /* Bottom Sheet */
+  --gds-effect-bottom-floating-button: 0px -2px 2px 0px rgba(0, 0, 0, 0.039);  /* Bottom Floating Button */
+  /* --gds-effect-frosted-glass: 내림(GDS 밖) — 강민관 2026-08-11 «GDS 밖으로 확정하고 닫기» · Frosted Glass · 소속 라이브러리를 확인하지 못했습니다 — search_design_system 이 이 이름을 어느 라이브러리에서도 찾지 못했습니다(2026-08-06). 파일 로컬 스타일이라 published 되지 않았을 가능성이 큽니다 — 소속이 확인될 때까지 토큰으로 내보내지 않습니다. */
+
+  /* Typography */
+  --gds-font-family: "Noto Sans KR", sans-serif;  /* GDS 폰트 단일 · 강민관 확정 2026-08-04 */
+  --gds-type-line-height: normal;  /* 행간 = Figma Auto · 팀 합의 2026-08-04 — 단계별 값을 따로 두지 않습니다 */
+  --gds-type-letter-spacing: 0;  /* 자간 — Figma 변수 typo/letter-spacing/0 · 단계별 값을 따로 두지 않습니다 */
+  --gds-type-display-1-size: 24px;  /* Graphic */
+  --gds-type-display-1-weight: 700;
+  --gds-type-title-1-size: 24px;  /* Time picker_number */
+  --gds-type-title-1-weight: 500;
+  --gds-type-title-2-size: 22px;  /* Time picker_date */
+  --gds-type-title-2-weight: 500;
+  --gds-type-display-2-size: 20px;  /* Graphic */
+  --gds-type-display-2-weight: 700;
+  --gds-type-title-3-size: 20px;  /* Contents_title · Modal */
+  --gds-type-title-3-weight: 500;
+  --gds-type-heading-1-size: 20px;  /* Contents_heading */
+  --gds-type-heading-1-weight: 700;
+  --gds-type-title-4-size: 18px;  /* Contents_title */
+  --gds-type-title-4-weight: 500;
+  --gds-type-heading-2-size: 18px;  /* Contents_heading */
+  --gds-type-heading-2-weight: 700;
+  --gds-type-display-3-size: 16px;  /* Graphic */
+  --gds-type-display-3-weight: 700;
+  --gds-type-title-5-size: 16px;  /* Top app bar · Button_label · Bottom sheet */
+  --gds-type-title-5-weight: 500;
+  --gds-type-body-1-size: 16px;  /* Contents_body */
+  --gds-type-body-1-weight: 400;
+  --gds-type-heading-3-size: 16px;  /* Contents_heading */
+  --gds-type-heading-3-weight: 700;
+  --gds-type-title-6-size: 14px;  /* Contents_title */
+  --gds-type-title-6-weight: 500;
+  --gds-type-body-2-size: 14px;  /* Contents_body */
+  --gds-type-body-2-weight: 400;
+  --gds-type-heading-4-size: 14px;  /* Contents_heading */
+  --gds-type-heading-4-weight: 700;
+  --gds-type-caption-1-size: 12px;  /* Contents_caption */
+  --gds-type-caption-1-weight: 400;
+  --gds-type-body-3-size: 12px;  /* Contents_body */
+  --gds-type-body-3-weight: 400;
+  --gds-type-title-7-size: 12px;  /* Contents_title · Bottom navigation_label */
+  --gds-type-title-7-weight: 500;
+  --gds-type-caption-2-size: 10px;  /* Contents_caption */
+  --gds-type-caption-2-weight: 400;
+  --gds-type-title-8-size: 10px;  /* Badge_label */
+  --gds-type-title-8-weight: 500;
+  --gds-type-body-4-size: 10px;  /* Contents_body */
+  --gds-type-body-4-weight: 400;
+
+  /* Spacing */
+  --gds-spacing-0: 0px;
+  --gds-spacing-100: 2px;
+  --gds-spacing-200: 4px;
+  --gds-spacing-300: 8px;
+  --gds-spacing-400: 12px;
+  --gds-spacing-500: 16px;
+  --gds-spacing-600: 20px;
+  --gds-spacing-700: 24px;
+  --gds-spacing-800: 28px;
+  --gds-spacing-900: 32px;
+  --gds-spacing-1000: 40px;
+  --gds-spacing-1100: 44px;
+  --gds-spacing-1200: 48px;
+  --gds-spacing-1300: 52px;
+
+  /* Radius */
+  --gds-radius-xs: 4px;
+  --gds-radius-sm: 8px;
+  --gds-radius-md: 10px;
+  --gds-radius-lg: 12px;
+  --gds-radius-xl: 16px;
+  --gds-radius-xxl: 20px;
+  --gds-radius-full: 9999px;
+  --gds-icon-size-16: 16px;
+  --gds-icon-size-20: 20px;
+  --gds-icon-size-24: 24px;
+  --gds-icon-size-32: 32px;
+  --gds-icon-size-40: 40px;
+  --gds-icon-stroke-16: 1px;
+  --gds-icon-stroke-20: 1px;
+  --gds-icon-stroke-24: 1.2px;
+  --gds-icon-stroke-32: 1.6px;
+  --gds-icon-stroke-40: 2px;
+  --gds-alpha-0: 0;
+  --gds-alpha-10: 0.1;
+  --gds-alpha-20: 0.2;
+  --gds-alpha-40: 0.4;
+  --gds-alpha-60: 0.6;
+  --gds-alpha-80: 0.8;
+  --gds-alpha-100: 1;
+  --gds-blur-4: 4px;
+  --gds-blur-8: 8px;
+  --gds-blur-12: 12px;
+  --gds-blur-16: 16px;
+  --gds-blur-20: 20px;
+  --gds-blur-24: 24px;
+
+  /* Elevation */
+  /* 재넘버링 반영됨 — 구 1~5 → 2~6, 신규 1 추가 */
+  --gds-elevation-1: 0px 1px 2px 0px rgba(0,0,0,0.15);  /* 신규 */
+  --gds-elevation-2: 0px 1px 3px 1px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);  /* 구 Elevation_1 */
+  --gds-elevation-3: 0px 2px 6px 2px rgba(0,0,0,0.15), 0px 1px 2px 0px rgba(0,0,0,0.3);  /* 구 Elevation_2 */
+  --gds-elevation-4: 0px 4px 8px 3px rgba(0,0,0,0.15), 0px 1px 3px 0px rgba(0,0,0,0.3);  /* 구 Elevation_3 */
+  --gds-elevation-5: 0px 6px 10px 4px rgba(0,0,0,0.15), 0px 2px 3px 0px rgba(0,0,0,0.3);  /* 구 Elevation_4 */
+  --gds-elevation-6: 0px 8px 12px 6px rgba(0,0,0,0.15), 0px 4px 4px 0px rgba(0,0,0,0.3);  /* 구 Elevation_5 */
+}
